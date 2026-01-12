@@ -1,0 +1,19 @@
+{
+  "moduleId": "module-advanced-001",
+  "courseId": "course-ai-automation-001",
+  "title": "Advanced: Complex Workflows and Best Practices",
+  "description": "Go deeper. Master data structures, handle multiple formats, merge sources, implement error handling, build multi-workflow systems, and follow production best practices.",
+  "order": 2,
+  "lessonCount": 6,
+  "duration": "5 hours",
+  "prerequisites": "Complete Beginner module",
+  "outcomes": [
+    "Transform complex data structures",
+    "Process XML, HTML, dates, binary files",
+    "Merge and batch process data",
+    "Build robust error handling",
+    "Design multi-workflow architectures"
+  ],
+  "createdAt": "2025-01-12T00:00:00Z",
+  "updatedAt": "2025-01-12T00:00:00Z"
+}

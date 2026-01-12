@@ -1,0 +1,7 @@
+{
+  "lessonId": "lesson-advanced-01",
+  "title": "Mastering Data Structures",
+  "markdownContent": "## Theory\nHow data flows between nodes: arrays, objects, items. The JSON wrapper format.\n\n## Demonstration\nInspect data between nodes. Use Split Out and Aggregate for transformations.\n\n## Practical\nTransform nested data: one-to-many and many-to-one operations.",
+  "createdAt": "2025-01-12T00:00:00Z",
+  "updatedAt": "2025-01-12T00:00:00Z"
+}

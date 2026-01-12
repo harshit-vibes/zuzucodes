@@ -1,0 +1,7 @@
+{
+  "lessonId": "lesson-advanced-05",
+  "title": "Building Business Workflows",
+  "markdownContent": "## Theory\nMulti-workflow architecture. Breaking complex automation into connected parts.\n\n## Demonstration\nDesign a system: data merge workflow feeding report generation.\n\n## Practical\nBuild a 2-workflow system: data pipeline + automated reporting.",
+  "createdAt": "2025-01-12T00:00:00Z",
+  "updatedAt": "2025-01-12T00:00:00Z"
+}

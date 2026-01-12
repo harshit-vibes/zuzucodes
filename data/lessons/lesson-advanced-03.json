@@ -1,0 +1,7 @@
+{
+  "lessonId": "lesson-advanced-03",
+  "title": "Data Operations: Merge and Split",
+  "markdownContent": "## Theory\nMerge modes: append, combine by fields/position. Batch processing with loops.\n\n## Demonstration\nMerge data from two APIs. Split large datasets into batches.\n\n## Practical\nCombine data from 3+ sources and process in optimized batches.",
+  "createdAt": "2025-01-12T00:00:00Z",
+  "updatedAt": "2025-01-12T00:00:00Z"
+}
