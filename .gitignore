@@ -9,6 +9,9 @@ __pycache__/
 venv/
 .env
 
+# Scripts env
+scripts/.env
+
 # OS
 .DS_Store
 Thumbs.db
@@ -17,3 +20,4 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
+.vercel

@@ -1,0 +1,7 @@
+{
+  "lessonId": "lesson-beginner-05",
+  "title": "Logic and Notifications",
+  "markdownContent": "## Theory\nCode nodes for calculations. Notification integrations: email, Slack, Discord.\n\n## Demonstration\nCalculate totals with JavaScript. Send results to a messaging platform.\n\n## Practical\nCreate a workflow that aggregates data and sends a notification summary.",
+  "createdAt": "2025-01-12T00:00:00Z",
+  "updatedAt": "2025-01-12T00:00:00Z"
+}

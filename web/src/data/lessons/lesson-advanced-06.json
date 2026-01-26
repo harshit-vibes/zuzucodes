@@ -1,0 +1,7 @@
+{
+  "lessonId": "lesson-advanced-06",
+  "title": "Production Best Practices",
+  "markdownContent": "## Theory\nWorkflow maintenance, versioning, performance optimization, documentation.\n\n## Demonstration\nReview settings. Export and organize backups.\n\n## Practical\nAudit an existing workflow. Document it for team handoff.",
+  "createdAt": "2025-01-12T00:00:00Z",
+  "updatedAt": "2025-01-12T00:00:00Z"
+}

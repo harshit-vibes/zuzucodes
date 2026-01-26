@@ -1,0 +1,100 @@
+{
+  "levels": {
+    "level-one": [
+      {
+        "file": "chapter-1",
+        "url": "https://docs.n8n.io/courses/level-one/chapter-1/"
+      },
+      {
+        "file": "chapter-2",
+        "url": "https://docs.n8n.io/courses/level-one/chapter-2/"
+      },
+      {
+        "file": "chapter-3",
+        "url": "https://docs.n8n.io/courses/level-one/chapter-3/"
+      },
+      {
+        "file": "chapter-4",
+        "url": "https://docs.n8n.io/courses/level-one/chapter-4/"
+      },
+      {
+        "file": "chapter-5-1",
+        "url": "https://docs.n8n.io/courses/level-one/chapter-5/chapter-5.1/"
+      },
+      {
+        "file": "chapter-5-2",
+        "url": "https://docs.n8n.io/courses/level-one/chapter-5/chapter-5.2/"
+      },
+      {
+        "file": "chapter-5-3",
+        "url": "https://docs.n8n.io/courses/level-one/chapter-5/chapter-5.3/"
+      },
+      {
+        "file": "chapter-5-4",
+        "url": "https://docs.n8n.io/courses/level-one/chapter-5/chapter-5.4/"
+      },
+      {
+        "file": "chapter-5-5",
+        "url": "https://docs.n8n.io/courses/level-one/chapter-5/chapter-5.5/"
+      },
+      {
+        "file": "chapter-5-6",
+        "url": "https://docs.n8n.io/courses/level-one/chapter-5/chapter-5.6/"
+      },
+      {
+        "file": "chapter-5-7",
+        "url": "https://docs.n8n.io/courses/level-one/chapter-5/chapter-5.7/"
+      },
+      {
+        "file": "chapter-5-8",
+        "url": "https://docs.n8n.io/courses/level-one/chapter-5/chapter-5.8/"
+      },
+      {
+        "file": "chapter-6",
+        "url": "https://docs.n8n.io/courses/level-one/chapter-6/"
+      },
+      {
+        "file": "chapter-7",
+        "url": "https://docs.n8n.io/courses/level-one/chapter-7/"
+      }
+    ],
+    "level-two": [
+      {
+        "file": "chapter-1",
+        "url": "https://docs.n8n.io/courses/level-two/chapter-1/"
+      },
+      {
+        "file": "chapter-2",
+        "url": "https://docs.n8n.io/courses/level-two/chapter-2/"
+      },
+      {
+        "file": "chapter-3",
+        "url": "https://docs.n8n.io/courses/level-two/chapter-3/"
+      },
+      {
+        "file": "chapter-4",
+        "url": "https://docs.n8n.io/courses/level-two/chapter-4/"
+      },
+      {
+        "file": "chapter-5-0",
+        "url": "https://docs.n8n.io/courses/level-two/chapter-5/chapter-5.0/"
+      },
+      {
+        "file": "chapter-5-1",
+        "url": "https://docs.n8n.io/courses/level-two/chapter-5/chapter-5.1/"
+      },
+      {
+        "file": "chapter-5-2",
+        "url": "https://docs.n8n.io/courses/level-two/chapter-5/chapter-5.2/"
+      },
+      {
+        "file": "chapter-5-3",
+        "url": "https://docs.n8n.io/courses/level-two/chapter-5/chapter-5.3/"
+      },
+      {
+        "file": "chapter-6",
+        "url": "https://docs.n8n.io/courses/level-two/chapter-6/"
+      }
+    ]
+  }
+}

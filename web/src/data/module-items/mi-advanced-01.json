@@ -1,0 +1,10 @@
+{
+  "itemId": "mi-advanced-01",
+  "moduleId": "module-advanced-001",
+  "order": 1,
+  "itemType": "lesson",
+  "lessonId": "lesson-advanced-01",
+  "quizId": null,
+  "createdAt": "2025-01-12T00:00:00Z",
+  "updatedAt": "2025-01-12T00:00:00Z"
+}

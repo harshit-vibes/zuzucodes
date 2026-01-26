@@ -1,0 +1,7 @@
+{
+  "lessonId": "lesson-advanced-02",
+  "title": "Working with Different Data Types",
+  "markdownContent": "## Theory\nProcessing XML, HTML, dates, and binary files. Format conversions.\n\n## Demonstration\nExtract HTML with selectors. Convert dates. Handle file uploads.\n\n## Practical\nBuild a workflow that processes multiple formats into a unified output.",
+  "createdAt": "2025-01-12T00:00:00Z",
+  "updatedAt": "2025-01-12T00:00:00Z"
+}

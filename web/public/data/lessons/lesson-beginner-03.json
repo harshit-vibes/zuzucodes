@@ -1,0 +1,7 @@
+{
+  "lessonId": "lesson-beginner-03",
+  "title": "Data Retrieval and Integration",
+  "markdownContent": "## Theory\nHow APIs work. HTTP methods, headers, authentication, and connecting to data sources.\n\n## Demonstration\nConfigure an HTTP node with credentials. Fetch data from an external API.\n\n## Practical\nRetrieve data from an API and insert it into a spreadsheet.",
+  "createdAt": "2025-01-12T00:00:00Z",
+  "updatedAt": "2025-01-12T00:00:00Z"
+}

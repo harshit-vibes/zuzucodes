@@ -1,0 +1,19 @@
+{
+  "courseId": "course-ai-automation-001",
+  "title": "AI Automation for General Workflows",
+  "description": "Learn to build AI-powered automation agents using workflow tools. Start from basics, progress to complex multi-workflow systems. Covers UI navigation, API integration, data processing, error handling, and production deployment.",
+  "thumbnailUrl": null,
+  "authorName": "AI Assistant",
+  "category": "Data/AI",
+  "duration": "10+ hours",
+  "level": "Beginner to Advanced",
+  "prerequisites": "Basic understanding of APIs and JSON",
+  "outcomes": [
+    "Build automated workflows from scratch",
+    "Connect APIs and process data",
+    "Handle errors and monitor executions",
+    "Deploy production-ready automations"
+  ],
+  "createdAt": "2025-01-12T00:00:00Z",
+  "updatedAt": "2025-01-12T00:00:00Z"
+}

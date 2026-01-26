@@ -1,0 +1,7 @@
+{
+  "lessonId": "lesson-advanced-04",
+  "title": "Error Handling Strategies",
+  "markdownContent": "## Theory\nMonitoring executions. Error workflows. Validation and explicit errors.\n\n## Demonstration\nSet up Error Trigger workflow. Use Stop and Error for validation.\n\n## Practical\nBuild error monitoring that alerts via multiple channels on failure.",
+  "createdAt": "2025-01-12T00:00:00Z",
+  "updatedAt": "2025-01-12T00:00:00Z"
+}

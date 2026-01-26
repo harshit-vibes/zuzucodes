@@ -1,0 +1,7 @@
+{
+  "lessonId": "lesson-beginner-01",
+  "title": "Introduction to Workflow Automation",
+  "markdownContent": "## Theory\nUnderstand what workflow automation is and why it matters. Learn the core interface: canvas, nodes, triggers, and execution controls.\n\n## Demonstration\nTour the editor UI. Add a trigger node and explore the node panel.\n\n## Practical\nBuild a 2-node workflow: fetch articles from an API and view the output.",
+  "createdAt": "2025-01-12T00:00:00Z",
+  "updatedAt": "2025-01-12T00:00:00Z"
+}

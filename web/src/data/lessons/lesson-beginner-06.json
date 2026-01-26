@@ -1,0 +1,7 @@
+{
+  "lessonId": "lesson-beginner-06",
+  "title": "Scheduling and Deployment",
+  "markdownContent": "## Theory\nTime-based triggers. Workflow activation, monitoring, and export/import.\n\n## Demonstration\nReplace manual trigger with a schedule. Publish and review execution logs.\n\n## Practical\nDeploy a complete workflow that runs automatically on a schedule.",
+  "createdAt": "2025-01-12T00:00:00Z",
+  "updatedAt": "2025-01-12T00:00:00Z"
+}

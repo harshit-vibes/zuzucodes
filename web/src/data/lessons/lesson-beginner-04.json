@@ -1,0 +1,7 @@
+{
+  "lessonId": "lesson-beginner-04",
+  "title": "Data Processing and Transformation",
+  "markdownContent": "## Theory\nConditional logic with If/Switch. Field mapping and data filtering techniques.\n\n## Demonstration\nFilter records by status. Select and rename columns using Edit Fields.\n\n## Practical\nBuild a workflow that filters data and outputs a transformed format.",
+  "createdAt": "2025-01-12T00:00:00Z",
+  "updatedAt": "2025-01-12T00:00:00Z"
+}
