@@ -438,6 +438,7 @@ def draw_page_5(c):
         {
             "name": "Essential",
             "desc": "Self-paced learning with community support",
+            "price": None,
             "featured": False,
             "features": [
                 ("Theory", "Self-paced"),
@@ -450,6 +451,7 @@ def draw_page_5(c):
         {
             "name": "Pro",
             "desc": "Enhanced learning with live instruction",
+            "price": "₹3,000",
             "featured": True,
             "features": [
                 ("Theory", "Enhanced"),
@@ -462,6 +464,7 @@ def draw_page_5(c):
         {
             "name": "Premium",
             "desc": "Deep, personalized learning experience",
+            "price": None,
             "featured": False,
             "features": [
                 ("Theory", "Deep dive"),
@@ -516,8 +519,17 @@ def draw_page_5(c):
         c.setFont('Times-Roman', 24)
         c.drawString(text_x, text_y, tier["name"])
 
+        # Price (if available)
+        if tier["price"]:
+            text_y -= 22
+            c.setFillColor(COLORS['accent'])
+            c.setFont('Helvetica-Bold', 18)
+            c.drawString(text_x, text_y, tier["price"])
+            text_y -= 18
+        else:
+            text_y -= 22
+
         # Description
-        text_y -= 22
         c.setFillColor(COLORS['text_secondary'])
         c.setFont('Helvetica', 9)
         desc_lines = []
@@ -595,7 +607,7 @@ def draw_page_6(c):
     about_paras = [
         ('The gap between "knowing about AI tools" and "being AI-native" is growing.', COLORS['text_secondary']),
         ("Tutorials teach features. Bootcamps teach syntax. Neither builds operational instincts.", COLORS['text_secondary']),
-        ("We built zuzu.codes to close that gap — with MBA-level rigor applied to AI-native upskilling.", COLORS['text_primary']),
+        ("Kuma Learn built zuzu.codes to close that gap — with MBA-level rigor applied to AI-native upskilling.", COLORS['text_primary']),
     ]
 
     for text, color in about_paras:
@@ -657,11 +669,17 @@ def draw_page_6(c):
     y -= 35
     draw_logo(c, PAGE_WIDTH / 2, y, 22, centered=True)
 
+    # Business entity
+    y -= 25
+    c.setFillColor(COLORS['text_secondary'])
+    c.setFont('Helvetica', 9)
+    c.drawCentredString(PAGE_WIDTH / 2, y, "Operated by Kuma Learn")
+
     # Copyright
-    y -= 30
+    y -= 18
     c.setFillColor(COLORS['text_muted'])
     c.setFont('Helvetica', 9)
-    c.drawCentredString(PAGE_WIDTH / 2, y, "© 2025 ZuzuCodes. All rights reserved.")
+    c.drawCentredString(PAGE_WIDTH / 2, y, "© 2025 Kuma Learn. All rights reserved.")
 
     c.showPage()
 

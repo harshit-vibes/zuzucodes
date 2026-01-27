@@ -8,6 +8,7 @@ const tiers = [
   {
     name: 'Essential',
     description: 'Self-paced learning with community support',
+    price: null,
     featured: false,
     features: [
       { quadrant: 'Core Theory', value: 'Self-paced' },
@@ -19,6 +20,7 @@ const tiers = [
   {
     name: 'Pro',
     description: 'Enhanced learning with live instruction',
+    price: '₹3,000',
     featured: true,
     features: [
       { quadrant: 'Core Theory', value: 'Enhanced materials' },
@@ -30,6 +32,7 @@ const tiers = [
   {
     name: 'Premium',
     description: 'Deep, personalized learning experience',
+    price: null,
     featured: false,
     features: [
       { quadrant: 'Core Theory', value: 'Deep dive content' },
@@ -80,7 +83,10 @@ export function PricingSection() {
                 {tier.featured && <span className="tag">Most Popular</span>}
               </div>
 
-              <h3 className="text-subhead text-[var(--text-dark)] mb-3">{tier.name}</h3>
+              <h3 className="text-subhead text-[var(--text-dark)] mb-2">{tier.name}</h3>
+              {tier.price && (
+                <p className="text-2xl font-semibold text-[var(--gold)] mb-2">{tier.price}</p>
+              )}
               <p className="text-small text-[var(--text-medium)] mb-6">{tier.description}</p>
 
               <div className="space-y-3 mb-6 flex-grow">

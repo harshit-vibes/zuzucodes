@@ -8,6 +8,8 @@ const termsContent = `
 
 **Last updated: January 2026**
 
+zuzu.codes is operated by **Kuma Learn**.
+
 ## 1. Acceptance of Terms
 
 By accessing and using zuzu.codes, you agree to be bound by these Terms of Service.
@@ -25,7 +27,7 @@ zuzu.codes provides AI-native upskilling courses and educational content. Course
 
 ## 4. Intellectual Property
 
-All course content, materials, and branding are owned by ZuzuCodes. Unauthorized reproduction or distribution is prohibited.
+All course content, materials, and branding are owned by Kuma Learn. Unauthorized reproduction or distribution is prohibited.
 
 ## 5. Payment & Refunds
 
@@ -33,7 +35,7 @@ Payment terms are specified at checkout. Refund policies vary by course tier and
 
 ## 6. Limitation of Liability
 
-ZuzuCodes is not liable for indirect, incidental, or consequential damages arising from use of our services.
+Kuma Learn is not liable for indirect, incidental, or consequential damages arising from use of our services.
 
 ## 7. Contact
 
@@ -44,6 +46,8 @@ const privacyContent = `
 # Privacy Policy
 
 **Last updated: January 2026**
+
+zuzu.codes is operated by **Kuma Learn**.
 
 ## 1. Information We Collect
 
@@ -155,7 +159,7 @@ export function Footer() {
           >
             Privacy
           </button>
-          <span>&copy; {new Date().getFullYear()}</span>
+          <span>&copy; {new Date().getFullYear()} Kuma Learn</span>
         </div>
       </footer>
 
