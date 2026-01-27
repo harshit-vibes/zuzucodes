@@ -451,7 +451,7 @@ def draw_page_5(c):
         {
             "name": "Pro",
             "desc": "Enhanced learning with live instruction",
-            "price": "₹3,000",
+            "price": "Rs. 3,000",
             "featured": True,
             "features": [
                 ("Theory", "Enhanced"),
@@ -659,11 +659,6 @@ def draw_page_6(c):
     c.setFillColor(COLORS['accent'])
     c.setFont('Helvetica', 12)
     c.drawCentredString(PAGE_WIDTH / 2, y, "WhatsApp: +91 80118 58376")
-
-    y -= 18
-    c.setFillColor(COLORS['text_secondary'])
-    c.setFont('Helvetica', 11)
-    c.drawCentredString(PAGE_WIDTH / 2, y, "hello@zuzu.codes")
 
     # Logo
     y -= 35

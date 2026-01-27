@@ -39,7 +39,7 @@ Kuma Learn is not liable for indirect, incidental, or consequential damages aris
 
 ## 7. Contact
 
-For questions, contact us at hello@zuzu.codes
+For questions, reach out via WhatsApp.
 `;
 
 const privacyContent = `
@@ -83,7 +83,7 @@ We use essential cookies for site functionality and analytics cookies to improve
 
 ## 7. Contact
 
-For privacy inquiries, contact us at hello@zuzu.codes
+For privacy inquiries, reach out via WhatsApp.
 `;
 
 function Dialog({ isOpen, onClose, title, children }: {
