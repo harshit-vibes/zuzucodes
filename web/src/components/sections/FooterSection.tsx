@@ -1,6 +1,9 @@
 'use client';
 
 import { motion } from 'motion/react';
+import { Card } from '@/components/ui/Card';
+
+const WHATSAPP_URL = 'https://wa.me/918011858376?text=enquiry%20for%20zuzu.codes';
 
 export function FooterSection() {
   return (
@@ -13,9 +16,10 @@ export function FooterSection() {
           viewport={{ once: true, margin: '-100px' }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         >
-          <span className="tag mb-8 inline-block">About</span>
+          <span className="tag mb-[var(--tag-mb)] inline-block">About</span>
 
-          <div className="space-y-6 mb-12">
+          {/* Body paragraphs - consistent spacing */}
+          <div className="space-y-[var(--paragraph-gap)] mb-[var(--section-header-mb)]">
             <p className="body-lg text-[var(--text-secondary)]">
               The gap between &quot;knowing about AI tools&quot; and &quot;being AI-native&quot; is growing.
             </p>
@@ -29,18 +33,20 @@ export function FooterSection() {
             </p>
           </div>
 
-          {/* Promise */}
+          {/* Promise - using Card component */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="p-8 bg-[var(--bg-card)] rounded-xl border border-[var(--border-default)] mb-12"
+            className="mb-[var(--section-header-mb)]"
           >
-            <p className="font-serif text-xl italic text-[var(--text-primary)] leading-relaxed">
-              &quot;Complete the quadrant with genuine effort, and you&apos;ll emerge AI-native — with instincts that{' '}
-              <span className="text-[var(--accent)]">compound across your entire career</span>.&quot;
-            </p>
+            <Card padding="lg" context="on-surface">
+              <p className="font-serif text-xl italic text-[var(--text-primary)] leading-relaxed">
+                &quot;Complete the quadrant with genuine effort, and you&apos;ll emerge AI-native — with instincts that{' '}
+                <span className="text-[var(--accent)]">compound across your entire career</span>.&quot;
+              </p>
+            </Card>
           </motion.div>
 
           {/* CTA */}
@@ -49,10 +55,10 @@ export function FooterSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="mb-16"
+            className="mb-20"
           >
             <a
-              href="https://wa.me/918011858376?text=enquiry%20for%20zuzu.codes"
+              href={WHATSAPP_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="btn-primary"

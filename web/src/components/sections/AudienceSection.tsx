@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
+import { SectionHeader } from '@/components/ui/SectionHeader';
 
 const audiences = [
   {
@@ -25,22 +26,15 @@ export function AudienceSection() {
   return (
     <section id="audience" className="section bg-[var(--bg-primary)]">
       <div className="w-full max-w-[680px]">
-        {/* Section header */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-100px' }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="mb-12"
-        >
-          <span className="tag mb-5 inline-block">Who This Is For</span>
-          <h2 className="display-lg text-balance">
-            Built for professionals who want more.
-          </h2>
-        </motion.div>
+        {/* Section header - using standardized component */}
+        <SectionHeader
+          tag="Who This Is For"
+          headline="Built for professionals who want more."
+          align="left"
+        />
 
-        {/* Audience items - vertical stack */}
-        <div className="space-y-6">
+        {/* Audience items - vertical stack with consistent spacing */}
+        <div className="space-y-8">
           {audiences.map((audience, i) => (
             <motion.div
               key={i}
@@ -73,21 +67,21 @@ export function AudienceSection() {
                 </div>
               </div>
 
-              {/* Divider */}
+              {/* Divider - consistent spacing */}
               {i < audiences.length - 1 && (
-                <div className="mt-6 ml-10 sm:ml-14 h-px bg-[var(--border-default)]" />
+                <div className="mt-8 ml-10 sm:ml-14 h-px bg-[var(--border-default)]" />
               )}
             </motion.div>
           ))}
         </div>
 
-        {/* MBA parallel statement */}
+        {/* MBA parallel statement - standardized spacing */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          className="mt-12 pt-8 border-t border-[var(--border-default)]"
+          className="mt-[var(--section-header-mb)] pt-[var(--content-gap)] border-t border-[var(--border-default)]"
         >
           <p className="font-serif text-lg sm:text-xl md:text-2xl italic text-[var(--text-secondary)] leading-relaxed text-center">
             Like an MBA provides frameworks for business thinking, this curriculum provides frameworks for{' '}

@@ -5,7 +5,12 @@
   /* Backgrounds - Light mode cream palette */
   --bg-primary: #FEFDFB;
   --bg-surface: #F5F3EF;
-  --bg-card: #FFFFFF;
+
+  /* Elevated surface backgrounds - contextual */
+  /* On --bg-primary sections, elevated elements use --bg-elevated-on-primary */
+  /* On --bg-surface sections, elevated elements use --bg-elevated-on-surface */
+  --bg-elevated-on-primary: #F5F3EF;   /* surface color for cards on primary bg */
+  --bg-elevated-on-surface: #FEFDFB;   /* primary color for cards on surface bg */
 
   /* Text hierarchy */
   --text-primary: #1A1A1A;
@@ -37,13 +42,27 @@
   --radius-xl: 16px;
   --radius-full: 9999px;
 
-  /* Spacing */
+  /* Spacing - consistent vertical rhythm */
   --space-2: 8px;
+  --space-3: 12px;
   --space-4: 16px;
+  --space-5: 20px;
   --space-6: 24px;
   --space-8: 32px;
+  --space-10: 40px;
   --space-12: 48px;
+  --space-14: 56px;
+  --space-16: 64px;
   --space-20: 80px;
+
+  /* Standardized component spacing */
+  --section-header-mb: 64px;      /* mb-16: space below section headers */
+  --tag-mb: 24px;                  /* mb-6: space below tags */
+  --headline-mb: 20px;             /* mb-5: space below headlines (when description follows) */
+  --paragraph-gap: 28px;           /* space-y-7: gap between paragraphs */
+  --card-padding: 32px;            /* standard card padding */
+  --card-padding-lg: 40px;         /* large card padding */
+  --content-gap: 40px;             /* mt-10: gap between content blocks */
 
   /* Header height for offset */
   --header-height: 72px;
@@ -94,7 +113,7 @@ body {
   font-family: 'Instrument Serif', Georgia, serif;
   font-size: clamp(40px, 8vw, 72px);
   font-weight: 400;
-  line-height: 1.05;
+  line-height: 1.1;
   letter-spacing: -0.02em;
 }
 
@@ -102,7 +121,7 @@ body {
   font-family: 'Instrument Serif', Georgia, serif;
   font-size: clamp(32px, 5vw, 56px);
   font-weight: 400;
-  line-height: 1.1;
+  line-height: 1.15;
   letter-spacing: -0.01em;
 }
 
@@ -110,7 +129,7 @@ body {
   font-family: 'Instrument Serif', Georgia, serif;
   font-size: clamp(24px, 4vw, 40px);
   font-weight: 400;
-  line-height: 1.2;
+  line-height: 1.25;
 }
 
 .heading-lg {
@@ -178,18 +197,18 @@ body {
   justify-content: center;
   align-items: center;
   position: relative;
-  padding: calc(var(--header-height) + 48px) 24px 48px;
+  padding: calc(var(--header-height) + 60px) 24px 60px;
 }
 
 @media (min-width: 640px) {
   .section {
-    padding: calc(var(--header-height) + 64px) 48px 64px;
+    padding: calc(var(--header-height) + 80px) 48px 80px;
   }
 }
 
 @media (min-width: 1024px) {
   .section {
-    padding: calc(var(--header-height) + 80px) 64px 80px;
+    padding: calc(var(--header-height) + 100px) 64px 100px;
   }
 }
 
@@ -315,16 +334,21 @@ body {
 }
 
 /* ============================================
-   CARD STYLE
+   CARD STYLE (Legacy - prefer Card component)
    ============================================ */
 
+/* Cards on surface sections (default) */
 .card {
-  background: var(--bg-card);
+  background: var(--bg-elevated-on-surface);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-lg);
   padding: 24px;
   transition: all var(--duration-normal) var(--ease-out);
-  box-shadow: var(--shadow-sm);
+}
+
+/* Cards on primary sections */
+.card--on-primary {
+  background: var(--bg-elevated-on-primary);
 }
 
 @media (min-width: 640px) {
@@ -334,7 +358,7 @@ body {
 }
 
 .card:hover {
-  border-color: var(--accent);
+  border-color: var(--border-hover);
 }
 
 /* ============================================
@@ -458,10 +482,11 @@ body {
    ACCORDION STYLES
    ============================================ */
 
+/* Accordion uses context-aware background via data attribute */
 .accordion-item {
   border: 1px solid var(--border-default);
   border-radius: var(--radius-lg);
-  background: var(--bg-card);
+  background: var(--bg-elevated-on-surface);
   overflow: hidden;
   transition: border-color var(--duration-normal) var(--ease-out);
 }
@@ -523,9 +548,10 @@ body {
    TAB STYLES
    ============================================ */
 
+/* Tab list uses context-aware background */
 .tab-list {
   display: inline-flex;
-  background: var(--bg-card);
+  background: var(--bg-elevated-on-surface);
   padding: 4px;
   border-radius: var(--radius-full);
   gap: 4px;
@@ -565,11 +591,12 @@ body {
    PRICING CARD STYLES
    ============================================ */
 
+/* Pricing cards use elevated background on primary sections */
 .pricing-card {
-  background: var(--bg-card);
+  background: var(--bg-elevated-on-primary);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-xl);
-  padding: 24px;
+  padding: 28px 24px;
   transition: all var(--duration-normal) var(--ease-out);
   height: 100%;
   display: flex;
@@ -578,7 +605,13 @@ body {
 
 @media (min-width: 640px) {
   .pricing-card {
-    padding: 32px;
+    padding: 36px 32px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .pricing-card {
+    padding: 40px 36px;
   }
 }
 
@@ -642,20 +675,20 @@ button:focus-visible {
 .pricing-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 24px;
+  gap: 28px;
   align-items: stretch;
 }
 
 @media (min-width: 768px) {
   .pricing-grid {
     grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
+    gap: 24px;
   }
 }
 
 @media (min-width: 1024px) {
   .pricing-grid {
-    gap: 24px;
+    gap: 28px;
   }
 }
 
@@ -675,18 +708,19 @@ button:focus-visible {
   }
 }
 
+/* Quadrant cells use elevated background on surface sections */
 .quadrant-cell {
-  background: var(--bg-card);
-  padding: 24px;
+  background: var(--bg-elevated-on-surface);
+  padding: 28px 24px;
   transition: background-color var(--duration-normal) var(--ease-out);
 }
 
 @media (min-width: 640px) {
   .quadrant-cell {
-    padding: 32px;
+    padding: 40px 36px;
   }
 }
 
 .quadrant-cell:hover {
-  background: var(--bg-primary);
+  background: var(--bg-surface);
 }

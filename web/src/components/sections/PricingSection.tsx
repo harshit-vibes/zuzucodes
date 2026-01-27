@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
+import { SectionHeader } from '@/components/ui/SectionHeader';
 
 interface PricingTier {
   name: string;
@@ -56,30 +57,21 @@ export function PricingSection() {
   return (
     <section id="pricing" className="section bg-[var(--bg-primary)]">
       <div className="w-full max-w-[1000px]">
-        {/* Section header */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-100px' }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="text-center mb-4"
-        >
-          <span className="tag mb-5 inline-block">Pricing</span>
-          <h2 className="display-lg mb-4">
-            Choose your depth
-          </h2>
-          <p className="body-lg text-[var(--text-secondary)] max-w-[520px] mx-auto">
-            Cohort-based learning with fixed timelines, peer accountability, and structured progression.
-          </p>
-        </motion.div>
+        {/* Section header - using standardized component */}
+        <SectionHeader
+          tag="Pricing"
+          headline="Choose your depth"
+          description="Cohort-based learning with fixed timelines, peer accountability, and structured progression."
+          align="center"
+        />
 
-        {/* Subtitle */}
+        {/* Subtitle - pulls up into header space */}
         <motion.p
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="text-center body-sm text-[var(--text-muted)] mb-10"
+          className="text-center body-sm text-[var(--text-muted)] -mt-[var(--content-gap)] mb-[var(--content-gap)]"
         >
           Higher tiers = deeper engagement at each stage
         </motion.p>
@@ -101,23 +93,23 @@ export function PricingSection() {
             >
               {/* Featured badge */}
               {tier.featured && (
-                <span className="tag mb-4 inline-block">Most Popular</span>
+                <span className="tag mb-5 inline-block">Most Popular</span>
               )}
 
               {/* Tier name */}
-              <h3 className="display-md text-[var(--text-primary)] mb-2">
+              <h3 className="display-md text-[var(--text-primary)] mb-3">
                 {tier.name}
               </h3>
 
               {/* Description */}
-              <p className="body-md text-[var(--text-secondary)] mb-6">
+              <p className="body-md text-[var(--text-secondary)] mb-8">
                 {tier.description}
               </p>
 
-              {/* Features */}
-              <div className="space-y-3 mb-6 flex-grow">
+              {/* Features - consistent spacing */}
+              <div className="space-y-4 mb-8 flex-grow">
                 {tier.features.map((feature, j) => (
-                  <div key={j} className="flex justify-between items-start gap-3">
+                  <div key={j} className="flex justify-between items-start gap-4">
                     <span className="body-sm text-[var(--text-muted)] flex-shrink-0">
                       {feature.quadrant}
                     </span>
@@ -147,7 +139,7 @@ export function PricingSection() {
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.5 }}
-          className="text-center body-sm text-[var(--text-muted)] mt-8"
+          className="text-center body-sm text-[var(--text-muted)] mt-[var(--content-gap)]"
         >
           Bundle and early bird options available.
         </motion.p>

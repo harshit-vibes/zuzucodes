@@ -2,6 +2,8 @@
 
 import { motion, AnimatePresence } from 'motion/react';
 import { useState } from 'react';
+import { SectionHeader } from '@/components/ui/SectionHeader';
+import { Card } from '@/components/ui/Card';
 
 interface Module {
   title: string;
@@ -100,7 +102,7 @@ function Accordion({ modules }: { modules: Module[] }) {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {modules.map((module, i) => (
         <div
           key={i}
@@ -149,7 +151,7 @@ function Accordion({ modules }: { modules: Module[] }) {
                 className="overflow-hidden"
               >
                 <div className="accordion-content">
-                  <div className="grid gap-2">
+                  <div className="grid gap-3">
                     {module.lessons.map((lesson, j) => (
                       <div
                         key={j}
@@ -182,19 +184,12 @@ export function CoursesSection() {
   return (
     <section id="courses" className="section bg-[var(--bg-surface)]">
       <div className="w-full max-w-[720px]">
-        {/* Section header */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-100px' }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="text-center mb-10"
-        >
-          <span className="tag mb-5 inline-block">The Courses</span>
-          <h2 className="display-lg mb-4">
-            Your learning path
-          </h2>
-        </motion.div>
+        {/* Section header - using standardized component */}
+        <SectionHeader
+          tag="The Courses"
+          headline="Your learning path"
+          align="center"
+        />
 
         {/* Tab Switcher */}
         <motion.div
@@ -202,7 +197,7 @@ export function CoursesSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className="flex justify-center mb-8"
+          className="flex justify-center mb-[var(--content-gap)]"
         >
           <div className="tab-list">
             {courses.map((course) => (
@@ -229,7 +224,7 @@ export function CoursesSection() {
           >
             {/* Arc statement */}
             <motion.p
-              className="body-lg text-[var(--text-secondary)] text-center mb-8 italic"
+              className="body-lg text-[var(--text-secondary)] text-center mb-[var(--content-gap)] italic"
             >
               {activeCourse.arc}
             </motion.p>
@@ -237,19 +232,21 @@ export function CoursesSection() {
             {/* Accordion modules */}
             <Accordion modules={activeCourse.modules} />
 
-            {/* Outcomes */}
+            {/* Outcomes - using Card component */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3 }}
-              className="mt-8 p-5 sm:p-6 bg-[var(--bg-card)] rounded-xl border border-[var(--border-default)]"
+              className="mt-[var(--content-gap)]"
             >
-              <h4 className="heading-md text-[var(--text-primary)] mb-2">
-                You&apos;ll develop
-              </h4>
-              <p className="body-md text-[var(--text-secondary)]">
-                {activeCourse.outcomes}
-              </p>
+              <Card padding="md" context="on-surface">
+                <h4 className="heading-md text-[var(--text-primary)] mb-3">
+                  You&apos;ll develop
+                </h4>
+                <p className="body-md text-[var(--text-secondary)]">
+                  {activeCourse.outcomes}
+                </p>
+              </Card>
             </motion.div>
           </motion.div>
         </AnimatePresence>

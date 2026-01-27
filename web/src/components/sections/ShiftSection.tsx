@@ -2,6 +2,8 @@
 
 import { motion } from 'motion/react';
 
+const WHATSAPP_URL = 'https://wa.me/918011858376?text=enquiry%20for%20zuzu.codes';
+
 export function ShiftSection() {
   return (
     <section id="shift" className="section bg-[var(--bg-primary)]">
@@ -11,7 +13,7 @@ export function ShiftSection() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="mb-6"
+          className="mb-[var(--tag-mb)]"
         >
           <span className="tag">The New Professional Baseline</span>
         </motion.div>
@@ -21,13 +23,13 @@ export function ShiftSection() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-          className="display-xl mb-10 text-balance"
+          className="display-xl mb-[var(--content-gap)] text-balance"
         >
           AI-native upskilling for the modern professional
         </motion.h1>
 
-        {/* Body paragraphs */}
-        <div className="space-y-5">
+        {/* Body paragraphs - standardized gap */}
+        <div className="space-y-[var(--paragraph-gap)]">
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -61,15 +63,15 @@ export function ShiftSection() {
           </motion.p>
         </div>
 
-        {/* CTA */}
+        {/* CTA - standardized spacing */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          className="mt-10"
+          className="mt-[var(--content-gap)]"
         >
           <a
-            href="https://wa.me/918011858376?text=enquiry%20for%20zuzu.codes"
+            href={WHATSAPP_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="btn-primary"

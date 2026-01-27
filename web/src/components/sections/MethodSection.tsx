@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
+import { SectionHeader } from '@/components/ui/SectionHeader';
 
 const quadrants = [
   {
@@ -32,22 +33,13 @@ export function MethodSection() {
   return (
     <section id="method" className="section bg-[var(--bg-surface)]">
       <div className="w-full max-w-[900px]">
-        {/* Section header */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-100px' }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="text-center mb-12"
-        >
-          <span className="tag mb-5 inline-block">The Zuzu Method</span>
-          <h2 className="display-lg mb-4 text-balance">
-            We don&apos;t teach tools. We build instincts.
-          </h2>
-          <p className="body-lg text-[var(--text-secondary)] max-w-[600px] mx-auto">
-            Every topic traverses four quadrants — a complete learning cycle that produces deep, transferable competence.
-          </p>
-        </motion.div>
+        {/* Section header - using standardized component */}
+        <SectionHeader
+          tag="The Zuzu Method"
+          headline="We don't teach tools. We build instincts."
+          description="Every topic traverses four quadrants — a complete learning cycle that produces deep, transferable competence."
+          align="center"
+        />
 
         {/* 2x2 Quadrant Grid */}
         <motion.div
@@ -55,7 +47,7 @@ export function MethodSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-50px' }}
           transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className="mb-12"
+          className="mb-[var(--section-header-mb)]"
         >
           <div className="quadrant-grid">
             {quadrants.map((quadrant, i) => (
@@ -71,10 +63,10 @@ export function MethodSection() {
                 }}
                 className="quadrant-cell group"
               >
-                <span className="number text-sm mb-3 block opacity-40 group-hover:opacity-100 transition-opacity">
+                <span className="number text-sm mb-4 block opacity-40 group-hover:opacity-100 transition-opacity">
                   0{i + 1}
                 </span>
-                <h3 className="heading-md text-[var(--text-primary)] mb-2 group-hover:text-[var(--accent)] transition-colors">
+                <h3 className="heading-md text-[var(--text-primary)] mb-3 group-hover:text-[var(--accent)] transition-colors">
                   {quadrant.title}
                 </h3>
                 <p className="body-md text-[var(--text-secondary)]">
@@ -93,8 +85,8 @@ export function MethodSection() {
           transition={{ duration: 0.8, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
           className="text-center"
         >
-          <h3 className="heading-md text-[var(--text-primary)] mb-5">Why this works</h3>
-          <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-x-6 gap-y-3 text-[var(--text-secondary)]">
+          <h3 className="heading-md text-[var(--text-primary)] mb-[var(--tag-mb)]">Why this works</h3>
+          <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-x-8 gap-y-4 text-[var(--text-secondary)]">
             {whyItWorks.map((item, i) => (
               <motion.span
                 key={i}
@@ -116,7 +108,7 @@ export function MethodSection() {
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.6 }}
-            className="mt-8 body-lg text-[var(--text-primary)] font-medium"
+            className="mt-[var(--content-gap)] body-lg text-[var(--text-primary)] font-medium"
           >
             Complete the quadrant. Build lasting competence.
           </motion.p>
