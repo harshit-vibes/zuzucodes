@@ -1,10 +1,45 @@
 'use client';
 
-import { motion, useScroll, useTransform } from 'motion/react';
-import { useRef, useEffect, useState } from 'react';
+import { motion, useScroll, useTransform, MotionValue } from 'motion/react';
+import { useEffect, useState } from 'react';
 
 interface FlowingLineProps {
   containerRef: React.RefObject<HTMLDivElement | null>;
+}
+
+// Separate component for section markers to properly use hooks
+function SectionMarker({
+  index,
+  x,
+  y,
+  scrollYProgress,
+}: {
+  index: number;
+  x: number;
+  y: number;
+  scrollYProgress: MotionValue<number>;
+}) {
+  const opacity = useTransform(
+    scrollYProgress,
+    [
+      Math.max(0, (index - 0.5) / 6),
+      index / 6,
+      Math.min(1, (index + 0.5) / 6),
+    ],
+    [0.3, 1, 0.3]
+  );
+
+  return (
+    <motion.circle
+      cx={x}
+      cy={y}
+      r="4"
+      fill="var(--bg-card)"
+      stroke="var(--border-default)"
+      strokeWidth="1"
+      style={{ opacity }}
+    />
+  );
 }
 
 export function FlowingLine({ containerRef }: FlowingLineProps) {
@@ -71,6 +106,13 @@ export function FlowingLine({ containerRef }: FlowingLineProps) {
 
   if (dimensions.height === 0) return null;
 
+  // Pre-calculate marker positions
+  const markers = [0, 1, 2, 3, 4, 5].map((i) => ({
+    index: i,
+    y: (dimensions.height / 6) * i + dimensions.height / 12,
+    x: dimensions.width / 2 + (i % 2 === 0 ? 1 : -1) * Math.min(150, dimensions.width * 0.1),
+  }));
+
   return (
     <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
       <svg
@@ -125,33 +167,15 @@ export function FlowingLine({ containerRef }: FlowingLineProps) {
         />
 
         {/* Section markers - small circles at each section */}
-        {[0, 1, 2, 3, 4, 5].map((i) => {
-          const y = (dimensions.height / 6) * i + dimensions.height / 12;
-          const x = dimensions.width / 2 + (i % 2 === 0 ? 1 : -1) * Math.min(150, dimensions.width * 0.1);
-
-          return (
-            <motion.circle
-              key={i}
-              cx={x}
-              cy={y}
-              r="4"
-              fill="var(--bg-card)"
-              stroke="var(--border-default)"
-              strokeWidth="1"
-              style={{
-                opacity: useTransform(
-                  scrollYProgress,
-                  [
-                    Math.max(0, (i - 0.5) / 6),
-                    i / 6,
-                    Math.min(1, (i + 0.5) / 6),
-                  ],
-                  [0.3, 1, 0.3]
-                ),
-              }}
-            />
-          );
-        })}
+        {markers.map((marker) => (
+          <SectionMarker
+            key={marker.index}
+            index={marker.index}
+            x={marker.x}
+            y={marker.y}
+            scrollYProgress={scrollYProgress}
+          />
+        ))}
       </svg>
     </div>
   );
