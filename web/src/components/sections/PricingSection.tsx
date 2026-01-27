@@ -43,24 +43,24 @@ const tiers = [
 export function PricingSection() {
   return (
     <section id="pricing" className="section bg-cream">
-      <div className="w-full max-w-[1000px]">
+      <div className="w-full max-w-[960px]">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-100px' }}
           transition={{ duration: 0.8 }}
-          className="text-center mb-6"
+          className="text-center mb-12"
         >
-          <span className="tag mb-6 inline-block">Pricing</span>
-          <h2 className="text-heading mb-5">Choose your depth</h2>
+          <span className="tag mb-10 inline-block">Pricing</span>
+          <h2 className="text-heading mb-6">Choose your depth</h2>
           <p className="text-body text-[var(--text-medium)] max-w-[520px] mx-auto">
             Cohort-based learning with fixed timelines, peer accountability, and structured progression.
           </p>
         </motion.div>
 
         {/* Subtitle */}
-        <p className="text-center text-small text-[var(--text-light)] mb-10">
+        <p className="text-center text-small text-[var(--text-light)] mb-12">
           Higher tiers = deeper engagement at each stage
         </p>
 
@@ -75,16 +75,19 @@ export function PricingSection() {
               transition={{ duration: 0.6, delay: 0.2 + i * 0.1 }}
               className={`pricing-card ${tier.featured ? 'featured' : ''}`}
             >
-              {tier.featured && <span className="tag mb-5 inline-block">Most Popular</span>}
+              {/* Tag area - fixed height for alignment */}
+              <div className="h-8 mb-4">
+                {tier.featured && <span className="tag">Most Popular</span>}
+              </div>
 
               <h3 className="text-subhead text-[var(--text-dark)] mb-3">{tier.name}</h3>
-              <p className="text-small text-[var(--text-medium)] mb-8">{tier.description}</p>
+              <p className="text-small text-[var(--text-medium)] mb-6">{tier.description}</p>
 
-              <div className="space-y-4 mb-8 flex-grow">
+              <div className="space-y-3 mb-6 flex-grow">
                 {tier.features.map((feature, j) => (
-                  <div key={j} className="flex justify-between items-start gap-4">
-                    <span className="text-small text-[var(--text-light)] flex-shrink-0">{feature.quadrant}</span>
-                    <span className="text-small text-[var(--text-dark)] text-right font-medium">{feature.value}</span>
+                  <div key={j} className="flex flex-col">
+                    <span className="text-[12px] text-[var(--text-light)] uppercase tracking-wide">{feature.quadrant}</span>
+                    <span className="text-small text-[var(--text-dark)] font-medium">{feature.value}</span>
                   </div>
                 ))}
               </div>
@@ -102,7 +105,7 @@ export function PricingSection() {
         </div>
 
         {/* Bottom note */}
-        <p className="text-center text-small text-[var(--text-light)] mt-10">
+        <p className="text-center text-small text-[var(--text-light)] mt-12">
           Bundle and early bird options available.
         </p>
       </div>

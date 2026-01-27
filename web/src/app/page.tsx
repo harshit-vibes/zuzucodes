@@ -7,34 +7,27 @@ import { MethodSection } from '@/components/sections/MethodSection';
 import { AudienceSection } from '@/components/sections/AudienceSection';
 import { CoursesSection } from '@/components/sections/CoursesSection';
 import { PricingSection } from '@/components/sections/PricingSection';
-import { FooterSection } from '@/components/sections/FooterSection';
+import { Footer } from '@/components/sections/Footer';
 
 export default function Home() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div ref={containerRef} className="relative">
-      {/* Fixed Header with navigation */}
+    <>
+      {/* Fixed Header */}
       <Header containerRef={containerRef} />
 
-      {/* Sections - The Story Arc */}
-      {/* 1. THE SHIFT (hook) */}
-      <ShiftSection />
+      {/* Main content */}
+      <main ref={containerRef} className="bg-[var(--cream)] pb-[var(--footer-height)]">
+        <ShiftSection />
+        <MethodSection />
+        <AudienceSection />
+        <CoursesSection />
+        <PricingSection />
+      </main>
 
-      {/* 2. THE METHOD (differentiator) */}
-      <MethodSection />
-
-      {/* 3. WHO IT'S FOR (audience) */}
-      <AudienceSection />
-
-      {/* 4. THE COURSES (offering) */}
-      <CoursesSection />
-
-      {/* 5. PRICING (action) */}
-      <PricingSection />
-
-      {/* 6. ABOUT (close) */}
-      <FooterSection />
-    </div>
+      {/* Fixed footer */}
+      <Footer />
+    </>
   );
 }

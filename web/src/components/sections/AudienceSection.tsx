@@ -12,7 +12,7 @@ const audiences = [
 export function AudienceSection() {
   return (
     <section id="audience" className="section bg-cream">
-      <div className="w-full max-w-[680px]">
+      <div className="w-full max-w-[640px]">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
@@ -21,14 +21,14 @@ export function AudienceSection() {
           transition={{ duration: 0.8 }}
           className="mb-14"
         >
-          <span className="tag mb-6 inline-block">Who This Is For</span>
+          <span className="tag mb-10 inline-block">Who This Is For</span>
           <h2 className="text-heading text-balance">
             Built for professionals who want more.
           </h2>
         </motion.div>
 
         {/* Audience items */}
-        <div className="space-y-8">
+        <div className="space-y-10">
           {audiences.map((audience, i) => (
             <motion.div
               key={i}
@@ -52,7 +52,7 @@ export function AudienceSection() {
                 </div>
               </div>
               {i < audiences.length - 1 && (
-                <div className="mt-8 ml-10 sm:ml-14 h-px bg-[var(--border)]" />
+                <div className="mt-10 ml-10 sm:ml-14 h-px bg-[var(--border)]" />
               )}
             </motion.div>
           ))}
@@ -64,7 +64,7 @@ export function AudienceSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, delay: 0.5 }}
-          className="mt-16 pt-10 border-t border-[var(--border)]"
+          className="mt-14 pt-12 border-t border-[var(--border)]"
         >
           <p className="font-serif text-lg sm:text-xl md:text-2xl italic text-[var(--text-medium)] leading-relaxed text-center">
             Like an MBA provides frameworks for business thinking, this curriculum provides frameworks for{' '}
