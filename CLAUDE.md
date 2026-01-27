@@ -4,7 +4,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Modular Course Learning Platform** - A system for creating and managing structured educational content with courses, modules, and lessons.
+**zuzu.codes** — An opinionated course platform for AI-era learning.
+
+### Vision
+- **Phase 1 (Current)**: Learner platform for course consumption
+- **Phase 2 (Future)**: Instructor platform for course creation and management
+
+### First Offerings
+Two courses on AI Automation management for any process—business or personal:
+1. AI Automation for General Workflows (Beginner → Advanced)
+2. AI Automation for Business Processes (Intermediate → Advanced)
+
+See `brochure.md` for detailed course offerings.
+
+---
 
 ## Data Architecture
 
@@ -15,34 +28,69 @@ Course → Module → ModuleItem → Lesson (or Quiz)
 ### Directory Structure
 ```
 data/
-├── n8n-official/     # Reference content (scraped from n8n docs)
-├── courses/          # Course definitions
-├── modules/          # Module definitions
-├── module-items/     # Links modules to lessons/quizzes
+├── courses/          # Course definitions (JSON)
+├── modules/          # Module definitions (JSON)
+├── module-items/     # Links modules to lessons/quizzes (JSON)
 ├── lessons/          # Lesson content (markdown)
-└── quizzes/          # Quiz definitions
+├── quizzes/          # Quiz definitions (JSON)
+└── reference/        # Source documentation
+
+web/                  # Next.js learner platform
+├── src/app/          # App router pages
+├── src/components/   # React components
+├── src/lib/          # Data loading, utilities
+└── src/types/        # TypeScript definitions
 ```
 
-### Entity Schema (from db-plan.md)
+### Entity Schema
 
-**Course**: `{courseId, title, description, category, outcomes[]}`
+**Course**: `{courseId, title, description, category, outcomes[], prerequisites, duration, level}`
 
-**Module**: `{moduleId, courseId, title, order, outcomes[]}`
+**Module**: `{moduleId, courseId, title, description, order, duration, outcomes[]}`
 
 **ModuleItem**: `{itemId, moduleId, order, itemType, lessonId|quizId}`
 
 **Lesson**: `{lessonId, title, markdownContent}`
-- Content structure: Theory → Demonstration → Practical
+- Content structure: Theory → Demonstration → Practical (always)
 
-## Current Content
-
-- **Course**: AI Automation for General Workflows
-- **Modules**: Beginner (6 lessons) + Advanced (6 lessons)
-- **Reference**: n8n course documentation in `data/n8n-official/`
+---
 
 ## ID Conventions
 
 - `course-{name}-001`
-- `module-{level}-001`
-- `lesson-{level}-{##}`
-- `mi-{level}-{##}`
+- `module-{course}-{level}-001`
+- `lesson-{module}-{##}`
+- `mi-{module}-{##}`
+
+---
+
+## Technology Stack
+
+- **Frontend**: Next.js 16, React 19, TypeScript
+- **Styling**: Tailwind CSS 4, CSS variables for theming
+- **Animation**: Motion (motion.dev)
+- **Database**: Supabase (PostgreSQL) with local JSON fallback
+- **Content**: Markdown with structured metadata
+
+---
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| `brochure.md` | Course offerings and descriptions |
+| `db-plan.md` | Database schema and entity definitions |
+| `web/src/app/page.tsx` | Main landing page |
+| `web/src/lib/data.ts` | Data loading functions (JSON + Supabase) |
+| `web/src/components/sections/` | Landing page section components |
+
+---
+
+## Development Commands
+
+```bash
+cd web
+npm install
+npm run dev      # Start dev server
+npm run build    # Production build
+```
