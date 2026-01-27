@@ -55,20 +55,20 @@ const tiers: PricingTier[] = [
 export function PricingSection() {
   return (
     <section id="pricing" className="section bg-[var(--bg-primary)]">
-      <div className="max-w-6xl mx-auto w-full">
+      <div className="w-full max-w-[1000px]">
         {/* Section header */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-100px' }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="text-center mb-6"
+          className="text-center mb-4"
         >
-          <span className="tag mb-6 inline-block">Pricing</span>
+          <span className="tag mb-5 inline-block">Pricing</span>
           <h2 className="display-lg mb-4">
             Choose your depth
           </h2>
-          <p className="body-lg text-[var(--text-secondary)] max-w-xl mx-auto">
+          <p className="body-lg text-[var(--text-secondary)] max-w-[520px] mx-auto">
             Cohort-based learning with fixed timelines, peer accountability, and structured progression.
           </p>
         </motion.div>
@@ -79,13 +79,13 @@ export function PricingSection() {
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="text-center body-sm text-[var(--text-muted)] mb-12"
+          className="text-center body-sm text-[var(--text-muted)] mb-10"
         >
           Higher tiers = deeper engagement at each stage
         </motion.p>
 
         {/* Pricing Cards */}
-        <div className="grid md:grid-cols-3 gap-6 items-center">
+        <div className="pricing-grid">
           {tiers.map((tier, i) => (
             <motion.div
               key={tier.name}
@@ -97,7 +97,7 @@ export function PricingSection() {
                 delay: 0.2 + i * 0.1,
                 ease: [0.16, 1, 0.3, 1],
               }}
-              className={`pricing-card ${tier.featured ? 'featured md:-my-4' : ''}`}
+              className={`pricing-card ${tier.featured ? 'featured' : ''}`}
             >
               {/* Featured badge */}
               {tier.featured && (
@@ -110,15 +110,15 @@ export function PricingSection() {
               </h3>
 
               {/* Description */}
-              <p className="body-md text-[var(--text-secondary)] mb-8">
+              <p className="body-md text-[var(--text-secondary)] mb-6">
                 {tier.description}
               </p>
 
               {/* Features */}
-              <div className="space-y-4 mb-8">
+              <div className="space-y-3 mb-6 flex-grow">
                 {tier.features.map((feature, j) => (
-                  <div key={j} className="flex justify-between items-start gap-4">
-                    <span className="body-sm text-[var(--text-muted)]">
+                  <div key={j} className="flex justify-between items-start gap-3">
+                    <span className="body-sm text-[var(--text-muted)] flex-shrink-0">
                       {feature.quadrant}
                     </span>
                     <span className="body-sm text-[var(--text-primary)] text-right font-medium">
@@ -133,7 +133,7 @@ export function PricingSection() {
                 href={WHATSAPP_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={tier.featured ? 'btn-primary w-full' : 'btn-secondary w-full'}
+                className={`${tier.featured ? 'btn-primary' : 'btn-secondary'} w-full mt-auto`}
               >
                 {tier.cta}
               </a>
@@ -147,7 +147,7 @@ export function PricingSection() {
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.5 }}
-          className="text-center body-sm text-[var(--text-muted)] mt-10"
+          className="text-center body-sm text-[var(--text-muted)] mt-8"
         >
           Bundle and early bird options available.
         </motion.p>

@@ -5,13 +5,13 @@ import { motion } from 'motion/react';
 export function ShiftSection() {
   return (
     <section id="shift" className="section bg-[var(--bg-primary)]">
-      <div className="max-w-[800px] mx-auto w-full">
+      <div className="w-full max-w-[720px]">
         {/* Tag */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="mb-8"
+          className="mb-6"
         >
           <span className="tag">The New Professional Baseline</span>
         </motion.div>
@@ -21,13 +21,13 @@ export function ShiftSection() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-          className="display-xl mb-12 text-balance"
+          className="display-xl mb-10 text-balance"
         >
           AI-native upskilling for the modern professional
         </motion.h1>
 
         {/* Body paragraphs */}
-        <div className="space-y-6">
+        <div className="space-y-5">
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -66,7 +66,7 @@ export function ShiftSection() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          className="mt-12"
+          className="mt-10"
         >
           <a
             href="https://wa.me/918011858376?text=enquiry%20for%20zuzu.codes"

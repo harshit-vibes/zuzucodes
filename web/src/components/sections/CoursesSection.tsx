@@ -100,7 +100,7 @@ function Accordion({ modules }: { modules: Module[] }) {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {modules.map((module, i) => (
         <div
           key={i}
@@ -111,13 +111,13 @@ function Accordion({ modules }: { modules: Module[] }) {
             className="accordion-trigger"
             onClick={() => setOpenIndex(openIndex === i ? null : i)}
           >
-            <div className="flex items-center gap-4">
-              <span className="number">Module {i + 1}</span>
-              <div>
-                <h4 className="heading-md text-[var(--text-primary)] text-left">
+            <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+              <span className="number flex-shrink-0">Module {i + 1}</span>
+              <div className="min-w-0">
+                <h4 className="heading-md text-[var(--text-primary)] text-left truncate">
                   {module.title}
                 </h4>
-                <p className="body-sm text-[var(--text-secondary)]">
+                <p className="body-sm text-[var(--text-secondary)] truncate">
                   {module.subtitle}
                 </p>
               </div>
@@ -149,13 +149,13 @@ function Accordion({ modules }: { modules: Module[] }) {
                 className="overflow-hidden"
               >
                 <div className="accordion-content">
-                  <div className="grid gap-3">
+                  <div className="grid gap-2">
                     {module.lessons.map((lesson, j) => (
                       <div
                         key={j}
-                        className="flex items-center gap-4 py-2 border-b border-[var(--border-subtle)] last:border-b-0"
+                        className="flex items-center gap-3 sm:gap-4 py-2 border-b border-[var(--border-subtle)] last:border-b-0"
                       >
-                        <span className="mono-md text-[var(--text-muted)] w-6">
+                        <span className="mono-md text-[var(--text-muted)] w-6 flex-shrink-0">
                           {String(j + 1).padStart(2, '0')}
                         </span>
                         <span className="body-md text-[var(--text-secondary)]">
@@ -181,16 +181,16 @@ export function CoursesSection() {
 
   return (
     <section id="courses" className="section bg-[var(--bg-surface)]">
-      <div className="max-w-4xl mx-auto w-full">
+      <div className="w-full max-w-[720px]">
         {/* Section header */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-100px' }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="text-center mb-12"
+          className="text-center mb-10"
         >
-          <span className="tag mb-6 inline-block">The Courses</span>
+          <span className="tag mb-5 inline-block">The Courses</span>
           <h2 className="display-lg mb-4">
             Your learning path
           </h2>
@@ -202,7 +202,7 @@ export function CoursesSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className="flex justify-center mb-10"
+          className="flex justify-center mb-8"
         >
           <div className="tab-list">
             {courses.map((course) => (
@@ -229,7 +229,7 @@ export function CoursesSection() {
           >
             {/* Arc statement */}
             <motion.p
-              className="body-lg text-[var(--text-secondary)] text-center mb-10 italic"
+              className="body-lg text-[var(--text-secondary)] text-center mb-8 italic"
             >
               {activeCourse.arc}
             </motion.p>
@@ -242,9 +242,9 @@ export function CoursesSection() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3 }}
-              className="mt-10 p-6 bg-[var(--bg-card)] rounded-xl border border-[var(--border-default)]"
+              className="mt-8 p-5 sm:p-6 bg-[var(--bg-card)] rounded-xl border border-[var(--border-default)]"
             >
-              <h4 className="heading-md text-[var(--text-primary)] mb-3">
+              <h4 className="heading-md text-[var(--text-primary)] mb-2">
                 You&apos;ll develop
               </h4>
               <p className="body-md text-[var(--text-secondary)]">
