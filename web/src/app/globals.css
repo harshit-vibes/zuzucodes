@@ -1,88 +1,41 @@
 @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
+/* ===========================================
+   DESIGN TOKENS - Keep it simple
+   =========================================== */
+
 :root {
-  /* Backgrounds - Light mode cream palette */
-  --bg-primary: #FEFDFB;
-  --bg-surface: #F5F3EF;
+  /* Two background tones - alternating sections */
+  --cream: #FEFDFB;
+  --warm-gray: #F5F3EF;
 
-  /* Elevated surface backgrounds - contextual */
-  /* On --bg-primary sections, elevated elements use --bg-elevated-on-primary */
-  /* On --bg-surface sections, elevated elements use --bg-elevated-on-surface */
-  --bg-elevated-on-primary: #F5F3EF;   /* surface color for cards on primary bg */
-  --bg-elevated-on-surface: #FEFDFB;   /* primary color for cards on surface bg */
+  /* Text */
+  --text-dark: #1A1A1A;
+  --text-medium: #4B5563;
+  --text-light: #9CA3AF;
 
-  /* Text hierarchy */
-  --text-primary: #1A1A1A;
-  --text-secondary: #4B5563;
-  --text-muted: #9CA3AF;
-  --text-inverse: #FEFDFB;
-
-  /* Accent - Dark goldenrod */
-  --accent: #B8860B;
-  --accent-hover: #996F09;
-  --accent-soft: rgba(184, 134, 11, 0.10);
-  --accent-glow: rgba(184, 134, 11, 0.25);
+  /* Accent */
+  --gold: #B8860B;
+  --gold-hover: #996F09;
+  --gold-soft: rgba(184, 134, 11, 0.10);
 
   /* Borders */
-  --border-default: #E5E7EB;
-  --border-subtle: #F3F4F6;
-  --border-hover: #D1D5DB;
+  --border: #E5E7EB;
+  --border-light: #F3F4F6;
 
-  /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
-  --shadow-accent: 0 8px 24px rgba(184, 134, 11, 0.15);
-
-  /* Border radius */
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
-  --radius-full: 9999px;
-
-  /* Spacing - consistent vertical rhythm */
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 20px;
-  --space-6: 24px;
-  --space-8: 32px;
-  --space-10: 40px;
-  --space-12: 48px;
-  --space-14: 56px;
-  --space-16: 64px;
-  --space-20: 80px;
-
-  /* Standardized component spacing */
-  --section-header-mb: 64px;      /* mb-16: space below section headers */
-  --tag-mb: 24px;                  /* mb-6: space below tags */
-  --headline-mb: 20px;             /* mb-5: space below headlines (when description follows) */
-  --paragraph-gap: 28px;           /* space-y-7: gap between paragraphs */
-  --card-padding: 32px;            /* standard card padding */
-  --card-padding-lg: 40px;         /* large card padding */
-  --content-gap: 40px;             /* mt-10: gap between content blocks */
-
-  /* Header height for offset */
+  /* Layout */
   --header-height: 72px;
 
-  /* Animation */
-  --duration-fast: 150ms;
-  --duration-normal: 300ms;
-  --duration-slow: 500ms;
-  --duration-slower: 800ms;
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* Spacing rhythm */
+  --gap-sm: 24px;
+  --gap-md: 40px;
+  --gap-lg: 64px;
 }
 
-@theme inline {
-  --color-background: var(--bg-primary);
-  --color-foreground: var(--text-primary);
-  --font-sans: 'DM Sans', system-ui, sans-serif;
-  --font-serif: 'Instrument Serif', Georgia, serif;
-  --font-mono: 'JetBrains Mono', monospace;
-}
+/* ===========================================
+   BASE
+   =========================================== */
 
 * {
   box-sizing: border-box;
@@ -93,322 +46,185 @@
 html {
   scroll-behavior: smooth;
   scroll-snap-type: y mandatory;
-  overflow-x: hidden;
 }
 
 body {
-  background: var(--bg-primary);
-  color: var(--text-primary);
+  background: var(--cream);
+  color: var(--text-dark);
   font-family: 'DM Sans', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
 }
 
-/* ============================================
-   TYPOGRAPHY SCALE
-   ============================================ */
+/* ===========================================
+   TYPOGRAPHY - Simple classes
+   =========================================== */
 
-.display-xl {
+.text-display {
   font-family: 'Instrument Serif', Georgia, serif;
   font-size: clamp(40px, 8vw, 72px);
-  font-weight: 400;
   line-height: 1.1;
   letter-spacing: -0.02em;
 }
 
-.display-lg {
+.text-heading {
   font-family: 'Instrument Serif', Georgia, serif;
   font-size: clamp(32px, 5vw, 56px);
-  font-weight: 400;
   line-height: 1.15;
-  letter-spacing: -0.01em;
 }
 
-.display-md {
+.text-subhead {
   font-family: 'Instrument Serif', Georgia, serif;
   font-size: clamp(24px, 4vw, 40px);
-  font-weight: 400;
   line-height: 1.25;
 }
 
-.heading-lg {
-  font-family: 'DM Sans', system-ui, sans-serif;
-  font-size: clamp(22px, 3vw, 28px);
-  font-weight: 500;
-  line-height: 1.3;
-}
-
-.heading-md {
+.text-title {
   font-family: 'DM Sans', system-ui, sans-serif;
   font-size: clamp(18px, 2.5vw, 22px);
   font-weight: 500;
   line-height: 1.4;
 }
 
-.body-lg {
+.text-body {
   font-family: 'DM Sans', system-ui, sans-serif;
   font-size: clamp(16px, 2vw, 18px);
-  font-weight: 400;
   line-height: 1.7;
 }
 
-.body-md {
-  font-family: 'DM Sans', system-ui, sans-serif;
-  font-size: 16px;
-  font-weight: 400;
-  line-height: 1.6;
-}
-
-.body-sm {
+.text-small {
   font-family: 'DM Sans', system-ui, sans-serif;
   font-size: 14px;
-  font-weight: 400;
   line-height: 1.5;
 }
 
-.caption {
-  font-family: 'DM Sans', system-ui, sans-serif;
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 1.4;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-}
-
-.mono-md {
+.text-mono {
   font-family: 'JetBrains Mono', monospace;
   font-size: 14px;
   font-weight: 500;
-  line-height: 1.4;
 }
 
-/* ============================================
-   FULL-PAGE SECTIONS
-   ============================================ */
+/* ===========================================
+   SECTION LAYOUT
+   =========================================== */
 
 .section {
   min-height: 100vh;
   min-height: 100dvh;
   scroll-snap-align: start;
-  scroll-snap-stop: always;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  position: relative;
   padding: calc(var(--header-height) + 60px) 24px 60px;
 }
 
-@media (min-width: 640px) {
+@media (min-width: 768px) {
   .section {
     padding: calc(var(--header-height) + 80px) 48px 80px;
   }
 }
 
-@media (min-width: 1024px) {
-  .section {
-    padding: calc(var(--header-height) + 100px) 64px 100px;
-  }
-}
+/* Section backgrounds - explicit classes */
+.bg-cream { background: var(--cream); }
+.bg-warm-gray { background: var(--warm-gray); }
 
-/* Section content wrapper - ensures proper centering */
-.section-content {
-  width: 100%;
-  max-width: var(--section-max-width, 1200px);
-  margin: 0 auto;
-}
+/* ===========================================
+   COMPONENTS
+   =========================================== */
 
-/* ============================================
-   FONTS
-   ============================================ */
-
-.font-serif {
-  font-family: 'Instrument Serif', Georgia, serif;
-}
-
-.font-mono {
-  font-family: 'JetBrains Mono', monospace;
-}
-
-/* ============================================
-   BUTTONS
-   ============================================ */
-
-.btn-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 14px 28px;
-  background: var(--accent);
-  color: var(--text-inverse);
-  font-family: 'DM Sans', system-ui, sans-serif;
-  font-weight: 500;
-  font-size: 15px;
-  border-radius: var(--radius-md);
-  border: none;
-  cursor: pointer;
-  transition: all var(--duration-normal) var(--ease-out);
-  box-shadow: var(--shadow-sm);
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.btn-primary:hover {
-  background: var(--accent-hover);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-accent);
-}
-
-.btn-primary:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-.btn-secondary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 14px 28px;
-  background: transparent;
-  color: var(--text-primary);
-  font-family: 'DM Sans', system-ui, sans-serif;
-  font-weight: 500;
-  font-size: 15px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-default);
-  cursor: pointer;
-  transition: all var(--duration-normal) var(--ease-out);
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.btn-secondary:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.btn-secondary:focus-visible {
-  outline: 2px solid var(--accent-soft);
-  outline-offset: 2px;
-}
-
-/* ============================================
-   TAG STYLE
-   ============================================ */
-
+/* Tag/Badge */
 .tag {
   display: inline-flex;
-  align-items: center;
-  gap: 8px;
   padding: 6px 14px;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--accent);
-  background: var(--accent-soft);
-  border-radius: var(--radius-full);
+  color: var(--gold);
+  background: var(--gold-soft);
+  border-radius: 9999px;
 }
 
-/* ============================================
-   NUMBER BADGE
-   ============================================ */
+/* Buttons */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 28px;
+  background: var(--gold);
+  color: var(--cream);
+  font-weight: 500;
+  font-size: 15px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
 
+.btn-primary:hover {
+  background: var(--gold-hover);
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 28px;
+  background: transparent;
+  color: var(--text-dark);
+  font-weight: 500;
+  font-size: 15px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+/* Number accent */
 .number {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 14px;
   font-weight: 500;
-  color: var(--accent);
+  color: var(--gold);
 }
 
-/* ============================================
-   DIVIDER LINE
-   ============================================ */
+/* ===========================================
+   CARD - Simple, explicit backgrounds
+   =========================================== */
 
-.divider {
-  height: 1px;
-  background: var(--border-default);
-}
-
-/* ============================================
-   CARD STYLE (Legacy - prefer Card component)
-   ============================================ */
-
-/* Cards on surface sections (default) */
-.card {
-  background: var(--bg-elevated-on-surface);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-lg);
+/* Card on warm-gray section (use cream bg) */
+.card-on-gray {
+  background: var(--cream);
+  border: 1px solid var(--border);
+  border-radius: 12px;
   padding: 24px;
-  transition: all var(--duration-normal) var(--ease-out);
 }
 
-/* Cards on primary sections */
-.card--on-primary {
-  background: var(--bg-elevated-on-primary);
+/* Card on cream section (use warm-gray bg) */
+.card-on-cream {
+  background: var(--warm-gray);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
 }
 
 @media (min-width: 640px) {
-  .card {
+  .card-on-gray,
+  .card-on-cream {
     padding: 32px;
   }
 }
 
-.card:hover {
-  border-color: var(--border-hover);
-}
-
-/* ============================================
-   LINK STYLE
-   ============================================ */
-
-.link {
-  color: var(--text-primary);
-  text-decoration: none;
-  transition: all var(--duration-fast) var(--ease-out);
-}
-
-.link:hover {
-  color: var(--accent);
-  text-decoration: underline;
-}
-
-/* ============================================
-   SELECTION
-   ============================================ */
-
-::selection {
-  background: var(--accent-soft);
-  color: var(--text-primary);
-}
-
-/* ============================================
-   SCROLLBAR - MINIMAL
-   ============================================ */
-
-::-webkit-scrollbar {
-  width: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--border-hover);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--accent);
-}
-
-/* ============================================
-   HEADER STYLES
-   ============================================ */
+/* ===========================================
+   HEADER
+   =========================================== */
 
 .header {
   position: fixed;
@@ -418,8 +234,7 @@ body {
   z-index: 50;
   background: rgba(254, 253, 251, 0.92);
   backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-light);
   height: var(--header-height);
 }
 
@@ -439,21 +254,18 @@ body {
   }
 }
 
-/* Progress bar at top of header */
 .progress-bar {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   height: 2px;
-  background: var(--accent);
+  background: var(--gold);
   transform-origin: 0%;
 }
 
-/* Section navigation dots */
 .section-dots {
   display: flex;
-  align-items: center;
   gap: 10px;
 }
 
@@ -461,42 +273,41 @@ body {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--border-default);
+  background: var(--border);
   border: none;
   cursor: pointer;
-  transition: all var(--duration-normal) var(--ease-out);
   padding: 0;
+  transition: all 0.3s ease;
 }
 
 .section-dot:hover {
-  background: var(--border-hover);
+  background: var(--gold);
   transform: scale(1.3);
 }
 
 .section-dot.active {
-  background: var(--accent);
+  background: var(--gold);
   transform: scale(1.3);
 }
 
-/* ============================================
-   ACCORDION STYLES
-   ============================================ */
+/* ===========================================
+   ACCORDION (Courses section)
+   =========================================== */
 
-/* Accordion uses context-aware background via data attribute */
 .accordion-item {
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-lg);
-  background: var(--bg-elevated-on-surface);
+  background: var(--cream);
+  border: 1px solid var(--border);
+  border-radius: 12px;
   overflow: hidden;
-  transition: border-color var(--duration-normal) var(--ease-out);
+  transition: border-color 0.3s ease;
 }
 
 .accordion-item:hover {
-  border-color: var(--border-hover);
+  border-color: #D1D5DB;
 }
 
 .accordion-item[data-state="open"] {
-  border-color: var(--accent);
+  border-color: var(--gold);
 }
 
 .accordion-trigger {
@@ -522,16 +333,12 @@ body {
 .accordion-icon {
   width: 24px;
   height: 24px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-muted);
-  transition: all var(--duration-normal) var(--ease-out);
+  color: var(--text-light);
+  transition: color 0.3s ease;
 }
 
 .accordion-item[data-state="open"] .accordion-icon {
-  color: var(--accent);
+  color: var(--gold);
 }
 
 .accordion-content {
@@ -544,32 +351,29 @@ body {
   }
 }
 
-/* ============================================
-   TAB STYLES
-   ============================================ */
+/* ===========================================
+   TABS (Courses section)
+   =========================================== */
 
-/* Tab list uses context-aware background */
 .tab-list {
   display: inline-flex;
-  background: var(--bg-elevated-on-surface);
+  background: var(--cream);
   padding: 4px;
-  border-radius: var(--radius-full);
+  border-radius: 9999px;
   gap: 4px;
-  border: 1px solid var(--border-default);
+  border: 1px solid var(--border);
 }
 
 .tab-trigger {
   padding: 10px 20px;
-  border-radius: var(--radius-full);
+  border-radius: 9999px;
   border: none;
   background: transparent;
-  color: var(--text-secondary);
-  font-family: 'DM Sans', system-ui, sans-serif;
+  color: var(--text-medium);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all var(--duration-normal) var(--ease-out);
-  white-space: nowrap;
+  transition: all 0.3s ease;
 }
 
 @media (min-width: 640px) {
@@ -579,28 +383,38 @@ body {
 }
 
 .tab-trigger:hover {
-  color: var(--text-primary);
+  color: var(--text-dark);
 }
 
 .tab-trigger[data-state="active"] {
-  background: var(--accent);
-  color: var(--text-inverse);
+  background: var(--gold);
+  color: var(--cream);
 }
 
-/* ============================================
-   PRICING CARD STYLES
-   ============================================ */
+/* ===========================================
+   PRICING GRID
+   =========================================== */
 
-/* Pricing cards use elevated background on primary sections */
+.pricing-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+@media (min-width: 768px) {
+  .pricing-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
 .pricing-card {
-  background: var(--bg-elevated-on-primary);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-xl);
+  background: var(--warm-gray);
+  border: 1px solid var(--border);
+  border-radius: 16px;
   padding: 28px 24px;
-  transition: all var(--duration-normal) var(--ease-out);
-  height: 100%;
   display: flex;
   flex-direction: column;
+  transition: all 0.3s ease;
 }
 
 @media (min-width: 640px) {
@@ -609,96 +423,37 @@ body {
   }
 }
 
-@media (min-width: 1024px) {
-  .pricing-card {
-    padding: 40px 36px;
-  }
-}
-
 .pricing-card:hover {
-  border-color: var(--border-hover);
+  border-color: #D1D5DB;
 }
 
 .pricing-card.featured {
-  border-color: var(--accent);
+  border-color: var(--gold);
   border-width: 2px;
-  box-shadow: var(--shadow-accent);
-  position: relative;
+  box-shadow: 0 8px 24px rgba(184, 134, 11, 0.15);
 }
 
 @media (min-width: 768px) {
   .pricing-card.featured {
     transform: scale(1.02);
   }
-}
 
-.pricing-card.featured:hover {
-  transform: scale(1.04);
-}
-
-/* ============================================
-   FOCUS STATES
-   ============================================ */
-
-*:focus-visible {
-  outline: 2px solid var(--accent-soft);
-  outline-offset: 2px;
-}
-
-button:focus-visible {
-  outline: 2px solid var(--accent);
-}
-
-/* ============================================
-   UTILITY CLASSES
-   ============================================ */
-
-.text-balance {
-  text-wrap: balance;
-}
-
-.max-w-prose {
-  max-width: 65ch;
-}
-
-/* Hide on mobile, show on larger screens */
-@media (max-width: 767px) {
-  .hide-mobile {
-    display: none !important;
+  .pricing-card.featured:hover {
+    transform: scale(1.04);
   }
 }
 
-/* ============================================
-   GRID LAYOUTS
-   ============================================ */
-
-.pricing-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 28px;
-  align-items: stretch;
-}
-
-@media (min-width: 768px) {
-  .pricing-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 24px;
-  }
-}
-
-@media (min-width: 1024px) {
-  .pricing-grid {
-    gap: 28px;
-  }
-}
+/* ===========================================
+   QUADRANT GRID (Method section)
+   =========================================== */
 
 .quadrant-grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 1px;
-  background: var(--border-default);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-xl);
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 16px;
   overflow: hidden;
 }
 
@@ -708,11 +463,10 @@ button:focus-visible {
   }
 }
 
-/* Quadrant cells use elevated background on surface sections */
 .quadrant-cell {
-  background: var(--bg-elevated-on-surface);
+  background: var(--cream);
   padding: 28px 24px;
-  transition: background-color var(--duration-normal) var(--ease-out);
+  transition: background-color 0.3s ease;
 }
 
 @media (min-width: 640px) {
@@ -722,5 +476,53 @@ button:focus-visible {
 }
 
 .quadrant-cell:hover {
-  background: var(--bg-surface);
+  background: var(--warm-gray);
+}
+
+/* ===========================================
+   UTILITIES
+   =========================================== */
+
+.text-balance {
+  text-wrap: balance;
+}
+
+.link {
+  color: var(--text-dark);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.link:hover {
+  color: var(--gold);
+  text-decoration: underline;
+}
+
+::selection {
+  background: var(--gold-soft);
+}
+
+/* Hide on mobile */
+@media (max-width: 767px) {
+  .hide-mobile {
+    display: none !important;
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gold);
 }

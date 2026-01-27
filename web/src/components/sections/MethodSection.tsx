@@ -1,25 +1,12 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { SectionHeader } from '@/components/ui/SectionHeader';
 
 const quadrants = [
-  {
-    title: 'Core Theory',
-    description: 'Principles and mental models that transfer',
-  },
-  {
-    title: 'Pattern Recognition',
-    description: 'Real-world cases with expert analysis',
-  },
-  {
-    title: 'Independent Application',
-    description: 'Build it yourself, make mistakes, learn',
-  },
-  {
-    title: 'Expert Guidance',
-    description: 'Feedback and refinement from practitioners',
-  },
+  { title: 'Core Theory', description: 'Principles and mental models that transfer' },
+  { title: 'Pattern Recognition', description: 'Real-world cases with expert analysis' },
+  { title: 'Independent Application', description: 'Build it yourself, make mistakes, learn' },
+  { title: 'Expert Guidance', description: 'Feedback and refinement from practitioners' },
 ];
 
 const whyItWorks = [
@@ -31,48 +18,46 @@ const whyItWorks = [
 
 export function MethodSection() {
   return (
-    <section id="method" className="section bg-[var(--bg-surface)]">
+    <section id="method" className="section bg-warm-gray">
       <div className="w-full max-w-[900px]">
-        {/* Section header - using standardized component */}
-        <SectionHeader
-          tag="The Zuzu Method"
-          headline="We don't teach tools. We build instincts."
-          description="Every topic traverses four quadrants — a complete learning cycle that produces deep, transferable competence."
-          align="center"
-        />
-
-        {/* 2x2 Quadrant Grid */}
+        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-50px' }}
-          transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className="mb-[var(--section-header-mb)]"
+          viewport={{ once: true, margin: '-100px' }}
+          transition={{ duration: 0.8 }}
+          className="text-center mb-16"
+        >
+          <span className="tag mb-6 inline-block">The Zuzu Method</span>
+          <h2 className="text-heading mb-5 text-balance">
+            We don&apos;t teach tools. We build instincts.
+          </h2>
+          <p className="text-body text-[var(--text-medium)] max-w-[600px] mx-auto">
+            Every topic traverses four quadrants — a complete learning cycle that produces deep, transferable competence.
+          </p>
+        </motion.div>
+
+        {/* Quadrant Grid */}
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+          className="mb-16"
         >
           <div className="quadrant-grid">
             {quadrants.map((quadrant, i) => (
-              <motion.div
-                key={quadrant.title}
-                initial={{ opacity: 0, scale: 0.95 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{
-                  duration: 0.5,
-                  delay: 0.3 + i * 0.1,
-                  ease: [0.16, 1, 0.3, 1],
-                }}
-                className="quadrant-cell group"
-              >
+              <div key={quadrant.title} className="quadrant-cell group">
                 <span className="number text-sm mb-4 block opacity-40 group-hover:opacity-100 transition-opacity">
                   0{i + 1}
                 </span>
-                <h3 className="heading-md text-[var(--text-primary)] mb-3 group-hover:text-[var(--accent)] transition-colors">
+                <h3 className="text-title text-[var(--text-dark)] mb-3 group-hover:text-[var(--gold)] transition-colors">
                   {quadrant.title}
                 </h3>
-                <p className="body-md text-[var(--text-secondary)]">
+                <p className="text-small text-[var(--text-medium)]">
                   {quadrant.description}
                 </p>
-              </motion.div>
+              </div>
             ))}
           </div>
         </motion.div>
@@ -82,36 +67,22 @@ export function MethodSection() {
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.8, delay: 0.4 }}
           className="text-center"
         >
-          <h3 className="heading-md text-[var(--text-primary)] mb-[var(--tag-mb)]">Why this works</h3>
-          <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-x-8 gap-y-4 text-[var(--text-secondary)]">
+          <h3 className="text-title text-[var(--text-dark)] mb-6">Why this works</h3>
+          <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-x-8 gap-y-4 text-[var(--text-medium)]">
             {whyItWorks.map((item, i) => (
-              <motion.span
-                key={i}
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.5 + i * 0.1 }}
-                className="body-sm flex items-center gap-2 justify-center"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] flex-shrink-0" />
+              <span key={i} className="text-small flex items-center gap-2 justify-center">
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--gold)] flex-shrink-0" />
                 {item}
-              </motion.span>
+              </span>
             ))}
           </div>
 
-          {/* Bottom tagline */}
-          <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-            className="mt-[var(--content-gap)] body-lg text-[var(--text-primary)] font-medium"
-          >
+          <p className="mt-10 text-body text-[var(--text-dark)] font-medium">
             Complete the quadrant. Build lasting competence.
-          </motion.p>
+          </p>
         </motion.div>
       </div>
     </section>
