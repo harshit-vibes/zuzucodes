@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { cn, getUniqueTags, titleCase } from "@/lib/utils";
-import type { Course } from "@/lib/supabase";
+import type { Course } from "@/lib/data";
 
 export function CourseGrid({ courses }: { courses: Course[] }) {
   const tags = useMemo(() => getUniqueTags(courses), [courses]);

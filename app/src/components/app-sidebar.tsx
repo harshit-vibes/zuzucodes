@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
-import type { CourseWithModules, SidebarCourseProgress, DashboardStats } from "@/lib/supabase";
+import type { CourseWithModules, SidebarCourseProgress, DashboardStats } from "@/lib/data";
 
 // ============================================
 // Types

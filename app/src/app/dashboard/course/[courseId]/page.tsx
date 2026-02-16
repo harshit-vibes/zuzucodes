@@ -1,4 +1,4 @@
-import { getCourseWithModules, getBatchModuleCompletionStatus, getSectionCompletionStatus } from '@/lib/supabase';
+import { getCourseWithModules, getBatchModuleCompletionStatus, getSectionCompletionStatus } from '@/lib/data';
 import { auth } from '@/lib/auth/server';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';

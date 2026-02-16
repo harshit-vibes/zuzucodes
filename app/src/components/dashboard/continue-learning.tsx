@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Play } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
-import type { ResumeData } from "@/lib/supabase";
+import type { ResumeData } from "@/lib/data";
 
 interface ContinueLearningProps {
   data: ResumeData | null;

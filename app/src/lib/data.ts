@@ -1,6 +1,6 @@
 /**
  * Data layer for zuzu.codes
- * Uses Neon for data storage, Supabase for auth only
+ * Uses Neon database with raw SQL queries via @neondatabase/serverless
  */
 
 import { cache } from 'react';
@@ -421,6 +421,8 @@ export const getResumeData = cache(async (userId: string): Promise<ResumeData | 
     if (!targetCourseId) {
       targetCourseId = (incompleteCourses[0] as any).course_id;
     }
+
+    if (!targetCourseId) return null;
 
     const course = await getCourseWithModules(targetCourseId);
     if (!course) return null;

@@ -1,6 +1,6 @@
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
-import { getCoursesForSidebar, getSidebarProgress, getSectionCompletionStatus, getDashboardStats } from "@/lib/supabase";
+import { getCoursesForSidebar, getSidebarProgress, getSectionCompletionStatus, getDashboardStats } from "@/lib/data";
 import { auth } from "@/lib/auth/server";
 import { redirect } from "next/navigation";
 import { UserButton } from "@/components/user-button";

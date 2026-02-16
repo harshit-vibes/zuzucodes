@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth/server';
 import { sql } from '@/lib/neon';
-import type { QuizForm } from '@/lib/supabase';
+import type { QuizForm } from '@/lib/data';
 
 export async function POST(req: Request) {
   try {

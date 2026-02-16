@@ -1,4 +1,4 @@
-import { getModule, isSectionCompleted, areAllLessonsCompleted, type QuizQuestion } from '@/lib/supabase';
+import { getModule, isSectionCompleted, areAllLessonsCompleted, type QuizQuestion } from '@/lib/data';
 import { auth } from '@/lib/auth/server';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';

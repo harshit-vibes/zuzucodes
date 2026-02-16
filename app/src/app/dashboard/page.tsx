@@ -3,7 +3,7 @@ import {
   getDashboardStats,
   getResumeData,
   getCourses,
-} from '@/lib/supabase';
+} from '@/lib/data';
 import Link from 'next/link';
 import Image from 'next/image';
 import {

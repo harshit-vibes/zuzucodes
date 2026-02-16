@@ -1,4 +1,4 @@
-import { getLesson, getModule, getLessonCount, isSectionCompleted } from '@/lib/supabase';
+import { getLesson, getModule, getLessonCount, isSectionCompleted } from '@/lib/data';
 import { getMdxSectionTitle } from '@/lib/mdx-utils';
 import { auth } from '@/lib/auth/server';
 import { notFound } from 'next/navigation';

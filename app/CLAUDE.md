@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Single-tenant architecture**: Each deployment serves one organization (e.g., zuzu.codes for public, potential white-label instances later).
 
-Built with Next.js 16 (App Router), Auth.js (NextAuth v5 beta) with magic link passwordless authentication, and Neon Postgres as the database.
+Built with Next.js 16 (App Router), Neon Auth (beta) for passwordless authentication, and Neon Postgres as the database.
 
 ---
 
@@ -26,16 +26,28 @@ npx tsc --noEmit # Type check
 
 ## Architecture
 
-### Authentication Flow
+### Authentication
 
-Auth.js (NextAuth v5 beta) handles authentication with magic link (passwordless):
-- `src/auth.ts`: Auth.js setup with Neon adapter and session configuration
-- `src/auth.config.ts`: Resend provider configuration and protected route logic
-- `src/middleware.ts`: Route protection using Auth.js middleware
-- `src/components/providers/auth-provider.tsx`: Client-side SessionProvider wrapper
+**Neon Auth** - Integrated authentication using `@neondatabase/auth` (beta)
 
-Protected routes: `/dashboard`, `/learn`, `/account`
-Public routes: `/`, `/sign-in`, `/check-email`, `/api/auth/*`
+**Key Features**:
+- Email OTP (one-time password) authentication - passwordless magic link
+- Email verification required at sign-up (prevents spam accounts)
+- Branch-based auth - each database branch has isolated users and sessions
+- Pre-built UI components (`SignInForm`, `SignUpForm`)
+- Session management via secure HTTP-only cookies
+
+**Implementation**:
+- `src/lib/auth/server.ts` - Server-side auth instance (`authServer`, `auth`)
+- `src/lib/auth/client.ts` - Client-side auth instance (`authClient`)
+- `src/middleware.ts` - Route protection using `neonAuthMiddleware`
+- `src/components/auth-dialog.tsx` - Sign-in/sign-up UI with email verification
+- `src/components/email-verification.tsx` - Email verification flow
+
+**Protected routes**: `/dashboard`, `/learn`, `/account`
+**Public routes**: `/`, `/api/*`
+
+**Branch isolation**: Users created in dev branches don't appear in production. See `docs/BRANCH_AUTH_GUIDE.md` for workflow.
 
 ### Data Model
 
@@ -72,11 +84,11 @@ The `module_schema` table defines validation rules:
 
 ### Key Patterns
 
-- **React.cache()**: Used in `src/lib/supabase.ts` to deduplicate fetches within a request
-- **Server Components**: Dashboard pages are RSC, use `auth()` from `src/auth.ts`
-- **Client/Server separation**: Auth provider uses client components with SessionProvider
+- **React.cache()**: Used in `src/lib/data.ts` to deduplicate fetches within a request
+- **Server Components**: Dashboard pages are RSC, use `auth()` from `src/lib/auth/server.ts` to get session
 - **API route auth pattern**: Get session with `auth()`, verify user, then query database
 - **Raw SQL queries**: Direct SQL via `@neondatabase/serverless` instead of ORM
+- **Branch-based development**: Database and auth are branch-specific for isolated testing
 
 ### API Routes
 
@@ -94,9 +106,9 @@ The `module_schema` table defines validation rules:
 ## Tech Stack
 
 - **Framework**: Next.js 16 with App Router (React 19, Server Components)
-- **Auth**: Auth.js (NextAuth v5 beta) with Neon adapter
+- **Auth**: Neon Auth (`@neondatabase/auth` v0.1.0-beta.21) with email OTP
 - **Database**: Neon Postgres (via `@neondatabase/serverless`)
-- **Email**: Resend for magic link delivery
+- **Email**: Neon's shared email provider (for auth emails)
 - **UI**: shadcn/ui (new-york style) + Tailwind CSS v4
 - **Markdown**: react-markdown + remark-gfm
 - **Icons**: Lucide React
@@ -107,10 +119,12 @@ The `module_schema` table defines validation rules:
 
 Required:
 - `DATABASE_URL` — Neon Postgres connection string
-- `AUTH_SECRET` — Generate with `openssl rand -base64 32`
-- `AUTH_RESEND_KEY` — Resend API key for magic link emails
+- `NEON_AUTH_BASE_URL` — Neon Auth API URL (from Neon Console → Auth)
+- `NEON_AUTH_COOKIE_SECRET` — Cookie encryption secret (generate with `openssl rand -base64 32`)
 - `NEXT_PUBLIC_ROOT_DOMAIN` — Domain for redirects (e.g., `zuzu.codes`)
 - `NEXT_PUBLIC_APP_URL` — Full app URL (e.g., `https://zuzu.codes`)
+
+**Branch-specific**: When using database branches, ensure `DATABASE_URL` and `NEON_AUTH_BASE_URL` are from the same branch. Use `npm run check-branch` to validate.
 
 ---
 
@@ -135,16 +149,19 @@ Required:
 
 ## Database Schema
 
-Neon Postgres database with Auth.js tables.
+Neon Postgres database with two schemas:
 
-Key tables:
-- `users` → User accounts (Auth.js compatible)
-- `accounts`, `sessions`, `verification_tokens` → Auth.js tables
+**`neon_auth` schema** (managed by Neon Auth):
+- `users` → User accounts with email, password hash, verification status
+- `sessions` → Active user sessions
+- `otps` → One-time passwords for email verification
+
+**`public` schema** (application data):
 - `courses` → Top-level content container
 - `modules` → Content units with MDX and quizzes
-- `user_progress` → Completion tracking
+- `user_progress` → Completion tracking (references `neon_auth.users.id`)
 
-Apply Auth.js schema with Neon adapter migrations.
+Auth schema is automatically created and managed by Neon when Auth is enabled. Application schema is managed via migrations.
 
 ---
 
