@@ -281,7 +281,7 @@ export function AppSidebar({
             {/* Course title + progress */}
             <div className="px-3 pb-3 border-b border-border/50 mb-2">
               <Link
-                href={`/dashboard/course/${activeCourse.id}`}
+                href="/dashboard"
                 className="block group"
               >
                 <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2">

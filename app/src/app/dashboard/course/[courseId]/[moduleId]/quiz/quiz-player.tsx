@@ -162,10 +162,10 @@ export function QuizPlayer({
 
             <div className="flex justify-center gap-3">
               <Link
-                href={`/dashboard/course/${courseId}`}
+                href="/dashboard"
                 className="px-5 py-2.5 rounded-lg border border-border text-sm font-medium hover:bg-muted transition-colors"
               >
-                Back to Course
+                Back to Dashboard
               </Link>
               <button
                 onClick={handleRetake}
@@ -229,10 +229,10 @@ export function QuizPlayer({
 
             <div className="flex justify-center gap-3">
               <Link
-                href={`/dashboard/course/${courseId}`}
+                href="/dashboard"
                 className="px-5 py-2.5 rounded-lg border border-border text-sm font-medium hover:bg-muted transition-colors"
               >
-                Back to Course
+                Back to Dashboard
               </Link>
               {!result.passed && (
                 <button

@@ -1,18 +1,32 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import Link from "next/link";
+import { useState } from "react";
 import { ArrowRight } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { cn, getUniqueTags, titleCase } from "@/lib/utils";
-import type { Course } from "@/lib/data";
+import type { Course, CourseProgress } from "@/lib/data";
+import { CourseOverviewDialog } from "./course-overview-dialog";
 
-export function CourseGrid({ courses }: { courses: Course[] }) {
-  const tags = useMemo(() => getUniqueTags(courses), [courses]);
+const STATUS_ORDER = { in_progress: 0, not_started: 1, completed: 2 } as const;
+
+export function CourseGrid({
+  courses,
+  courseProgress = {},
+}: {
+  courses: Course[];
+  courseProgress?: Record<string, CourseProgress>;
+}) {
+  const tags = getUniqueTags(courses);
   const [activeTag, setActiveTag] = useState<string | null>(null);
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
 
-  const filtered = activeTag
-    ? courses.filter((c) => c.tag === activeTag)
-    : courses;
+  const filtered = (activeTag ? courses.filter((c) => c.tag === activeTag) : [...courses]).sort(
+    (a, b) => {
+      const statusA = courseProgress[a.id]?.status ?? "not_started";
+      const statusB = courseProgress[b.id]?.status ?? "not_started";
+      return STATUS_ORDER[statusA] - STATUS_ORDER[statusB];
+    }
+  );
 
   return (
     <>
@@ -49,17 +63,35 @@ export function CourseGrid({ courses }: { courses: Course[] }) {
 
       {/* Course cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        {filtered.map((course) => (
-          <Link
-            key={course.id}
-            href={`/dashboard/course/${course.id}`}
-            className="group relative rounded-xl border bg-card p-5 transition-all duration-200 hover:border-primary/50 hover:shadow-sm"
-          >
-            <div className="absolute left-0 top-4 bottom-4 w-1 rounded-full bg-primary" />
-            <div className="pl-4">
-              <div className="flex items-start justify-between mb-2">
-                <div className="flex-1 min-w-0">
-                  <span className="font-semibold transition-colors group-hover:text-primary">
+        {filtered.map((course) => {
+          const progress = courseProgress[course.id];
+          const status = progress?.status ?? "not_started";
+          const progressValue = progress?.progress ?? 0;
+
+          const ctaLabel =
+            status === "completed" ? "Review" : status === "in_progress" ? "Continue" : "Start";
+
+          return (
+            <button
+              key={course.id}
+              onClick={() => setSelectedCourse(course)}
+              className="group relative rounded-xl border bg-card p-5 transition-all duration-200 hover:border-primary/50 hover:shadow-sm text-left w-full"
+            >
+              <div className="absolute left-0 top-4 bottom-4 w-1 rounded-full bg-primary" />
+              <div className="pl-4">
+                <div className="mb-2">
+                  {/* Status badge */}
+                  {status === "in_progress" && (
+                    <span className="inline-block mb-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary/10 text-primary">
+                      In Progress
+                    </span>
+                  )}
+                  {status === "completed" && (
+                    <span className="inline-block mb-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-muted text-muted-foreground">
+                      Completed
+                    </span>
+                  )}
+                  <span className="block font-semibold transition-colors group-hover:text-primary">
                     {course.title}
                   </span>
                   {course.description && (
@@ -68,24 +100,48 @@ export function CourseGrid({ courses }: { courses: Course[] }) {
                     </p>
                   )}
                 </div>
-              </div>
-              <div className="flex items-center justify-between pt-3 border-t border-border/50">
-                <div className="flex items-center gap-2">
-                  {course.tag && (
-                    <span className="text-[10px] text-muted-foreground/70 bg-muted px-1.5 py-0.5 rounded">
-                      {titleCase(course.tag)}
+
+                {/* Progress bar */}
+                {progressValue > 0 && (
+                  <div className="flex items-center gap-3 mb-3">
+                    <Progress value={progressValue} className="flex-1 h-1.5" />
+                    <span className="text-xs font-medium text-primary w-8 text-right">
+                      {progressValue}%
                     </span>
-                  )}
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between pt-3 border-t border-border/50">
+                  <div className="flex items-center gap-2">
+                    {course.tag && (
+                      <span className="text-[10px] text-muted-foreground/70 bg-muted px-1.5 py-0.5 rounded">
+                        {titleCase(course.tag)}
+                      </span>
+                    )}
+                  </div>
+                  <span className="flex items-center gap-1 text-xs font-medium text-primary group-hover:gap-2 transition-all">
+                    {ctaLabel}
+                    <ArrowRight className="h-3 w-3" />
+                  </span>
                 </div>
-                <span className="flex items-center gap-1 text-xs font-medium text-primary group-hover:gap-2 transition-all">
-                  Start learning
-                  <ArrowRight className="h-3 w-3" />
-                </span>
               </div>
-            </div>
-          </Link>
-        ))}
+            </button>
+          );
+        })}
       </div>
+
+      {/* Course overview dialog — rendered once, keyed by selected course */}
+      {selectedCourse && (
+        <CourseOverviewDialog
+          key={selectedCourse.id}
+          course={selectedCourse}
+          courseProgress={courseProgress[selectedCourse.id]}
+          open={!!selectedCourse}
+          onOpenChange={(open) => {
+            if (!open) setSelectedCourse(null);
+          }}
+        />
+      )}
     </>
   );
 }

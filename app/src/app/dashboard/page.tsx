@@ -3,7 +3,10 @@ import {
   getDashboardStats,
   getResumeData,
   getCourses,
+  getCourseWithModules,
+  getUserCoursesProgress,
 } from '@/lib/data';
+import type { CourseProgress } from '@/lib/data';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -45,6 +48,20 @@ export default async function DashboardPage() {
   };
   const resumeData = userData?.[1] ?? null;
 
+  const courseProgress: Record<string, CourseProgress> =
+    userId && courses.length > 0
+      ? await getUserCoursesProgress(userId, courses.map((c) => c.id))
+      : {};
+
+  // Compute first lesson URL for "Start Your Journey" button
+  let startUrl: string | null = null;
+  if (!resumeData && courses.length > 0) {
+    const firstCourse = await getCourseWithModules(courses[0].id);
+    if (firstCourse?.modules[0]) {
+      startUrl = `/dashboard/course/${firstCourse.id}/${firstCourse.modules[0].id}/lesson/1`;
+    }
+  }
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -52,7 +69,7 @@ export default async function DashboardPage() {
         firstName={firstName}
         stats={stats}
         resumeData={resumeData}
-        courses={courses}
+        startUrl={startUrl}
       />
 
       {/* Main Content */}
@@ -61,7 +78,7 @@ export default async function DashboardPage() {
           <h2 className="text-lg font-semibold mb-4">
             Courses
           </h2>
-          {courses.length > 0 && <CourseGrid courses={courses} />}
+          {courses.length > 0 && <CourseGrid courses={courses} courseProgress={courseProgress} />}
 
           {/* Documentation link removed - will be added when zuzu.codes docs are available */}
         </div>
@@ -81,12 +98,12 @@ function HeroSection({
   firstName,
   stats,
   resumeData,
-  courses,
+  startUrl,
 }: {
   firstName: string;
   stats: { streak: number; coursesInProgress: number; coursesTotal: number };
   resumeData: Awaited<ReturnType<typeof getResumeData>>;
-  courses: Awaited<ReturnType<typeof getCourses>>;
+  startUrl: string | null;
 }) {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
@@ -140,9 +157,9 @@ function HeroSection({
               <ArrowRight className="h-4 w-4" />
             </div>
           </Link>
-        ) : courses.length > 0 ? (
+        ) : startUrl ? (
           <Link
-            href={`/dashboard/course/${courses[0].id}`}
+            href={startUrl}
             className="group inline-flex items-center gap-3 rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-medium transition-all hover:bg-primary/90"
           >
             <Sparkles className="h-4 w-4" />

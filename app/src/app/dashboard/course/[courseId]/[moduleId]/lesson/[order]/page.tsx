@@ -53,8 +53,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
         <div className="container mx-auto px-6 py-4">
           <Breadcrumb
             items={[
-              { label: 'Courses', href: '/dashboard' },
-              { label: 'Course', href: `/dashboard/course/${courseId}` },
+              { label: 'Dashboard', href: '/dashboard' },
               { label: module.title },
             ]}
           />

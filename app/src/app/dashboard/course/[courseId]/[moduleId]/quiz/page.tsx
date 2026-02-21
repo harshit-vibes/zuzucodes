@@ -48,8 +48,7 @@ export default async function QuizPage({ params }: QuizPageProps) {
         <div className="container mx-auto px-6 py-6">
           <Breadcrumb
             items={[
-              { label: 'Courses', href: '/dashboard' },
-              { label: 'Course', href: `/dashboard/course/${courseId}` },
+              { label: 'Dashboard', href: '/dashboard' },
               { label: module.title },
               { label: 'Quiz' },
             ]}
