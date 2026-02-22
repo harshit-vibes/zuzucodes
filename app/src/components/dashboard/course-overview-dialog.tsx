@@ -5,13 +5,14 @@ import { useRouter } from 'next/navigation';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Check } from 'lucide-react';
-import { titleCase } from '@/lib/utils';
+import { titleCase, cn } from '@/lib/utils';
 import type { Course, CourseProgress } from '@/lib/data';
 
 interface ModuleDetail {
@@ -52,7 +53,10 @@ export function CourseOverviewDialog({
     const controller = new AbortController();
 
     fetch(`/api/courses/${course.id}/detail`, { signal: controller.signal })
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
       .then((json: DetailData) => setData(json))
       .catch((err: unknown) => {
         if (err instanceof Error && err.name !== 'AbortError') {
@@ -81,6 +85,8 @@ export function CourseOverviewDialog({
     onOpenChange(false);
   };
 
+  const hasOutcomes = (course.outcomes?.length ?? 0) > 0;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[88vh] flex flex-col p-0 gap-0">
@@ -95,6 +101,9 @@ export function CourseOverviewDialog({
           <DialogTitle className="text-xl font-semibold leading-snug">
             {course.title}
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Course overview — modules and progress
+          </DialogDescription>
           {course.description && (
             <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
               {course.description}
@@ -115,11 +124,11 @@ export function CourseOverviewDialog({
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
 
           {/* What you'll learn */}
-          {course.outcomes && course.outcomes.length > 0 && (
+          {hasOutcomes && (
             <section>
               <p className="label-mono text-muted-foreground mb-3">What you&apos;ll learn</p>
-              <div className={`grid gap-x-4 gap-y-2 ${course.outcomes.length >= 4 ? 'grid-cols-2' : 'grid-cols-1'}`}>
-                {course.outcomes.map((outcome, i) => (
+              <div className={cn('grid gap-x-4 gap-y-2', (course.outcomes?.length ?? 0) >= 4 ? 'grid-cols-2' : 'grid-cols-1')}>
+                {(course.outcomes ?? []).map((outcome, i) => (
                   <div key={i} className="flex items-start gap-2">
                     <span className="flex-shrink-0 w-4 h-4 rounded-full bg-primary/15 flex items-center justify-center mt-0.5">
                       <Check className="w-2.5 h-2.5 text-primary" />
@@ -132,7 +141,7 @@ export function CourseOverviewDialog({
           )}
 
           {/* Divider before curriculum */}
-          {course.outcomes && course.outcomes.length > 0 && (
+          {hasOutcomes && (
             <hr className="border-border/50" />
           )}
 
@@ -154,6 +163,7 @@ export function CourseOverviewDialog({
           <button
             onClick={handleCta}
             disabled={!data}
+            aria-busy={loading}
             className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {ctaLabel}
