@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth/server';
 import { getCourseWithModules, getSectionCompletionStatus } from '@/lib/data';
+import { getMdxSectionTitles } from '@/lib/mdx-utils';
 
 interface ModuleDetail {
   id: string;
   title: string;
+  description: string | null;
   section_count: number;
   has_quiz: boolean;
   lessonCompletion: boolean[];
   quizCompleted: boolean;
+  lessonTitles: string[];
 }
 
 interface DetailResponse {
@@ -40,13 +43,20 @@ export async function GET(
       lessonCompletion.push(completionStatus[`${m.id}:lesson-${i}`] ?? false);
     }
     const quizCompleted = completionStatus[`${m.id}:quiz`] ?? false;
+
+    const lessonTitles = m.mdx_content
+      ? getMdxSectionTitles(m.mdx_content)
+      : Array.from({ length: m.section_count }, (_, i) => `Lesson ${i + 1}`);
+
     return {
       id: m.id,
       title: m.title,
+      description: m.description,
       section_count: m.section_count,
       has_quiz: !!m.quiz_form,
       lessonCompletion,
       quizCompleted,
+      lessonTitles,
     };
   });
 
