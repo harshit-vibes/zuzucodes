@@ -40,6 +40,8 @@ interface CodeLessonLayoutProps {
   lessonTitle: string;
   content: string;
   codeTemplate: string | null;
+  testCode: string | null;
+  solutionCode: string | null;
   savedCode: string | null;
   lessonId: string;
   courseId: string;
@@ -55,6 +57,8 @@ export function CodeLessonLayout({
   lessonTitle,
   content,
   codeTemplate,
+  testCode,
+  solutionCode,
   savedCode,
   lessonId,
   courseId,
@@ -70,6 +74,7 @@ export function CodeLessonLayout({
   const [hasError, setHasError] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saved'>('idle');
+  const [testPassed, setTestPassed] = useState(false);
   const [activeTab, setActiveTab] = useState<'lesson' | 'code'>('lesson');
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -109,24 +114,33 @@ export function CodeLessonLayout({
     setIsRunning(true);
     setOutput('');
     setHasError(false);
+    setTestPassed(false);
 
     try {
       const pyodide = await getPyodide();
 
-      // Capture stdout/stderr
       let stdout = '';
       let stderr = '';
       pyodide.setStdout({ batched: (text: string) => { stdout += text + '\n'; } });
       pyodide.setStderr({ batched: (text: string) => { stderr += text + '\n'; } });
 
-      await pyodide.runPythonAsync(code);
+      await pyodide.runPythonAsync(testCode ? `${code}\n\n${testCode}` : code);
 
       if (stderr) {
         setOutput(stderr.trim());
         setHasError(true);
+      } else if (testCode) {
+        setOutput('All tests passed!');
+        setTestPassed(true);
+        if (isAuthenticated) {
+          fetch('/api/progress/lesson', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lessonId, courseId }),
+          }).catch(() => {});
+        }
       } else {
         setOutput(stdout.trim() || '(no output)');
-        setHasError(false);
       }
     } catch (err: unknown) {
       setOutput((err as any)?.message ?? String(err));
@@ -173,7 +187,7 @@ export function CodeLessonLayout({
       </div>
 
       {/* Completion */}
-      {isAuthenticated && (
+      {isAuthenticated && !testCode && (
         <div className="mt-12 pt-8 border-t border-border/50">
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div>
@@ -205,6 +219,14 @@ export function CodeLessonLayout({
         <div className="flex items-center gap-2">
           {saveStatus === 'saved' && (
             <span className="text-xs text-muted-foreground transition-opacity">Saved</span>
+          )}
+          {solutionCode && (
+            <button
+              onClick={() => handleCodeChange(solutionCode)}
+              className="px-3 py-1 rounded border border-border text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            >
+              Show Answer
+            </button>
           )}
           <button
             onClick={handleRun}

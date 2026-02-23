@@ -105,11 +105,15 @@ export async function getCoursesWithModules(): Promise<CourseWithModules[]> {
 
     for (const course of courses) {
       const modules = await sql`
-        SELECT id, course_id, title, description, "order",
-               lesson_count, quiz_form
-        FROM modules
-        WHERE course_id = ${course.id}
-        ORDER BY "order" ASC
+        SELECT m.id, m.course_id, m.title, m.description, m."order",
+               m.quiz_form, COALESCE(lc.lesson_count, 0) AS lesson_count
+        FROM modules m
+        LEFT JOIN (
+          SELECT module_id, COUNT(*)::INTEGER AS lesson_count
+          FROM lessons GROUP BY module_id
+        ) lc ON lc.module_id = m.id
+        WHERE m.course_id = ${course.id}
+        ORDER BY m."order" ASC
       `;
 
       coursesWithModules.push({
@@ -144,11 +148,15 @@ export const getCourseWithModules = cache(async (courseId: string): Promise<Cour
     const course = courses[0];
 
     const modules = await sql`
-      SELECT id, course_id, title, description, "order",
-             lesson_count, quiz_form
-      FROM modules
-      WHERE course_id = ${courseId}
-      ORDER BY "order" ASC
+      SELECT m.id, m.course_id, m.title, m.description, m."order",
+             m.quiz_form, COALESCE(lc.lesson_count, 0) AS lesson_count
+      FROM modules m
+      LEFT JOIN (
+        SELECT module_id, COUNT(*)::INTEGER AS lesson_count
+        FROM lessons GROUP BY module_id
+      ) lc ON lc.module_id = m.id
+      WHERE m.course_id = ${courseId}
+      ORDER BY m."order" ASC
     `;
 
     return {
@@ -171,10 +179,14 @@ export const getCourseWithModules = cache(async (courseId: string): Promise<Cour
 export const getModule = cache(async (moduleId: string): Promise<Module | null> => {
   try {
     const result = await sql`
-      SELECT id, course_id, title, description, "order",
-             lesson_count, quiz_form
-      FROM modules
-      WHERE id = ${moduleId}
+      SELECT m.id, m.course_id, m.title, m.description, m."order",
+             m.quiz_form, COALESCE(lc.lesson_count, 0) AS lesson_count
+      FROM modules m
+      LEFT JOIN (
+        SELECT module_id, COUNT(*)::INTEGER AS lesson_count
+        FROM lessons GROUP BY module_id
+      ) lc ON lc.module_id = m.id
+      WHERE m.id = ${moduleId}
     `;
 
     return result.length > 0 ? (result[0] as Module) : null;
@@ -190,6 +202,8 @@ export interface LessonData {
   content: string;
   title: string;
   codeTemplate: string | null;
+  testCode: string | null;
+  solutionCode: string | null;
   moduleId: string;
   moduleTitle: string;
 }
@@ -206,6 +220,7 @@ export async function getLesson(
   try {
     const result = await sql`
       SELECT l.id, l.lesson_index, l.title, l.content, l.code_template,
+             l.test_code, l.solution_code,
              m.id AS module_id, m.title AS module_title
       FROM lessons l
       JOIN modules m ON m.id = l.module_id
@@ -222,6 +237,8 @@ export async function getLesson(
       content: row.content,
       title: row.title,
       codeTemplate: row.code_template ?? null,
+      testCode: row.test_code ?? null,
+      solutionCode: row.solution_code ?? null,
       moduleId: row.module_id,
       moduleTitle: row.module_title,
     };
@@ -233,18 +250,17 @@ export async function getLesson(
 
 /**
  * Get lesson count for a module.
- * Queries lessons table first; falls back to lesson_count column.
  */
 export async function getLessonCount(moduleId: string): Promise<number> {
   try {
     const result = await sql`
       SELECT COUNT(*)::INTEGER AS count FROM lessons WHERE module_id = ${moduleId}
     `;
-    const count = (result[0] as any).count;
-    if (count > 0) return count;
-  } catch { /* fall through */ }
-  const module = await getModule(moduleId);
-  return module?.lesson_count ?? 0;
+    return (result[0] as any).count ?? 0;
+  } catch (error) {
+    console.error('getLessonCount error:', error);
+    return 0;
+  }
 }
 
 /**
@@ -783,11 +799,15 @@ export const getCoursesForSidebar = cache(async (): Promise<CourseWithModules[]>
 
     const courseIds = courses.map((c) => (c as any).id);
     const allModules = await sql`
-      SELECT id, course_id, title, description, "order",
-             lesson_count, quiz_form
-      FROM modules
-      WHERE course_id = ANY(${courseIds})
-      ORDER BY "order" ASC
+      SELECT m.id, m.course_id, m.title, m.description, m."order",
+             m.quiz_form, COALESCE(lc.lesson_count, 0) AS lesson_count
+      FROM modules m
+      LEFT JOIN (
+        SELECT module_id, COUNT(*)::INTEGER AS lesson_count
+        FROM lessons GROUP BY module_id
+      ) lc ON lc.module_id = m.id
+      WHERE m.course_id = ANY(${courseIds})
+      ORDER BY m."order" ASC
     `;
 
     const modulesByCourse = new Map<string, Module[]>();
