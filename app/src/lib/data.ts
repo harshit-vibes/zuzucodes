@@ -44,7 +44,7 @@ export interface Module {
   order: number;
   mdx_content: string | null;
   quiz_form: QuizForm | null;
-  section_count: number;
+  lesson_count: number;
   schema_version: number | null;
 }
 
@@ -59,13 +59,13 @@ export type CourseWithModules = Course & {
 };
 
 /**
- * Derive content items from module fields (section_count + quiz_form).
+ * Derive content items from module fields (lesson_count + quiz_form).
  * Uses mdx_content headings for real lesson titles when available.
  */
 function deriveContentItems(m: Module): ContentItem[] {
   const items: ContentItem[] = [];
   const titles = m.mdx_content ? getMdxSectionTitles(m.mdx_content) : [];
-  for (let i = 0; i < m.section_count; i++) {
+  for (let i = 0; i < m.lesson_count; i++) {
     items.push({ type: 'lesson', index: i, title: titles[i] || `Lesson ${i + 1}` });
   }
   if (m.quiz_form) {
@@ -111,7 +111,7 @@ export async function getCoursesWithModules(): Promise<CourseWithModules[]> {
     for (const course of courses) {
       const modules = await sql`
         SELECT id, course_id, title, description, "order",
-               mdx_content, section_count, quiz_form, schema_version
+               mdx_content, lesson_count, quiz_form, schema_version
         FROM modules
         WHERE course_id = ${course.id}
         ORDER BY "order" ASC
@@ -150,7 +150,7 @@ export const getCourseWithModules = cache(async (courseId: string): Promise<Cour
 
     const modules = await sql`
       SELECT id, course_id, title, description, "order",
-             mdx_content, section_count, quiz_form, schema_version
+             mdx_content, lesson_count, quiz_form, schema_version
       FROM modules
       WHERE course_id = ${courseId}
       ORDER BY "order" ASC
@@ -177,7 +177,7 @@ export const getModule = cache(async (moduleId: string): Promise<Module | null> 
   try {
     const result = await sql`
       SELECT id, course_id, title, description, "order",
-             mdx_content, section_count, quiz_form, schema_version
+             mdx_content, lesson_count, quiz_form, schema_version
       FROM modules
       WHERE id = ${moduleId}
     `;
@@ -190,42 +190,85 @@ export const getModule = cache(async (moduleId: string): Promise<Module | null> 
 });
 
 export interface LessonData {
-  index: number;
+  id: string;
+  lessonIndex: number;
   content: string;
+  title: string;
+  codeTemplate: string | null;
   moduleId: string;
   moduleTitle: string;
 }
 
 /**
- * Get lesson by module and position (1-indexed)
+ * Get lesson by module and position (1-indexed).
+ * Queries the lessons table first; falls back to mdx_content for unmigrated modules.
  */
 export async function getLesson(
   moduleId: string,
   position: number
 ): Promise<LessonData | null> {
-  const { getMdxSection } = await import('@/lib/mdx-utils');
+  const lessonIndex = position - 1;
 
-  const module = await getModule(moduleId);
-  if (!module || !module.mdx_content) return null;
+  try {
+    const result = await sql`
+      SELECT l.id, l.lesson_index, l.title, l.content, l.code_template,
+             m.id AS module_id, m.title AS module_title
+      FROM lessons l
+      JOIN modules m ON m.id = l.module_id
+      WHERE l.module_id = ${moduleId}
+        AND l.lesson_index = ${lessonIndex}
+    `;
 
-  const sectionIndex = position - 1;
-  const content = getMdxSection(module.mdx_content, sectionIndex);
-  if (!content) return null;
+    if (result.length > 0) {
+      const row = result[0] as any;
+      return {
+        id: row.id,
+        lessonIndex: row.lesson_index,
+        content: row.content,
+        title: row.title,
+        codeTemplate: row.code_template ?? null,
+        moduleId: row.module_id,
+        moduleTitle: row.module_title,
+      };
+    }
 
-  return {
-    index: sectionIndex,
-    content,
-    moduleId: module.id,
-    moduleTitle: module.title,
-  };
+    // Fallback: legacy mdx_content path for unmigrated modules
+    const { getMdxSection, getMdxSectionTitle } = await import('@/lib/mdx-utils');
+    const module = await getModule(moduleId);
+    if (!module?.mdx_content) return null;
+
+    const content = getMdxSection(module.mdx_content, lessonIndex);
+    if (!content) return null;
+
+    return {
+      id: `lesson-${moduleId}-${String(position).padStart(2, '0')}`,
+      lessonIndex,
+      content,
+      title: getMdxSectionTitle(content),
+      codeTemplate: null,
+      moduleId: module.id,
+      moduleTitle: module.title,
+    };
+  } catch (error) {
+    console.error('getLesson error:', error);
+    return null;
+  }
 }
 
 /**
- * Get lesson count for a module
+ * Get lesson count for a module.
+ * Queries lessons table first; falls back to lesson_count column.
  */
 export async function getLessonCount(moduleId: string): Promise<number> {
+  try {
+    const result = await sql`
+      SELECT COUNT(*)::INTEGER AS count FROM lessons WHERE module_id = ${moduleId}
+    `;
+    const count = (result[0] as any).count;
+    if (count > 0) return count;
+  } catch { /* fall through */ }
   const module = await getModule(moduleId);
-  return module?.section_count ?? 0;
+  return module?.lesson_count ?? 0;
 }
 
 /**
@@ -234,6 +277,21 @@ export async function getLessonCount(moduleId: string): Promise<number> {
 export async function getQuiz(moduleId: string): Promise<QuizForm | null> {
   const module = await getModule(moduleId);
   return module?.quiz_form ?? null;
+}
+
+/**
+ * Get user's saved code for a lesson
+ */
+export async function getUserCode(userId: string, lessonId: string): Promise<string | null> {
+  try {
+    const result = await sql`
+      SELECT code FROM user_code WHERE user_id = ${userId} AND lesson_id = ${lessonId}
+    `;
+    return result.length > 0 ? (result[0] as any).code : null;
+  } catch (error) {
+    console.error('getUserCode error:', error);
+    return null;
+  }
 }
 
 // ========================================
@@ -278,7 +336,6 @@ export interface CourseProgress {
  */
 export const getDashboardStats = cache(async (userId: string): Promise<DashboardStats> => {
   try {
-    // Get all courses
     const courses = await sql`SELECT id FROM courses`;
     const courseIds = courses.map((c: any) => c.id);
 
@@ -286,7 +343,6 @@ export const getDashboardStats = cache(async (userId: string): Promise<Dashboard
     let coursesTotal = 0;
 
     if (courseIds.length > 0) {
-      // Get batch progress using the Postgres function
       const batchProgress = await sql`
         SELECT * FROM get_batch_course_progress(${userId}, ${courseIds})
       `;
@@ -299,23 +355,20 @@ export const getDashboardStats = cache(async (userId: string): Promise<Dashboard
       }
     }
 
-    // Get quiz average
+    // Quiz average from user_quiz_attempts
     const quizRows = await sql`
-      SELECT score_percent
-      FROM user_progress
-      WHERE user_id = ${userId}
-        AND score_percent IS NOT NULL
+      SELECT score_percent FROM user_quiz_attempts WHERE user_id = ${userId}
     `;
 
     const quizAverage = quizRows.length
       ? Math.round(quizRows.reduce((sum: number, r: any) => sum + r.score_percent, 0) / quizRows.length)
       : null;
 
-    // Calculate streak
+    // Streak: union lesson completions + quiz attempts
     const activityDates = await sql`
-      SELECT completed_at
-      FROM user_progress
-      WHERE user_id = ${userId}
+      SELECT completed_at FROM user_lesson_progress WHERE user_id = ${userId}
+      UNION ALL
+      SELECT attempted_at AS completed_at FROM user_quiz_attempts WHERE user_id = ${userId}
       ORDER BY completed_at DESC
     `;
 
@@ -343,20 +396,10 @@ export const getDashboardStats = cache(async (userId: string): Promise<Dashboard
       }
     }
 
-    return {
-      streak,
-      coursesInProgress,
-      coursesTotal,
-      quizAverage,
-    };
+    return { streak, coursesInProgress, coursesTotal, quizAverage };
   } catch (error) {
     console.error('getDashboardStats error:', error);
-    return {
-      streak: 0,
-      coursesInProgress: 0,
-      coursesTotal: 0,
-      quizAverage: null,
-    };
+    return { streak: 0, coursesInProgress: 0, coursesTotal: 0, quizAverage: null };
   }
 });
 
@@ -366,11 +409,7 @@ export const getDashboardStats = cache(async (userId: string): Promise<Dashboard
  */
 export const getResumeData = cache(async (userId: string): Promise<ResumeData | null> => {
   try {
-    // Get all courses
-    const allCourses = await sql`
-      SELECT id FROM courses ORDER BY created_at ASC
-    `;
-
+    const allCourses = await sql`SELECT id FROM courses ORDER BY created_at ASC`;
     const courseIds = allCourses.map((c: any) => c.id);
     if (courseIds.length === 0) return null;
 
@@ -378,31 +417,31 @@ export const getResumeData = cache(async (userId: string): Promise<ResumeData | 
       SELECT * FROM get_batch_course_progress(${userId}, ${courseIds})
     `;
 
-    // Find incomplete courses with progress > 0
     const incompleteCourses = batchProgress.filter(
       (p: any) => p.progress_percent > 0 && !p.is_completed
     );
 
     if (incompleteCourses.length === 0) return null;
 
-    // Find last activity
+    // Recent activity: union lesson completions + quiz attempts
     const recentActivity = await sql`
-      SELECT module_id, section_index, completed_at
-      FROM user_progress
+      SELECT l.module_id, l.lesson_index AS section_index, ulp.completed_at
+      FROM user_lesson_progress ulp
+      JOIN lessons l ON l.id = ulp.lesson_id
+      WHERE ulp.user_id = ${userId}
+      UNION ALL
+      SELECT module_id, NULL AS section_index, attempted_at AS completed_at
+      FROM user_quiz_attempts
       WHERE user_id = ${userId}
       ORDER BY completed_at DESC
       LIMIT 50
     `;
 
-    // Map module → course
     const incompleteIds = incompleteCourses.map((c: any) => c.course_id);
     const moduleMap = await sql`
-      SELECT id, course_id
-      FROM modules
-      WHERE course_id = ANY(${incompleteIds})
+      SELECT id, course_id FROM modules WHERE course_id = ANY(${incompleteIds})
     `;
 
-    // Find which incomplete course was most recently accessed
     let targetCourseId: string | null = null;
     let lastActivity: { module_id: string; section_index: number | null } | null = null;
 
@@ -412,16 +451,13 @@ export const getResumeData = cache(async (userId: string): Promise<ResumeData | 
         targetCourseId = (mod as any).course_id;
         lastActivity = {
           module_id: (activity as any).module_id,
-          section_index: (activity as any).section_index
+          section_index: (activity as any).section_index,
         };
         break;
       }
     }
 
-    if (!targetCourseId) {
-      targetCourseId = (incompleteCourses[0] as any).course_id;
-    }
-
+    if (!targetCourseId) targetCourseId = (incompleteCourses[0] as any).course_id;
     if (!targetCourseId) return null;
 
     const course = await getCourseWithModules(targetCourseId);
@@ -431,7 +467,6 @@ export const getResumeData = cache(async (userId: string): Promise<ResumeData | 
       (c: any) => c.course_id === targetCourseId
     ) as any)?.progress_percent || 0;
 
-    // Build resume href
     let href = `/dashboard/course/${course.id}`;
     if (lastActivity) {
       const moduleId = lastActivity.module_id;
@@ -447,8 +482,12 @@ export const getResumeData = cache(async (userId: string): Promise<ResumeData | 
 
     return {
       course,
-      moduleTitle: lastActivity ? course.modules.find(m => m.id === lastActivity!.module_id)?.title || 'Module 1' : 'Module 1',
-      contentTitle: lastActivity?.section_index === null ? 'Quiz' : `Lesson ${(lastActivity?.section_index ?? 0) + 1}`,
+      moduleTitle: lastActivity
+        ? course.modules.find(m => m.id === lastActivity!.module_id)?.title || 'Module 1'
+        : 'Module 1',
+      contentTitle: lastActivity?.section_index === null
+        ? 'Quiz'
+        : `Lesson ${(lastActivity?.section_index ?? 0) + 1}`,
       progress: progressPercent,
       href,
     };
@@ -465,12 +504,14 @@ export async function getWeeklyActivity(userId: string): Promise<WeeklyActivity[
   try {
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
+    const since = weekAgo.toISOString();
 
     const data = await sql`
-      SELECT completed_at
-      FROM user_progress
-      WHERE user_id = ${userId}
-        AND completed_at >= ${weekAgo.toISOString()}
+      SELECT completed_at FROM user_lesson_progress
+      WHERE user_id = ${userId} AND completed_at >= ${since}
+      UNION ALL
+      SELECT attempted_at AS completed_at FROM user_quiz_attempts
+      WHERE user_id = ${userId} AND attempted_at >= ${since}
     `;
 
     const byDate: Record<string, number> = {};
@@ -486,10 +527,7 @@ export async function getWeeklyActivity(userId: string): Promise<WeeklyActivity[
       const d = new Date();
       d.setDate(d.getDate() - i);
       const dateStr = d.toISOString().split('T')[0];
-      result.push({
-        date: dateStr,
-        completions: byDate[dateStr] || 0,
-      });
+      result.push({ date: dateStr, completions: byDate[dateStr] || 0 });
     }
 
     return result;
@@ -506,26 +544,25 @@ export async function getActivityHeatmapData(userId: string): Promise<ActivityDa
   try {
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    const since = sixMonthsAgo.toISOString();
 
     const data = await sql`
-      SELECT completed_at
-      FROM user_progress
-      WHERE user_id = ${userId}
-        AND completed_at >= ${sixMonthsAgo.toISOString()}
+      SELECT completed_at FROM user_lesson_progress
+      WHERE user_id = ${userId} AND completed_at >= ${since}
+      UNION ALL
+      SELECT attempted_at AS completed_at FROM user_quiz_attempts
+      WHERE user_id = ${userId} AND attempted_at >= ${since}
     `;
 
     const byDate: Record<string, number> = {};
     data.forEach((row: any) => {
       if (row.completed_at) {
-        const date = row.completed_at.split('T')[0];
+        const date = new Date(row.completed_at).toISOString().split('T')[0];
         byDate[date] = (byDate[date] || 0) + 1;
       }
     });
 
-    return Object.entries(byDate).map(([date, count]) => ({
-      date,
-      count,
-    }));
+    return Object.entries(byDate).map(([date, count]) => ({ date, count }));
   } catch (error) {
     console.error('getActivityHeatmapData error:', error);
     return [];
@@ -555,7 +592,6 @@ export async function getUserCoursesProgress(userId: string, courseIds: string[]
       };
     }
 
-    // Fill in not-started courses
     courseIds.forEach(id => {
       if (!result[id]) {
         result[id] = { courseId: id, progress: 0, status: 'not_started', lastAccessed: null };
@@ -586,9 +622,7 @@ export async function getSidebarProgress(
   userId: string,
   courseIds: string[]
 ): Promise<Record<string, SidebarCourseProgress>> {
-  if (courseIds.length === 0) {
-    return {};
-  }
+  if (courseIds.length === 0) return {};
 
   try {
     const data = await sql`
@@ -618,46 +652,33 @@ export async function getSidebarProgress(
 // ========================================
 
 /**
- * Check if a specific section is completed by a user.
- * For lessons: sectionIndex is 0-based, checks for row with score_percent IS NULL.
- * For quiz: sectionIndex is null, checks for row with passed = true.
+ * Check if a specific lesson is completed by a user.
  */
-export async function isSectionCompleted(
-  userId: string,
-  moduleId: string,
-  sectionIndex: number | null
-): Promise<boolean> {
+export async function isLessonCompleted(userId: string, lessonId: string): Promise<boolean> {
   try {
-    let data;
-    if (sectionIndex !== null) {
-      // Lesson
-      data = await sql`
-        SELECT id, passed
-        FROM user_progress
-        WHERE user_id = ${userId}
-          AND module_id = ${moduleId}
-          AND section_index = ${sectionIndex}
-          AND score_percent IS NULL
-      `;
-    } else {
-      // Quiz
-      data = await sql`
-        SELECT id, passed
-        FROM user_progress
-        WHERE user_id = ${userId}
-          AND module_id = ${moduleId}
-          AND section_index IS NULL
-          AND passed = true
-      `;
-    }
-
-    if (!data || data.length === 0) {
-      return false;
-    }
-
-    return sectionIndex !== null ? true : data.some((row: any) => row.passed === true);
+    const result = await sql`
+      SELECT 1 FROM user_lesson_progress
+      WHERE user_id = ${userId} AND lesson_id = ${lessonId}
+    `;
+    return result.length > 0;
   } catch (error) {
-    console.error('isSectionCompleted error:', error);
+    console.error('isLessonCompleted error:', error);
+    return false;
+  }
+}
+
+/**
+ * Check if the quiz for a module has been passed by a user.
+ */
+export async function isQuizCompleted(userId: string, moduleId: string): Promise<boolean> {
+  try {
+    const result = await sql`
+      SELECT 1 FROM user_quiz_attempts
+      WHERE user_id = ${userId} AND module_id = ${moduleId} AND passed = true
+    `;
+    return result.length > 0;
+  } catch (error) {
+    console.error('isQuizCompleted error:', error);
     return false;
   }
 }
@@ -675,34 +696,29 @@ export async function getSectionCompletionStatus(
   try {
     const moduleIds = modules.map(m => m.id);
 
-    const data = await sql`
-      SELECT module_id, section_index, score_percent, passed
-      FROM user_progress
-      WHERE user_id = ${userId}
-        AND module_id = ANY(${moduleIds})
-    `;
+    const [lessonRows, completedRows, passedRows] = await Promise.all([
+      sql`SELECT id, module_id, lesson_index FROM lessons WHERE module_id = ANY(${moduleIds})`,
+      sql`
+        SELECT ulp.lesson_id FROM user_lesson_progress ulp
+        JOIN lessons l ON l.id = ulp.lesson_id
+        WHERE ulp.user_id = ${userId} AND l.module_id = ANY(${moduleIds})
+      `,
+      sql`
+        SELECT DISTINCT module_id FROM user_quiz_attempts
+        WHERE user_id = ${userId} AND module_id = ANY(${moduleIds}) AND passed = true
+      `,
+    ]);
 
+    const completedSet = new Set((completedRows as any[]).map(r => r.lesson_id));
+    const passedQuizSet = new Set((passedRows as any[]).map(r => r.module_id));
     const result: Record<string, boolean> = {};
 
-    // Initialize all items as false
     for (const m of modules) {
-      for (let i = 0; i < m.section_count; i++) {
-        result[`${m.id}:lesson-${i}`] = false;
+      for (const l of (lessonRows as any[]).filter(l => l.module_id === m.id)) {
+        result[`${m.id}:lesson-${l.lesson_index}`] = completedSet.has(l.id);
       }
       if (m.quiz_form) {
-        result[`${m.id}:quiz`] = false;
-      }
-    }
-
-    // Mark completed items
-    for (const row of data) {
-      const r = row as any;
-      if (r.section_index !== null && r.score_percent === null) {
-        // Lesson completion
-        result[`${r.module_id}:lesson-${r.section_index}`] = true;
-      } else if (r.section_index === null && r.passed === true) {
-        // Quiz completion
-        result[`${r.module_id}:quiz`] = true;
+        result[`${m.id}:quiz`] = passedQuizSet.has(m.id);
       }
     }
 
@@ -716,24 +732,19 @@ export async function getSectionCompletionStatus(
 /**
  * Check if all lessons in a module are completed
  */
-export async function areAllLessonsCompleted(
-  userId: string,
-  moduleId: string
-): Promise<boolean> {
+export async function areAllLessonsCompleted(userId: string, moduleId: string): Promise<boolean> {
   try {
-    const module = await getModule(moduleId);
-    if (!module || module.section_count === 0) return false;
-
-    const data = await sql`
-      SELECT section_index
-      FROM user_progress
-      WHERE user_id = ${userId}
-        AND module_id = ${moduleId}
-        AND section_index IS NOT NULL
-        AND score_percent IS NULL
-    `;
-
-    return (data.length) >= module.section_count;
+    const [totalResult, completedResult] = await Promise.all([
+      sql`SELECT COUNT(*)::INTEGER AS count FROM lessons WHERE module_id = ${moduleId}`,
+      sql`
+        SELECT COUNT(*)::INTEGER AS count FROM user_lesson_progress ulp
+        JOIN lessons l ON l.id = ulp.lesson_id
+        WHERE ulp.user_id = ${userId} AND l.module_id = ${moduleId}
+      `,
+    ]);
+    const total = (totalResult[0] as any).count;
+    if (total === 0) return false;
+    return (completedResult[0] as any).count >= total;
   } catch (error) {
     console.error('areAllLessonsCompleted error:', error);
     return false;
@@ -769,14 +780,8 @@ export async function getBatchModuleCompletionStatus(
       };
     }
 
-    // Fill in missing modules with defaults
     moduleIds.forEach(id => {
-      if (!result[id]) {
-        result[id] = {
-          allLessonsCompleted: false,
-          quizCompleted: false,
-        };
-      }
+      if (!result[id]) result[id] = { allLessonsCompleted: false, quizCompleted: false };
     });
 
     return result;
@@ -800,36 +805,29 @@ export const getCoursesForSidebar = cache(async (): Promise<CourseWithModules[]>
 
     if (courses.length === 0) return [];
 
-    // Batch load all modules in a single query (fixes N+1 pattern)
     const courseIds = courses.map((c) => (c as any).id);
     const allModules = await sql`
       SELECT id, course_id, title, description, "order",
-             mdx_content, section_count, quiz_form, schema_version
+             mdx_content, lesson_count, quiz_form, schema_version
       FROM modules
       WHERE course_id = ANY(${courseIds})
       ORDER BY "order" ASC
     `;
 
-    // Group modules by course_id in memory
     const modulesByCourse = new Map<string, Module[]>();
     for (const module of allModules) {
       const courseId = (module as any).course_id;
-      if (!modulesByCourse.has(courseId)) {
-        modulesByCourse.set(courseId, []);
-      }
+      if (!modulesByCourse.has(courseId)) modulesByCourse.set(courseId, []);
       modulesByCourse.get(courseId)!.push(module as Module);
     }
 
-    // Assemble courses with their modules
-    const coursesWithModules: CourseWithModules[] = courses.map((course) => ({
+    return courses.map((course) => ({
       ...course,
       modules: (modulesByCourse.get((course as any).id) || []).map((m) => ({
         ...m,
         contentItems: deriveContentItems(m),
       })),
     } as CourseWithModules));
-
-    return coursesWithModules;
   } catch (error) {
     console.error('getCoursesForSidebar error:', error);
     return [];

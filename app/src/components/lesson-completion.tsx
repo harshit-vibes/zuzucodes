@@ -3,26 +3,20 @@
 import { useState } from 'react';
 
 interface LessonCompletionProps {
-  moduleId: string;
-  sectionIndex: number;
+  lessonId: string;
   courseId: string;
   isInitiallyCompleted?: boolean;
   onComplete?: () => void;
 }
 
 export function LessonCompletion({
-  moduleId,
-  sectionIndex,
+  lessonId,
   courseId,
   isInitiallyCompleted = false,
   onComplete,
 }: LessonCompletionProps) {
   const [isCompleted, setIsCompleted] = useState(isInitiallyCompleted);
   const [isLoading, setIsLoading] = useState(false);
-  const [startTime] = useState(Date.now());
-
-  // Track time spent when marking complete
-  const getTimeSpent = () => Math.round((Date.now() - startTime) / 1000);
 
   const handleMarkComplete = async () => {
     setIsLoading(true);
@@ -30,12 +24,7 @@ export function LessonCompletion({
       const res = await fetch('/api/progress/lesson', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          moduleId,
-          sectionIndex,
-          courseId,
-          timeSpentSeconds: getTimeSpent(),
-        }),
+        body: JSON.stringify({ lessonId, courseId }),
       });
 
       if (res.ok) {
@@ -55,16 +44,10 @@ export function LessonCompletion({
       const res = await fetch('/api/progress/lesson', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          moduleId,
-          sectionIndex,
-          courseId,
-        }),
+        body: JSON.stringify({ lessonId, courseId }),
       });
 
-      if (res.ok) {
-        setIsCompleted(false);
-      }
+      if (res.ok) setIsCompleted(false);
     } catch (error) {
       console.error('Error marking lesson incomplete:', error);
     } finally {

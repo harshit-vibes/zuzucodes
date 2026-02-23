@@ -1,5 +1,4 @@
-import { getLesson, getModule, getLessonCount, isSectionCompleted } from '@/lib/data';
-import { getMdxSectionTitle } from '@/lib/mdx-utils';
+import { getLesson, getModule, getLessonCount, isLessonCompleted } from '@/lib/data';
 import { auth } from '@/lib/auth/server';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
@@ -20,8 +19,6 @@ export default async function LessonPage({ params }: LessonPageProps) {
     notFound();
   }
 
-  const sectionIndex = position - 1;
-
   const [lessonData, module, lessonCount] = await Promise.all([
     getLesson(moduleId, position),
     getModule(moduleId),
@@ -32,19 +29,13 @@ export default async function LessonPage({ params }: LessonPageProps) {
     notFound();
   }
 
-  // Check if lesson is already completed
   const isCompleted = user
-    ? await isSectionCompleted(user.id, moduleId, sectionIndex)
+    ? await isLessonCompleted(user.id, lessonData.id)
     : false;
 
   const hasNext = position < lessonCount;
   const hasPrev = position > 1;
   const progress = (position / lessonCount) * 100;
-
-  // Extract lesson title from content
-  const lessonTitle = lessonData.content
-    ? getMdxSectionTitle(lessonData.content)
-    : `Lesson ${position}`;
 
   return (
     <div className="min-h-screen">
@@ -80,7 +71,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
 
             {/* Lesson title */}
             <h1 className="text-3xl md:text-4xl font-semibold tracking-tight leading-tight">
-              {lessonTitle}
+              {lessonData.title}
             </h1>
           </header>
 
@@ -110,8 +101,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
                   </p>
                 </div>
                 <LessonCompletion
-                  moduleId={moduleId}
-                  sectionIndex={sectionIndex}
+                  lessonId={lessonData.id}
                   courseId={courseId}
                   isInitiallyCompleted={isCompleted}
                 />
@@ -125,7 +115,6 @@ export default async function LessonPage({ params }: LessonPageProps) {
       <nav className="sticky bottom-0 bg-background/95 backdrop-blur-sm border-t border-border/50">
         <div className="container mx-auto px-6 py-4">
           <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
-            {/* Previous */}
             {hasPrev ? (
               <Link
                 href={`/dashboard/course/${courseId}/${moduleId}/lesson/${position - 1}`}
@@ -145,7 +134,6 @@ export default async function LessonPage({ params }: LessonPageProps) {
               <div />
             )}
 
-            {/* Center - clickable lesson dots */}
             <div className="hidden sm:flex items-center gap-1.5">
               {Array.from({ length: lessonCount }, (_, i) => (
                 <Link
@@ -162,7 +150,6 @@ export default async function LessonPage({ params }: LessonPageProps) {
               ))}
             </div>
 
-            {/* Next / Quiz */}
             {hasNext ? (
               <Link
                 href={`/dashboard/course/${courseId}/${moduleId}/lesson/${position + 1}`}

@@ -1,4 +1,4 @@
-import { getModule, isSectionCompleted, areAllLessonsCompleted, type QuizQuestion } from '@/lib/data';
+import { getModule, isQuizCompleted, areAllLessonsCompleted, type QuizQuestion } from '@/lib/data';
 import { auth } from '@/lib/auth/server';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
@@ -27,7 +27,7 @@ export default async function QuizPage({ params }: QuizPageProps) {
 
   if (user) {
     [isCompleted, allLessonsCompleted] = await Promise.all([
-      isSectionCompleted(user.id, moduleId, null),
+      isQuizCompleted(user.id, moduleId),
       areAllLessonsCompleted(user.id, moduleId),
     ]);
   }
@@ -106,7 +106,7 @@ export default async function QuizPage({ params }: QuizPageProps) {
 
               <h2 className="text-xl font-semibold mb-2">Quiz Locked</h2>
               <p className="text-muted-foreground mb-6">
-                Complete all {module.section_count} lesson{module.section_count !== 1 ? 's' : ''} in this module to unlock the quiz.
+                Complete all {module.lesson_count} lesson{module.lesson_count !== 1 ? 's' : ''} in this module to unlock the quiz.
               </p>
 
               <Link

@@ -17,11 +17,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // Get quiz_form from module
     const modules = await sql`
-      SELECT quiz_form
-      FROM modules
-      WHERE id = ${moduleId}
+      SELECT quiz_form FROM modules WHERE id = ${moduleId}
     `;
 
     if (modules.length === 0 || !modules[0].quiz_form) {
@@ -44,53 +41,38 @@ export async function POST(req: Request) {
     }
 
     // Calculate score
-    let totalQuestions = quizForm.questions.length;
+    const totalQuestions = quizForm.questions.length;
     let correctCount = 0;
     const correctAnswers: Record<string, string> = {};
 
     for (const question of quizForm.questions) {
       correctAnswers[question.id] = question.correctOption;
-      if (answers[question.id] === question.correctOption) {
-        correctCount++;
-      }
+      if (answers[question.id] === question.correctOption) correctCount++;
     }
 
     const score = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
     const passed = score >= quizForm.passingScore;
 
-    // If user is logged in, persist the attempt (use UPSERT to allow retaking)
+    // Persist attempt (always insert a new row — supports multiple attempts)
     if (userId) {
       try {
         await sql`
-          INSERT INTO user_progress (user_id, module_id, section_index, completed_at, score_percent, passed, answers)
-          VALUES (${userId}, ${moduleId}, NULL, NOW(), ${score}, ${passed}, ${JSON.stringify(answers)}::JSONB)
-          ON CONFLICT (user_id, module_id, section_index)
-          DO UPDATE SET
-            completed_at = NOW(),
-            score_percent = ${score},
-            passed = ${passed},
-            answers = ${JSON.stringify(answers)}::JSONB
+          INSERT INTO user_quiz_attempts (user_id, module_id, score_percent, passed, answers, attempted_at)
+          VALUES (${userId}, ${moduleId}, ${score}, ${passed}, ${JSON.stringify(answers)}::JSONB, NOW())
         `;
       } catch (attemptError) {
         console.error('Error saving quiz attempt:', attemptError);
       }
     }
 
-    return NextResponse.json({
-      score,
-      passed,
-      correctAnswers,
-    });
+    return NextResponse.json({ score, passed, correctAnswers });
   } catch (error) {
     console.error('Error submitting quiz:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
-// Reset quiz progress (allow retaking)
+// Reset quiz progress (delete all attempts, allow retaking)
 export async function DELETE(req: Request) {
   try {
     const { user } = await auth();
@@ -102,30 +84,17 @@ export async function DELETE(req: Request) {
     const { moduleId } = await req.json();
 
     if (!moduleId) {
-      return NextResponse.json(
-        { error: 'Missing moduleId' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Missing moduleId' }, { status: 400 });
     }
 
-    // Delete all quiz attempt rows for this module (section_index IS NULL, score_percent IS NOT NULL)
     await sql`
-      DELETE FROM user_progress
-      WHERE user_id = ${user.id}
-        AND module_id = ${moduleId}
-        AND section_index IS NULL
-        AND score_percent IS NOT NULL
+      DELETE FROM user_quiz_attempts
+      WHERE user_id = ${user.id} AND module_id = ${moduleId}
     `;
 
-    return NextResponse.json({
-      success: true,
-      message: 'Quiz progress reset. You can retake the quiz.',
-    });
+    return NextResponse.json({ success: true, message: 'Quiz progress reset. You can retake the quiz.' });
   } catch (error) {
     console.error('Error resetting quiz:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

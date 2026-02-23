@@ -7,7 +7,7 @@ interface ModuleDetail {
   id: string;
   title: string;
   description: string | null;
-  section_count: number;
+  lesson_count: number;
   has_quiz: boolean;
   lessonCompletion: boolean[];
   quizCompleted: boolean;
@@ -39,20 +39,20 @@ export async function GET(
 
   const moduleDetails: ModuleDetail[] = course.modules.map((m) => {
     const lessonCompletion: boolean[] = [];
-    for (let i = 0; i < m.section_count; i++) {
+    for (let i = 0; i < m.lesson_count; i++) {
       lessonCompletion.push(completionStatus[`${m.id}:lesson-${i}`] ?? false);
     }
     const quizCompleted = completionStatus[`${m.id}:quiz`] ?? false;
 
     const lessonTitles = m.mdx_content
       ? getMdxSectionTitles(m.mdx_content)
-      : Array.from({ length: m.section_count }, (_, i) => `Lesson ${i + 1}`);
+      : Array.from({ length: m.lesson_count }, (_, i) => `Lesson ${i + 1}`);
 
     return {
       id: m.id,
       title: m.title,
       description: m.description,
-      section_count: m.section_count,
+      lesson_count: m.lesson_count,
       has_quiz: !!m.quiz_form,
       lessonCompletion,
       quizCompleted,
