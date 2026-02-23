@@ -5,7 +5,6 @@
 
 import { cache } from 'react';
 import { sql } from '@/lib/neon';
-import { getMdxSectionTitles } from '@/lib/mdx-utils';
 
 // ========================================
 // TYPES
@@ -42,10 +41,8 @@ export interface Module {
   title: string;
   description: string | null;
   order: number;
-  mdx_content: string | null;
   quiz_form: QuizForm | null;
   lesson_count: number;
-  schema_version: number | null;
 }
 
 export interface ContentItem {
@@ -60,13 +57,11 @@ export type CourseWithModules = Course & {
 
 /**
  * Derive content items from module fields (lesson_count + quiz_form).
- * Uses mdx_content headings for real lesson titles when available.
  */
 function deriveContentItems(m: Module): ContentItem[] {
   const items: ContentItem[] = [];
-  const titles = m.mdx_content ? getMdxSectionTitles(m.mdx_content) : [];
   for (let i = 0; i < m.lesson_count; i++) {
-    items.push({ type: 'lesson', index: i, title: titles[i] || `Lesson ${i + 1}` });
+    items.push({ type: 'lesson', index: i, title: `Lesson ${i + 1}` });
   }
   if (m.quiz_form) {
     items.push({ type: 'quiz', index: -1, title: m.quiz_form.title || 'Quiz' });
@@ -111,7 +106,7 @@ export async function getCoursesWithModules(): Promise<CourseWithModules[]> {
     for (const course of courses) {
       const modules = await sql`
         SELECT id, course_id, title, description, "order",
-               mdx_content, lesson_count, quiz_form, schema_version
+               lesson_count, quiz_form
         FROM modules
         WHERE course_id = ${course.id}
         ORDER BY "order" ASC
@@ -150,7 +145,7 @@ export const getCourseWithModules = cache(async (courseId: string): Promise<Cour
 
     const modules = await sql`
       SELECT id, course_id, title, description, "order",
-             mdx_content, lesson_count, quiz_form, schema_version
+             lesson_count, quiz_form
       FROM modules
       WHERE course_id = ${courseId}
       ORDER BY "order" ASC
@@ -177,7 +172,7 @@ export const getModule = cache(async (moduleId: string): Promise<Module | null> 
   try {
     const result = await sql`
       SELECT id, course_id, title, description, "order",
-             mdx_content, lesson_count, quiz_form, schema_version
+             lesson_count, quiz_form
       FROM modules
       WHERE id = ${moduleId}
     `;
@@ -201,7 +196,6 @@ export interface LessonData {
 
 /**
  * Get lesson by module and position (1-indexed).
- * Queries the lessons table first; falls back to mdx_content for unmigrated modules.
  */
 export async function getLesson(
   moduleId: string,
@@ -219,35 +213,17 @@ export async function getLesson(
         AND l.lesson_index = ${lessonIndex}
     `;
 
-    if (result.length > 0) {
-      const row = result[0] as any;
-      return {
-        id: row.id,
-        lessonIndex: row.lesson_index,
-        content: row.content,
-        title: row.title,
-        codeTemplate: row.code_template ?? null,
-        moduleId: row.module_id,
-        moduleTitle: row.module_title,
-      };
-    }
+    if (result.length === 0) return null;
 
-    // Fallback: legacy mdx_content path for unmigrated modules
-    const { getMdxSection, getMdxSectionTitle } = await import('@/lib/mdx-utils');
-    const module = await getModule(moduleId);
-    if (!module?.mdx_content) return null;
-
-    const content = getMdxSection(module.mdx_content, lessonIndex);
-    if (!content) return null;
-
+    const row = result[0] as any;
     return {
-      id: `lesson-${moduleId}-${String(position).padStart(2, '0')}`,
-      lessonIndex,
-      content,
-      title: getMdxSectionTitle(content),
-      codeTemplate: null,
-      moduleId: module.id,
-      moduleTitle: module.title,
+      id: row.id,
+      lessonIndex: row.lesson_index,
+      content: row.content,
+      title: row.title,
+      codeTemplate: row.code_template ?? null,
+      moduleId: row.module_id,
+      moduleTitle: row.module_title,
     };
   } catch (error) {
     console.error('getLesson error:', error);
@@ -808,7 +784,7 @@ export const getCoursesForSidebar = cache(async (): Promise<CourseWithModules[]>
     const courseIds = courses.map((c) => (c as any).id);
     const allModules = await sql`
       SELECT id, course_id, title, description, "order",
-             mdx_content, lesson_count, quiz_form, schema_version
+             lesson_count, quiz_form
       FROM modules
       WHERE course_id = ANY(${courseIds})
       ORDER BY "order" ASC
