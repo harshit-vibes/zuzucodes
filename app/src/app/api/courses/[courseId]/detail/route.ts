@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth/server';
 import { getCourseWithModules, getSectionCompletionStatus } from '@/lib/data';
-import { getMdxSectionTitles } from '@/lib/mdx-utils';
+import { sql } from '@/lib/neon';
 
 interface ModuleDetail {
   id: string;
@@ -37,6 +37,22 @@ export async function GET(
 
   const completionStatus = await getSectionCompletionStatus(user.id, course.modules);
 
+  // Fetch real lesson titles for all modules in one query
+  const lessonRows = await sql`
+    SELECT module_id, lesson_index, title
+    FROM lessons
+    WHERE module_id = ANY(${course.modules.map((m) => m.id)})
+    ORDER BY module_id, lesson_index ASC
+  `;
+
+  const lessonTitlesByModule = new Map<string, string[]>();
+  for (const row of lessonRows as any[]) {
+    if (!lessonTitlesByModule.has(row.module_id)) {
+      lessonTitlesByModule.set(row.module_id, []);
+    }
+    lessonTitlesByModule.get(row.module_id)!.push(row.title);
+  }
+
   const moduleDetails: ModuleDetail[] = course.modules.map((m) => {
     const lessonCompletion: boolean[] = [];
     for (let i = 0; i < m.lesson_count; i++) {
@@ -44,9 +60,8 @@ export async function GET(
     }
     const quizCompleted = completionStatus[`${m.id}:quiz`] ?? false;
 
-    const lessonTitles = m.mdx_content
-      ? getMdxSectionTitles(m.mdx_content)
-      : Array.from({ length: m.lesson_count }, (_, i) => `Lesson ${i + 1}`);
+    const lessonTitles = lessonTitlesByModule.get(m.id)
+      ?? Array.from({ length: m.lesson_count }, (_, i) => `Lesson ${i + 1}`);
 
     return {
       id: m.id,
