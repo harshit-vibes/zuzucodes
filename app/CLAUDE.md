@@ -33,7 +33,6 @@ npx tsc --noEmit # Type check
 **Key Features**:
 - Email OTP (one-time password) authentication - passwordless magic link
 - Email verification required at sign-up (prevents spam accounts)
-- Branch-based auth - each database branch has isolated users and sessions
 - Pre-built UI components (`SignInForm`, `SignUpForm`)
 - Session management via secure HTTP-only cookies
 
@@ -46,8 +45,6 @@ npx tsc --noEmit # Type check
 
 **Protected routes**: `/dashboard`, `/learn`, `/account`
 **Public routes**: `/`, `/api/*`
-
-**Branch isolation**: Users created in dev branches don't appear in production. See `docs/BRANCH_AUTH_GUIDE.md` for workflow.
 
 ### Data Model
 
@@ -88,7 +85,6 @@ The `module_schema` table defines validation rules:
 - **Server Components**: Dashboard pages are RSC, use `auth()` from `src/lib/auth/server.ts` to get session
 - **API route auth pattern**: Get session with `auth()`, verify user, then query database
 - **Raw SQL queries**: Direct SQL via `@neondatabase/serverless` instead of ORM
-- **Branch-based development**: Database and auth are branch-specific for isolated testing
 
 ### API Routes
 
@@ -123,8 +119,6 @@ Required:
 - `NEON_AUTH_COOKIE_SECRET` — Cookie encryption secret (generate with `openssl rand -base64 32`)
 - `NEXT_PUBLIC_ROOT_DOMAIN` — Domain for redirects (e.g., `zuzu.codes`)
 - `NEXT_PUBLIC_APP_URL` — Full app URL (e.g., `https://zuzu.codes`)
-
-**Branch-specific**: When using database branches, ensure `DATABASE_URL` and `NEON_AUTH_BASE_URL` are from the same branch. Use `npm run check-branch` to validate.
 
 ---
 

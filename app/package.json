@@ -6,9 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "dev:branch": "echo 'Ensure DATABASE_URL and NEON_AUTH_BASE_URL point to your branch' && next dev",
-    "check-branch": "node scripts/check-branch-config.js"
+    "lint": "eslint"
   },
   "dependencies": {
     "@neondatabase/auth": "^0.1.0-beta.21",

@@ -5,6 +5,7 @@ import { visit } from 'unist-util-visit';
 import type { Root, Heading, Code as CodeNode, Image as ImageNode, Table as TableNode, List as ListNode } from 'mdast';
 import { cache } from 'react';
 import { splitMdxSections } from '@/lib/mdx-utils';
+import { sql } from '@/lib/neon';
 
 // ========================================
 // TYPES
@@ -99,36 +100,16 @@ export interface ValidationResult {
 // SCHEMA FETCHING
 // ========================================
 
-function getSupabaseAdmin() {
-  const { createClient } = require('@supabase/supabase-js');
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SECRET!,
-  );
-}
-
 export const getActiveSchema = cache(async (): Promise<ModuleSchema | null> => {
-  const db = getSupabaseAdmin();
-  const { data, error } = await db
-    .from('module_schema')
-    .select('*')
-    .eq('is_active', true)
-    .single();
-
-  if (error || !data) return null;
-  return data as ModuleSchema;
+  const rows = await sql`SELECT * FROM module_schema WHERE is_active = true LIMIT 1`;
+  if (!rows || rows.length === 0) return null;
+  return rows[0] as ModuleSchema;
 });
 
 export async function getSchemaByVersion(version: number): Promise<ModuleSchema | null> {
-  const db = getSupabaseAdmin();
-  const { data, error } = await db
-    .from('module_schema')
-    .select('*')
-    .eq('version', version)
-    .single();
-
-  if (error || !data) return null;
-  return data as ModuleSchema;
+  const rows = await sql`SELECT * FROM module_schema WHERE version = ${version} LIMIT 1`;
+  if (!rows || rows.length === 0) return null;
+  return rows[0] as ModuleSchema;
 }
 
 // ========================================
