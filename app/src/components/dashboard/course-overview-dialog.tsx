@@ -19,7 +19,7 @@ interface ModuleDetail {
   id: string;
   title: string;
   description: string | null;
-  section_count: number;
+  lesson_count: number;
   has_quiz: boolean;
   lessonCompletion: boolean[];
   quizCompleted: boolean;
@@ -198,7 +198,7 @@ function StatusBadge({ status }: { status: 'not_started' | 'in_progress' | 'comp
 function ModuleCard({ mod }: { mod: ModuleDetail }) {
   const lessonsDone = mod.lessonCompletion.filter(Boolean).length;
   const quizDone = mod.has_quiz && mod.quizCompleted ? 1 : 0;
-  const total = mod.section_count + (mod.has_quiz ? 1 : 0);
+  const total = mod.lesson_count + (mod.has_quiz ? 1 : 0);
   const completedCount = lessonsDone + quizDone;
   const progressPercent = total > 0 ? (completedCount / total) * 100 : 0;
   const allDone = total > 0 && completedCount === total;
@@ -242,7 +242,7 @@ function ModuleCard({ mod }: { mod: ModuleDetail }) {
 
       {/* Lesson + quiz rows */}
       <div className="space-y-1">
-        {Array.from({ length: mod.section_count }, (_, i) => {
+        {Array.from({ length: mod.lesson_count }, (_, i) => {
           const done = mod.lessonCompletion[i] ?? false;
           return (
             <div key={i} className="flex items-center gap-2 text-xs">
