@@ -61,12 +61,14 @@ def greet():
 
 Complete the \`greet()\` function so it **returns** the string \`"Hello, World!"\`.
 
-Click **Submit** — if all tests pass, the lesson is automatically marked complete.
+Click **Run** — if all tests pass, the lesson is automatically marked complete.
 `;
 
 const lesson1Template = `def greet():
     # Return the string "Hello, World!"
     pass
+
+print(greet())
 `;
 
 const lesson2Content = `## String Formatting with f-strings
@@ -97,6 +99,8 @@ Stuck? Use **Show Answer** to see the solution.
 const lesson2Template = `def make_greeting(name):
     # Return f"Hello, {name}!"
     pass
+
+print(make_greeting("Alice"))
 `;
 
 const lesson2Solution = `def make_greeting(name):
