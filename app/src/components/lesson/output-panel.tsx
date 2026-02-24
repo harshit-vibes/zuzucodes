@@ -186,7 +186,7 @@ export function OutputPanel({ phase, output, error, hasTestCases, hasRun, testRe
   // Tests tab visible only after first Run
   const showTestsTab = hasTestCases && hasRun;
   const hasResults = testResults !== null && testResults.length > 0;
-  const allTestsPassed = hasResults && testResults!.every(t => t.pass);
+  const allTestsPassed = testResults !== null && testResults.length > 0 && testResults.every(t => t.pass);
   const autoSwitchToTests = (phase === 'run-pass' || phase === 'run-fail') && showTestsTab && hasResults;
   const effectiveTab = autoSwitchToTests ? 'tests' : activeTab;
 
@@ -238,8 +238,8 @@ export function OutputPanel({ phase, output, error, hasTestCases, hasRun, testRe
                 <span className="text-xs font-mono text-muted-foreground/50 animate-pulse">…</span>
               </div>
             )}
-            {(phase === 'run-pass' || phase === 'run-fail') && hasResults && (
-              <TestResultsList results={testResults!} />
+            {(phase === 'run-pass' || phase === 'run-fail') && testResults && testResults.length > 0 && (
+              <TestResultsList results={testResults} />
             )}
             {(phase === 'run-pass' || phase === 'run-fail') && !hasResults && (
               <div className="flex-1 flex items-center justify-center">
@@ -256,6 +256,11 @@ export function OutputPanel({ phase, output, error, hasTestCases, hasRun, testRe
             {phase === 'error' && error && (
               <div className="flex-1 overflow-auto">
                 <ErrorDisplay error={error} />
+              </div>
+            )}
+            {phase === 'idle' && (
+              <div className="flex-1 flex items-center justify-center">
+                <span className="text-xs font-mono text-muted-foreground/40">Run your code to see test results</span>
               </div>
             )}
           </>
