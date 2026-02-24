@@ -7,11 +7,9 @@ import type { TestCaseResult } from '@/lib/judge0';
 export type ExecutionPhase =
   | 'idle'
   | 'running'
-  | 'success'
+  | 'run-pass'
+  | 'run-fail'
   | 'error'
-  | 'submitting'
-  | 'submit-pass'
-  | 'submit-fail'
   | 'tle';
 
 export interface ExecutionMetrics {
@@ -24,7 +22,8 @@ interface OutputPanelProps {
   output: string;
   error: ParsedError | null;
   hasTestCases: boolean;
-  submitResults: TestCaseResult[] | null;
+  hasRun: boolean;
+  testResults: TestCaseResult[] | null;
   metrics: ExecutionMetrics | null;
 }
 
@@ -40,15 +39,13 @@ function MetricsBadge({ metrics }: { metrics: ExecutionMetrics }) {
   );
 }
 
-function HeaderLabel({ phase }: { phase: ExecutionPhase }) {
-  if (phase === 'running' || phase === 'submitting') {
+function HeaderLabel({ phase, allTestsPassed }: { phase: ExecutionPhase; allTestsPassed: boolean }) {
+  if (phase === 'running') {
     return (
-      <span className="text-xs text-muted-foreground animate-pulse">
-        {phase === 'submitting' ? 'Submitting…' : 'Running…'}
-      </span>
+      <span className="text-xs text-muted-foreground animate-pulse">Running…</span>
     );
   }
-  if (phase === 'submit-pass') {
+  if (phase === 'run-pass' && allTestsPassed) {
     return (
       <span className="text-xs text-green-500 flex items-center gap-1">
         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -58,7 +55,7 @@ function HeaderLabel({ phase }: { phase: ExecutionPhase }) {
       </span>
     );
   }
-  if (phase === 'submit-fail') {
+  if (phase === 'run-fail') {
     return <span className="text-xs text-red-400">Tests failed</span>;
   }
   if (phase === 'tle') {
@@ -183,24 +180,25 @@ function TestResultsList({ results }: { results: TestCaseResult[] }) {
   );
 }
 
-export function OutputPanel({ phase, output, error, hasTestCases, submitResults, metrics }: OutputPanelProps) {
+export function OutputPanel({ phase, output, error, hasTestCases, hasRun, testResults, metrics }: OutputPanelProps) {
   const [activeTab, setActiveTab] = useState<'console' | 'tests'>('console');
 
-  // Auto-switch to tests tab on submit phases
-  const showTestsTab = hasTestCases;
-  const isSubmitPhase = phase === 'submitting' || phase === 'submit-pass' || phase === 'submit-fail' || phase === 'tle';
-  const effectiveTab = isSubmitPhase && showTestsTab ? 'tests' : activeTab;
+  // Tests tab visible only after first Run
+  const showTestsTab = hasTestCases && hasRun;
+  const hasResults = testResults !== null && testResults.length > 0;
+  const allTestsPassed = hasResults && testResults!.every(t => t.pass);
+  const autoSwitchToTests = (phase === 'run-pass' || phase === 'run-fail') && showTestsTab && hasResults;
+  const effectiveTab = autoSwitchToTests ? 'tests' : activeTab;
 
   const isIdle = phase === 'idle';
-  const isLoading = phase === 'running' || phase === 'submitting';
-  const isSuccess = phase === 'success';
+  const isLoading = phase === 'running';
 
   return (
     <div className="shrink-0 h-48 border-t border-border bg-muted/30 dark:bg-zinc-950 flex flex-col">
       {/* Panel header */}
       <div className="flex items-center justify-between px-3 py-1.5 border-b border-border/40">
         <div className="flex items-center gap-3">
-          <HeaderLabel phase={phase} />
+          <HeaderLabel phase={phase} allTestsPassed={allTestsPassed} />
           {metrics && !isLoading && <MetricsBadge metrics={metrics} />}
         </div>
         {showTestsTab && (
@@ -235,15 +233,15 @@ export function OutputPanel({ phase, output, error, hasTestCases, submitResults,
         {/* Tests tab */}
         {effectiveTab === 'tests' && showTestsTab && (
           <>
-            {(phase === 'submitting') && (
+            {phase === 'running' && (
               <div className="flex-1 flex items-center justify-center">
                 <span className="text-xs font-mono text-muted-foreground/50 animate-pulse">…</span>
               </div>
             )}
-            {(phase === 'submit-pass' || phase === 'submit-fail') && submitResults && submitResults.length > 0 && (
-              <TestResultsList results={submitResults} />
+            {(phase === 'run-pass' || phase === 'run-fail') && hasResults && (
+              <TestResultsList results={testResults!} />
             )}
-            {(phase === 'submit-pass' || phase === 'submit-fail') && (!submitResults || submitResults.length === 0) && (
+            {(phase === 'run-pass' || phase === 'run-fail') && !hasResults && (
               <div className="flex-1 flex items-center justify-center">
                 <span className="text-xs font-mono text-muted-foreground/40">No results</span>
               </div>
@@ -258,13 +256,6 @@ export function OutputPanel({ phase, output, error, hasTestCases, submitResults,
             {phase === 'error' && error && (
               <div className="flex-1 overflow-auto">
                 <ErrorDisplay error={error} />
-              </div>
-            )}
-            {(phase === 'idle' || phase === 'running' || phase === 'success') && (
-              <div className="flex-1 flex items-center justify-center">
-                <span className="text-xs font-mono text-muted-foreground/30">
-                  Press Submit to run tests
-                </span>
               </div>
             )}
           </>
@@ -293,8 +284,8 @@ export function OutputPanel({ phase, output, error, hasTestCases, submitResults,
                 <span className="text-xs font-mono text-amber-400/80">Time limit exceeded</span>
               </div>
             )}
-            {isSuccess && output && <OutputDisplay output={output} />}
-            {isSuccess && !output && (
+            {(phase === 'run-pass' || phase === 'run-fail') && output && <OutputDisplay output={output} />}
+            {(phase === 'run-pass' || phase === 'run-fail') && !output && (
               <div className="flex-1 flex items-center justify-center">
                 <span className="text-xs font-mono text-muted-foreground/40">(no output)</span>
               </div>
