@@ -30,12 +30,9 @@ export interface TestCaseResult {
   exp: unknown;
 }
 
-export interface Judge0SubmitResult {
+export interface Judge0TestsResult {
   tests: TestCaseResult[];
   allPassed: boolean;
-  statusId: number;
-  statusDescription: string;
-  stderr: string;
   time: number | null;
   memory: number | null;
   remaining: number | null;
@@ -88,51 +85,6 @@ async function postSubmission(
   return { data, remaining, resetAt };
 }
 
-// ─── Test runner builder ─────────────────────────────────────────────────────
-
-/**
- * Append a hidden Python test runner to user code.
- * Output: a single JSON array printed to stdout:
- *   [{"d": "description", "pass": true, "got": 3, "exp": 3}, ...]
- *
- * Uses underscore-prefixed private vars to avoid colliding with user code.
- */
-export function buildTestRunner(
-  userCode: string,
-  testCases: TestCase[],
-  entryPoint: string,
-): string {
-  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(entryPoint)) {
-    throw new Error(`Invalid entryPoint: ${entryPoint}`);
-  }
-
-  const casesJson = JSON.stringify(
-    testCases.map(tc => ({ d: tc.description, args: tc.args, expected: tc.expected }))
-  );
-  const casesJsonLiteral = JSON.stringify(casesJson);
-
-  const runner = `
-
-# ── auto-generated test runner ──────────────────────────────────────────────
-import json as _json
-
-_cases = _json.loads(${casesJsonLiteral})
-_fn = ${entryPoint}
-_results = []
-
-for _tc in _cases:
-    try:
-        _got = _fn(*_tc["args"])
-        _results.append({"d": _tc["d"], "pass": _got == _tc["expected"], "got": _got, "exp": _tc["expected"]})
-    except Exception as _e:
-        _results.append({"d": _tc["d"], "pass": False, "got": str(_e), "exp": _tc["expected"]})
-
-print(_json.dumps(_results))
-`;
-
-  return `${userCode}\n${runner}`;
-}
-
 // ─── Public API ──────────────────────────────────────────────────────────────
 
 /**
@@ -155,51 +107,53 @@ export async function runCode(sourceCode: string, stdin?: string): Promise<Judge
 }
 
 /**
- * Submit user code against test cases.
- * Appends a hidden test runner, runs 1 Judge0 submission, parses JSON stdout.
- * Used by the "Submit" button.
+ * Run user code against test cases — one Judge0 call per test case, in parallel.
+ * Each call builds a small program: userCode + one-liner that calls entryPoint(*args) and prints the result.
+ * Pass/fail is determined by comparing stdout.trim() to String(expected).
  */
-export async function submitCode(
+export async function runTests(
   userCode: string,
   testCases: TestCase[],
   entryPoint: string,
-): Promise<Judge0SubmitResult> {
-  const source = buildTestRunner(userCode, testCases, entryPoint);
-  const { data, remaining, resetAt } = await postSubmission(source);
-
-  const statusId = (data.status as { id: number })?.id ?? 0;
-  const statusDescription = (data.status as { description: string })?.description ?? '';
-  const stderr = (data.stderr as string) ?? '';
-  const time = data.time !== null && data.time !== undefined ? parseFloat(data.time as string) : null;
-  const memory = data.memory !== null && data.memory !== undefined ? parseInt(data.memory as string, 10) : null;
-
-  // Non-Accepted statuses: TLE (5), Runtime Error (11), etc.
-  if (statusId !== 3) {
-    return { tests: [], allPassed: false, statusId, statusDescription, stderr, time, memory, remaining, resetAt };
+): Promise<Judge0TestsResult> {
+  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(entryPoint)) {
+    throw new Error(`Invalid entryPoint: ${entryPoint}`);
   }
 
-  // Parse JSON stdout
-  const stdout = ((data.stdout as string) ?? '').trim();
-  let tests: TestCaseResult[] = [];
-  try {
-    tests = JSON.parse(stdout) as TestCaseResult[];
-  } catch {
-    // Runner output was not valid JSON — treat as runtime error
-    return {
-      tests: [],
-      allPassed: false,
-      statusId: 11,
-      statusDescription: 'Runtime Error',
-      stderr: `Could not parse test runner output: ${stdout}`,
-      time,
-      memory,
-      remaining,
-      resetAt,
-    };
-  }
+  const runResults = await Promise.all(
+    testCases.map((tc) => {
+      const argsJson = JSON.stringify(tc.args);
+      const program = [
+        userCode,
+        '',
+        'import json as _json',
+        `_args = _json.loads(${JSON.stringify(argsJson)})`,
+        `print(${entryPoint}(*_args))`,
+      ].join('\n');
+      return runCode(program);
+    })
+  );
 
-  const allPassed = tests.length > 0 && tests.every(t => t.pass);
-  return { tests, allPassed, statusId, statusDescription, stderr, time, memory, remaining, resetAt };
+  const tests: TestCaseResult[] = testCases.map((tc, i) => {
+    const r = runResults[i];
+    if (r.statusId === 3) {
+      const got = (r.stdout ?? '').trim();
+      return { d: tc.description, pass: got === String(tc.expected), got, exp: tc.expected };
+    }
+    const got = (r.stderr ?? '').trim() || `Runtime error (status ${r.statusId})`;
+    return { d: tc.description, pass: false, got, exp: tc.expected };
+  });
+
+  const allPassed = tests.every(t => t.pass);
+  const last = runResults[runResults.length - 1];
+  return {
+    tests,
+    allPassed,
+    time: last?.time ?? null,
+    memory: last?.memory ?? null,
+    remaining: last?.remaining ?? null,
+    resetAt: last?.resetAt ?? null,
+  };
 }
 
 /**
