@@ -36,7 +36,8 @@ export default async function LessonPage({ params }: LessonPageProps) {
       lessonTitle={lessonData.title}
       content={lessonData.content}
       codeTemplate={lessonData.codeTemplate}
-      testCode={lessonData.testCode}
+      testCases={lessonData.testCases}
+      entryPoint={lessonData.entryPoint}
       solutionCode={lessonData.solutionCode}
       savedCode={savedCode}
       lessonId={lessonData.id}
