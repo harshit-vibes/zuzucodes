@@ -19,8 +19,8 @@ export interface UsageResult {
 }
 
 function parseRateLimitHeaders(headers: Headers): { remaining: number | null; resetAt: number | null } {
-  const remaining = headers.get('X-RateLimit-requests-Remaining');
-  const reset = headers.get('X-RateLimit-requests-Reset');
+  const remaining = headers.get('x-ratelimit-submissions-remaining');
+  const reset = headers.get('x-ratelimit-submissions-reset');
   return {
     remaining: remaining !== null ? parseInt(remaining, 10) : null,
     resetAt: reset !== null ? parseInt(reset, 10) : null,
