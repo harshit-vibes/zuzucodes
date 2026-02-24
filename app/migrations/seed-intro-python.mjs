@@ -61,16 +61,12 @@ def greet():
 
 Complete the \`greet()\` function so it **returns** the string \`"Hello, World!"\`.
 
-Click **Run** — if the test passes, the lesson is automatically marked complete.
+Click **Submit** — if all tests pass, the lesson is automatically marked complete.
 `;
 
 const lesson1Template = `def greet():
     # Return the string "Hello, World!"
     pass
-`;
-
-const lesson1TestCode = `result = greet()
-assert result == "Hello, World!", f"Expected 'Hello, World!', got {result!r}"
 `;
 
 const lesson2Content = `## String Formatting with f-strings
@@ -89,25 +85,22 @@ Prefix the string with \`f\` and wrap any variable in \`{}\` — Python substitu
 
 ### Task
 
-You are given a \`name\` variable. Build a \`greeting\` string using an f-string so that:
+Write a function \`make_greeting(name)\` that returns a greeting string using an f-string:
 
-\`\`\`
-greeting == f"Hello, {name}!"
+\`\`\`python
+make_greeting("Alice")  # → "Hello, Alice!"
 \`\`\`
 
 Stuck? Use **Show Answer** to see the solution.
 `;
 
-const lesson2Template = `name = "Python"
-# Build greeting using an f-string
-greeting = ""
+const lesson2Template = `def make_greeting(name):
+    # Return f"Hello, {name}!"
+    pass
 `;
 
-const lesson2TestCode = `assert greeting == f"Hello, {name}!", f"Expected 'Hello, {name}!', got {greeting!r}"
-`;
-
-const lesson2Solution = `name = "Python"
-greeting = f"Hello, {name}!"
+const lesson2Solution = `def make_greeting(name):
+    return f"Hello, {name}!"
 `;
 
 const quizForm = {
@@ -185,25 +178,34 @@ async function seed() {
 
   // Lesson 0 — theory only, no code (manual Mark as Complete)
   await sql`
-    INSERT INTO lessons (id, module_id, lesson_index, title, content, code_template, test_code, solution_code)
+    INSERT INTO lessons (id, module_id, lesson_index, title, content,
+                         code_template, test_code, solution_code,
+                         test_cases, entry_point)
     VALUES (
       'lesson-intro-python-hello-world-00',
       'module-intro-python-hello-world-001',
       0,
       'What is Python?',
       ${lesson0Content},
-      NULL, NULL, NULL
+      NULL, NULL, NULL, NULL, NULL
     )
     ON CONFLICT (id) DO UPDATE SET
       title = EXCLUDED.title, content = EXCLUDED.content,
       code_template = EXCLUDED.code_template,
-      test_code = EXCLUDED.test_code, solution_code = EXCLUDED.solution_code
+      test_code = EXCLUDED.test_code, solution_code = EXCLUDED.solution_code,
+      test_cases = EXCLUDED.test_cases, entry_point = EXCLUDED.entry_point
   `;
   console.log('✓ lesson 0 (theory — manual completion)');
 
-  // Lesson 1 — code + test_code only (auto-complete, no Show Answer)
+  // Lesson 1 — greet() function, Judge0 test cases
+  const lesson1TestCases = [
+    { description: 'returns Hello World', args: [], expected: 'Hello, World!' }
+  ];
+
   await sql`
-    INSERT INTO lessons (id, module_id, lesson_index, title, content, code_template, test_code, solution_code)
+    INSERT INTO lessons (id, module_id, lesson_index, title, content,
+                         code_template, test_code, solution_code,
+                         test_cases, entry_point)
     VALUES (
       'lesson-intro-python-hello-world-01',
       'module-intro-python-hello-world-001',
@@ -211,19 +213,29 @@ async function seed() {
       'Your First Python Function',
       ${lesson1Content},
       ${lesson1Template},
-      ${lesson1TestCode},
-      NULL
+      NULL,
+      NULL,
+      ${JSON.stringify(lesson1TestCases)}::jsonb,
+      'greet'
     )
     ON CONFLICT (id) DO UPDATE SET
       title = EXCLUDED.title, content = EXCLUDED.content,
       code_template = EXCLUDED.code_template,
-      test_code = EXCLUDED.test_code, solution_code = EXCLUDED.solution_code
+      test_code = EXCLUDED.test_code, solution_code = EXCLUDED.solution_code,
+      test_cases = EXCLUDED.test_cases, entry_point = EXCLUDED.entry_point
   `;
-  console.log('✓ lesson 1 (code + test_code — auto-complete)');
+  console.log('✓ lesson 1 (greet — Judge0 test cases)');
 
-  // Lesson 2 — code + test_code + solution_code (auto-complete + Show Answer)
+  // Lesson 2 — make_greeting(name) f-string function, Judge0 test cases
+  const lesson2TestCases = [
+    { description: 'greets Python', args: ['Python'], expected: 'Hello, Python!' },
+    { description: 'greets Alice', args: ['Alice'], expected: 'Hello, Alice!' },
+  ];
+
   await sql`
-    INSERT INTO lessons (id, module_id, lesson_index, title, content, code_template, test_code, solution_code)
+    INSERT INTO lessons (id, module_id, lesson_index, title, content,
+                         code_template, test_code, solution_code,
+                         test_cases, entry_point)
     VALUES (
       'lesson-intro-python-hello-world-02',
       'module-intro-python-hello-world-001',
@@ -231,15 +243,18 @@ async function seed() {
       'String Formatting with f-strings',
       ${lesson2Content},
       ${lesson2Template},
-      ${lesson2TestCode},
-      ${lesson2Solution}
+      NULL,
+      ${lesson2Solution},
+      ${JSON.stringify(lesson2TestCases)}::jsonb,
+      'make_greeting'
     )
     ON CONFLICT (id) DO UPDATE SET
       title = EXCLUDED.title, content = EXCLUDED.content,
       code_template = EXCLUDED.code_template,
-      test_code = EXCLUDED.test_code, solution_code = EXCLUDED.solution_code
+      test_code = EXCLUDED.test_code, solution_code = EXCLUDED.solution_code,
+      test_cases = EXCLUDED.test_cases, entry_point = EXCLUDED.entry_point
   `;
-  console.log('✓ lesson 2 (code + test_code + solution_code — auto-complete + Show Answer)');
+  console.log('✓ lesson 2 (make_greeting — Judge0 test cases)');
 
   console.log('\nDone. Navigate to /dashboard to see the course.');
 }
