@@ -52,7 +52,7 @@ export function Markdown({ content }: MarkdownProps) {
             const isInline = !className;
             if (isInline) {
               return (
-                <code className="px-1.5 py-0.5 rounded-md bg-zinc-900 text-[0.875em] font-mono text-primary/85 ring-1 ring-zinc-700/50 before:content-none after:content-none">
+                <code className="px-1.5 py-0.5 rounded-md text-[0.875em] font-mono text-primary bg-primary/[0.07] ring-1 ring-primary/15 dark:bg-zinc-900 dark:text-primary/85 dark:ring-zinc-700/50 before:content-none after:content-none">
                   {children}
                 </code>
               );
@@ -62,12 +62,12 @@ export function Markdown({ content }: MarkdownProps) {
             );
           },
           pre: ({ children }) => (
-            <pre className="relative my-6 rounded-lg bg-zinc-950 text-zinc-200 overflow-x-auto border border-zinc-800 shadow-[inset_0_1px_0_0_oklch(1_0_0/0.05)]">
-              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-zinc-800/80">
+            <pre className="relative my-6 rounded-xl bg-zinc-950 text-zinc-200 overflow-x-auto border border-zinc-800/60 shadow-sm">
+              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-zinc-800/60">
                 <div className="flex gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full bg-zinc-600" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-zinc-600" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-zinc-600" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
                 </div>
                 <span className="ml-1 text-[10px] font-mono text-zinc-500 tracking-wider uppercase">python</span>
               </div>
@@ -92,22 +92,22 @@ export function Markdown({ content }: MarkdownProps) {
             <hr className="my-10 border-none h-px bg-gradient-to-r from-transparent via-border to-transparent" />
           ),
           table: ({ children }) => (
-            <div className="my-6 overflow-x-auto rounded-lg border border-zinc-800 shadow-sm">
+            <div className="my-6 overflow-x-auto rounded-lg border border-border shadow-sm">
               <table className="min-w-full text-sm">{children}</table>
             </div>
           ),
           thead: ({ children }) => (
-            <thead className="bg-zinc-900 border-b border-zinc-800">
+            <thead className="bg-muted border-b border-border">
               {children}
             </thead>
           ),
           th: ({ children }) => (
-            <th className="px-4 py-2.5 text-left font-mono text-[11px] text-zinc-400 tracking-wider uppercase">
+            <th className="px-4 py-2.5 text-left font-mono text-[11px] text-muted-foreground tracking-wider uppercase">
               {children}
             </th>
           ),
           td: ({ children }) => (
-            <td className="px-4 py-2.5 text-sm border-t border-zinc-800/60 text-foreground/80">{children}</td>
+            <td className="px-4 py-2.5 text-sm border-t border-border/60 text-foreground/80">{children}</td>
           ),
           img: ({ src, alt }) => (
             <span className="block my-6 rounded-xl overflow-hidden border border-border shadow-sm">
