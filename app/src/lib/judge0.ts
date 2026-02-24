@@ -23,10 +23,14 @@ export interface Judge0RunResult {
   resetAt: number | null;
 }
 
+/**
+ * Result for a single test case execution.
+ * Note: `expected` should be a string or number primitive — comparison uses String(expected).
+ */
 export interface TestCaseResult {
   d: string;      // description
   pass: boolean;
-  got: unknown;
+  got: string;
   exp: unknown;
 }
 
@@ -120,7 +124,11 @@ export async function runTests(
     throw new Error(`Invalid entryPoint: ${entryPoint}`);
   }
 
-  const runResults = await Promise.all(
+  if (testCases.length === 0) {
+    throw new Error('runTests requires at least one test case');
+  }
+
+  const settled = await Promise.allSettled(
     testCases.map((tc) => {
       const argsJson = JSON.stringify(tc.args);
       const program = [
@@ -135,7 +143,12 @@ export async function runTests(
   );
 
   const tests: TestCaseResult[] = testCases.map((tc, i) => {
-    const r = runResults[i];
+    const result = settled[i];
+    if (result.status === 'rejected') {
+      const got = (result.reason as Error)?.message ?? 'Request failed';
+      return { d: tc.description, pass: false, got, exp: tc.expected };
+    }
+    const r = result.value;
     if (r.statusId === 3) {
       const got = (r.stdout ?? '').trim();
       return { d: tc.description, pass: got === String(tc.expected), got, exp: tc.expected };
@@ -145,14 +158,14 @@ export async function runTests(
   });
 
   const allPassed = tests.every(t => t.pass);
-  const last = runResults[runResults.length - 1];
+  const lastFulfilled = settled.filter((s): s is PromiseFulfilledResult<Judge0RunResult> => s.status === 'fulfilled').at(-1)?.value;
   return {
     tests,
     allPassed,
-    time: last?.time ?? null,
-    memory: last?.memory ?? null,
-    remaining: last?.remaining ?? null,
-    resetAt: last?.resetAt ?? null,
+    time: lastFulfilled?.time ?? null,
+    memory: lastFulfilled?.memory ?? null,
+    remaining: lastFulfilled?.remaining ?? null,
+    resetAt: lastFulfilled?.resetAt ?? null,
   };
 }
 
