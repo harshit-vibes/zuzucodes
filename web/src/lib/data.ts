@@ -58,14 +58,19 @@ export function getAllLessons(): Lesson[] {
 export function getCourseWithModules(courseId: string): CourseWithModules {
   const course = getCourse(courseId);
   const modules = getModules(courseId);
+  // Load all items and lessons once — avoids N reads per module
+  const allItems = readJsonDir<ModuleItem>('module-items');
   const allLessons = getAllLessons();
+  const lessonMap = new Map(allLessons.map(l => [l.lessonId, l]));
 
   const modulesWithLessons: ModuleWithLessons[] = modules.map(module => {
-    const items = getModuleItems(module.moduleId);
+    const items = allItems
+      .filter(i => i.moduleId === module.moduleId)
+      .sort((a, b) => a.order - b.order);
     const lessons = items
       .filter(item => item.itemType === 'lesson' && item.lessonId)
-      .map(item => allLessons.find(l => l.lessonId === item.lessonId)!)
-      .filter(Boolean);
+      .map(item => lessonMap.get(item.lessonId!))
+      .filter((l): l is Lesson => Boolean(l));
 
     return { ...module, lessons };
   });

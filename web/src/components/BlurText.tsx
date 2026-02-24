@@ -43,7 +43,10 @@ const BlurText: React.FC<BlurTextProps> = ({
   onAnimationComplete,
   stepDuration = 0.35
 }) => {
-  const elements = animateBy === 'words' ? text.split(' ') : text.split('');
+  const elements = useMemo(
+    () => animateBy === 'words' ? text.split(' ') : text.split(''),
+    [text, animateBy]
+  );
   const [inView, setInView] = useState(false);
   const ref = useRef<HTMLParagraphElement>(null);
 
@@ -86,12 +89,15 @@ const BlurText: React.FC<BlurTextProps> = ({
   const stepCount = toSnapshots.length + 1;
   const totalDuration = stepDuration * (stepCount - 1);
   const times = Array.from({ length: stepCount }, (_, i) => (stepCount === 1 ? 0 : i / (stepCount - 1)));
+  // Hoist out of map — same value for every segment
+  const animateKeyframes = useMemo(
+    () => buildKeyframes(fromSnapshot, toSnapshots),
+    [fromSnapshot, toSnapshots]
+  );
 
   return (
     <p ref={ref} className={`blur-text ${className} flex flex-wrap`}>
       {elements.map((segment, index) => {
-        const animateKeyframes = buildKeyframes(fromSnapshot, toSnapshots);
-
         const spanTransition: Transition = {
           duration: totalDuration,
           times,

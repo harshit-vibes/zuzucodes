@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useMemo } from 'react';
 
 interface GlareHoverProps {
   width?: string;
@@ -33,19 +33,22 @@ const GlareHover: React.FC<GlareHoverProps> = ({
   className = '',
   style = {}
 }) => {
-  const hex = glareColor.replace('#', '');
-  let rgba = glareColor;
-  if (/^[\dA-Fa-f]{6}$/.test(hex)) {
-    const r = parseInt(hex.slice(0, 2), 16);
-    const g = parseInt(hex.slice(2, 4), 16);
-    const b = parseInt(hex.slice(4, 6), 16);
-    rgba = `rgba(${r}, ${g}, ${b}, ${glareOpacity})`;
-  } else if (/^[\dA-Fa-f]{3}$/.test(hex)) {
-    const r = parseInt(hex[0] + hex[0], 16);
-    const g = parseInt(hex[1] + hex[1], 16);
-    const b = parseInt(hex[2] + hex[2], 16);
-    rgba = `rgba(${r}, ${g}, ${b}, ${glareOpacity})`;
-  }
+  const rgba = useMemo(() => {
+    const hex = glareColor.replace('#', '');
+    if (/^[\dA-Fa-f]{6}$/.test(hex)) {
+      const r = parseInt(hex.slice(0, 2), 16);
+      const g = parseInt(hex.slice(2, 4), 16);
+      const b = parseInt(hex.slice(4, 6), 16);
+      return `rgba(${r}, ${g}, ${b}, ${glareOpacity})`;
+    }
+    if (/^[\dA-Fa-f]{3}$/.test(hex)) {
+      const r = parseInt(hex[0] + hex[0], 16);
+      const g = parseInt(hex[1] + hex[1], 16);
+      const b = parseInt(hex[2] + hex[2], 16);
+      return `rgba(${r}, ${g}, ${b}, ${glareOpacity})`;
+    }
+    return glareColor;
+  }, [glareColor, glareOpacity]);
 
   const overlayRef = useRef<HTMLDivElement | null>(null);
 
@@ -72,7 +75,7 @@ const GlareHover: React.FC<GlareHoverProps> = ({
     }
   };
 
-  const overlayStyle: React.CSSProperties = {
+  const overlayStyle = useMemo<React.CSSProperties>(() => ({
     position: 'absolute',
     inset: 0,
     background: `linear-gradient(${glareAngle}deg,
@@ -83,7 +86,7 @@ const GlareHover: React.FC<GlareHoverProps> = ({
     backgroundRepeat: 'no-repeat',
     backgroundPosition: '-100% -100%, 0 0',
     pointerEvents: 'none'
-  };
+  }), [glareAngle, glareSize, rgba]);
 
   return (
     <div

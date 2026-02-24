@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import FadeContent from '@/components/FadeContent';
 
 export function Footer() {
@@ -44,10 +45,12 @@ export function Footer() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             {/* Logo/Brand */}
             <div className="flex items-center gap-3">
-              <img
+              <Image
                 src="/logo.png"
                 alt="ZuzuCodes"
-                className="w-8 h-8 rounded-lg opacity-80"
+                width={32}
+                height={32}
+                className="rounded-lg opacity-80"
               />
               <span className="text-lg font-medium text-[var(--text-primary)]">
                 zuzu<span className="text-[var(--accent-primary)]">.</span>codes
