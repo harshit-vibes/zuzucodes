@@ -5,6 +5,7 @@
 
 import { cache } from 'react';
 import { sql } from '@/lib/neon';
+import type { TestCase } from '@/lib/judge0';
 
 // ========================================
 // TYPES
@@ -160,7 +161,8 @@ export interface LessonData {
   content: string;
   title: string;
   codeTemplate: string | null;
-  testCode: string | null;
+  testCases: TestCase[] | null;
+  entryPoint: string | null;
   solutionCode: string | null;
   moduleId: string;
   moduleTitle: string;
@@ -179,7 +181,7 @@ export const getLesson = cache(async (
   try {
     const result = await sql`
       SELECT l.id, l.lesson_index, l.title, l.content, l.code_template,
-             l.test_code, l.solution_code,
+             l.test_cases, l.entry_point, l.solution_code,
              m.id AS module_id, m.title AS module_title
       FROM lessons l
       JOIN modules m ON m.id = l.module_id
@@ -196,7 +198,8 @@ export const getLesson = cache(async (
       content: row.content,
       title: row.title,
       codeTemplate: row.code_template ?? null,
-      testCode: row.test_code ?? null,
+      testCases: (row.test_cases as TestCase[] | null) ?? null,
+      entryPoint: row.entry_point ?? null,
       solutionCode: row.solution_code ?? null,
       moduleId: row.module_id,
       moduleTitle: row.module_title,
