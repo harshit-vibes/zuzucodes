@@ -153,7 +153,6 @@ export function CodeLessonLayout({
         const { stdout, stderr, statusId, time, memory } = runResult;
 
         setMetrics({ time: time ?? null, memory: memory ?? null });
-        setHasRun(true);
 
         if (statusId === 5) {
           setExecutionPhase('tle');
@@ -167,6 +166,7 @@ export function CodeLessonLayout({
           return;
         }
 
+        setHasRun(true);
         setOutput((stdout ?? '').trim());
 
         if (testRes && testRes.ok) {
