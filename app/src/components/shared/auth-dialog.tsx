@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { SignInForm, SignUpForm } from "@neondatabase/auth/react/ui";
-import { EmailVerification } from "@/components/email-verification";
+import { EmailVerification } from "@/components/shared/email-verification";
 
 type AuthView = "sign-in" | "sign-up" | "verify-email";
 

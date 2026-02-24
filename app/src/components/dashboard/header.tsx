@@ -1,8 +1,8 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { ThemeToggle } from '@/components/theme-toggle';
-import { UserButton } from '@/components/user-button';
+import { ThemeToggle } from '@/components/shared/theme-toggle';
+import { UserButton } from '@/components/shared/user-button';
 
 export function DashboardHeader() {
   const pathname = usePathname();

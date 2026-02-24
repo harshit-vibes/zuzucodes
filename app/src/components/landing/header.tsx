@@ -4,9 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { BrandLogo } from "@/components/brand-logo";
-import { AuthDialog } from "@/components/auth-dialog";
+import { ThemeToggle } from "@/components/shared/theme-toggle";
+import { BrandLogo } from "@/components/shared/brand-logo";
+import { AuthDialog } from "@/components/shared/auth-dialog";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 

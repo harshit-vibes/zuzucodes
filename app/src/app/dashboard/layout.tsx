@@ -1,12 +1,12 @@
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app-sidebar";
+import { AppSidebar } from "@/components/shared/app-sidebar";
 import { getCoursesForSidebar, getSidebarProgress, getSectionCompletionStatus, getDashboardStats } from "@/lib/data";
 import { auth } from "@/lib/auth/server";
 import { redirect } from "next/navigation";
-import { DashboardHeader } from "@/components/dashboard-header";
-import { DashboardMain } from "@/components/dashboard-main";
+import { DashboardHeader } from "@/components/dashboard/header";
+import { DashboardMain } from "@/components/dashboard/main";
 import { RateLimitProvider } from "@/context/rate-limit-context";
-import { RateLimitIndicator } from "@/components/rate-limit-indicator";
+import { RateLimitIndicator } from "@/components/lesson/rate-limit-indicator";
 
 export default async function DashboardLayout({
   children,

@@ -1,7 +1,7 @@
 import { getLesson, getModule, getLessonCount, isLessonCompleted, getUserCode } from '@/lib/data';
 import { auth } from '@/lib/auth/server';
 import { notFound } from 'next/navigation';
-import { CodeLessonLayout } from '@/components/code-lesson-layout';
+import { CodeLessonLayout } from '@/components/lesson/code-lesson-layout';
 
 interface LessonPageProps {
   params: Promise<{ courseId: string; moduleId: string; order: string }>;

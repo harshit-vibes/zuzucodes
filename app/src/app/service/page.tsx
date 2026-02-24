@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
-import { BrandLogo } from "@/components/brand-logo";
+import { BrandLogo } from "@/components/shared/brand-logo";
 
 export const metadata: Metadata = {
   title: "Terms of Service | zuzu.codes",

@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { BrandLogo } from "@/components/brand-logo";
+import { BrandLogo } from "@/components/shared/brand-logo";
 
 const footerLinks = {
   product: [

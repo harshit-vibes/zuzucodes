@@ -2,7 +2,7 @@ import { getModule, isQuizCompleted, areAllLessonsCompleted, type QuizQuestion }
 import { auth } from '@/lib/auth/server';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { Breadcrumb } from '@/components/breadcrumb';
+import { Breadcrumb } from '@/components/shared/breadcrumb';
 import { QuizPlayer } from './quiz-player';
 
 interface QuizPageProps {

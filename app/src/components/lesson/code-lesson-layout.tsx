@@ -3,12 +3,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Markdown } from '@/components/markdown';
-import { CodeEditor } from '@/components/code-editor';
-import { OutputPanel, ExecutionPhase } from '@/components/output-panel';
+import { Markdown } from '@/components/shared/markdown';
+import { CodeEditor } from '@/components/lesson/code-editor';
+import { OutputPanel, ExecutionPhase } from '@/components/lesson/output-panel';
 import { parsePythonError, ParsedError } from '@/lib/python-output';
-import { ThemeToggle } from '@/components/theme-toggle';
-import { UserButton } from '@/components/user-button';
+import { ThemeToggle } from '@/components/shared/theme-toggle';
+import { UserButton } from '@/components/shared/user-button';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useRateLimitActions } from '@/context/rate-limit-context';
 
