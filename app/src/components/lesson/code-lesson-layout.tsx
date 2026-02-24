@@ -11,7 +11,7 @@ import { ThemeToggle } from '@/components/shared/theme-toggle';
 import { UserButton } from '@/components/shared/user-button';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useRateLimitActions } from '@/context/rate-limit-context';
-import type { TestCase, TestCaseResult } from '@/lib/judge0';
+import type { TestCase, TestCaseResult, Judge0RunResult, Judge0SubmitResult } from '@/lib/judge0';
 import type { ExecutionMetrics } from '@/components/lesson/output-panel';
 
 interface CodeLessonLayoutProps {
@@ -59,6 +59,7 @@ export function CodeLessonLayout({
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saved'>('idle');
   const [activeTab, setActiveTab] = useState<'lesson' | 'code'>('lesson');
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isExecutingRef = useRef(false);
   const [submitResults, setSubmitResults] = useState<TestCaseResult[] | null>(null);
   const [metrics, setMetrics] = useState<ExecutionMetrics | null>(null);
 
@@ -101,122 +102,136 @@ export function CodeLessonLayout({
   }, []);
 
   const handleRun = async () => {
-    if (!incrementRateLimit()) {
-      setParsedError({
-        errorType: 'LimitError',
-        message: 'Daily limit reached · see footer for reset time',
-        line: null,
-        raw: '',
-      });
-      setExecutionPhase('error');
-      return;
-    }
-
-    setExecutionPhase('running');
-    setOutput('');
-    setParsedError(null);
-    setSubmitResults(null);
-
+    if (isExecutingRef.current) return;
+    isExecutingRef.current = true;
     try {
-      const res = await fetch('/api/code/run', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code }),
-      });
-
-      if (!res.ok) {
-        const msg = 'Execution service unavailable';
-        setParsedError({ errorType: 'Error', message: msg, line: null, raw: msg });
+      if (!incrementRateLimit()) {
+        setParsedError({
+          errorType: 'LimitError',
+          message: 'Daily limit reached · see footer for reset time',
+          line: null,
+          raw: '',
+        });
         setExecutionPhase('error');
         return;
       }
 
-      const result = await res.json();
-      const { stdout, stderr, statusId, time, memory } = result;
+      setExecutionPhase('running');
+      setOutput('');
+      setParsedError(null);
+      setSubmitResults(null);
+      setMetrics(null);
 
-      setMetrics({ time: time ?? null, memory: memory ?? null });
+      try {
+        const res = await fetch('/api/code/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code }),
+        });
 
-      if (statusId === 5) {
-        setExecutionPhase('tle');
-      } else if (stderr || (statusId !== 3 && statusId !== 0)) {
-        const errorText = stderr || `Runtime error (status ${statusId})`;
-        setParsedError(parsePythonError(errorText.trim()));
+        if (!res.ok) {
+          const msg = 'Execution service unavailable';
+          setParsedError({ errorType: 'Error', message: msg, line: null, raw: msg });
+          setExecutionPhase('error');
+          return;
+        }
+
+        const result = await res.json() as Judge0RunResult;
+        const { stdout, stderr, statusId, time, memory } = result;
+
+        setMetrics({ time: time ?? null, memory: memory ?? null });
+
+        if (statusId === 5) {
+          setExecutionPhase('tle');
+        } else if (stderr || (statusId !== 3 && statusId !== 0)) {
+          const errorText = stderr || `Runtime error (status ${statusId})`;
+          setParsedError(parsePythonError(errorText.trim()));
+          setExecutionPhase('error');
+        } else {
+          setOutput((stdout ?? '').trim());
+          setExecutionPhase('success');
+        }
+      } catch (err: unknown) {
+        const message = (err as Error).message ?? 'Network error';
+        setParsedError({ errorType: 'Error', message, line: null, raw: message });
         setExecutionPhase('error');
-      } else {
-        setOutput(stdout.trim());
-        setExecutionPhase('success');
       }
-    } catch (err: unknown) {
-      const message = (err as Error).message ?? 'Network error';
-      setParsedError({ errorType: 'Error', message, line: null, raw: message });
-      setExecutionPhase('error');
+    } finally {
+      isExecutingRef.current = false;
     }
   };
 
   const handleSubmit = async () => {
-    if (!testCases || testCases.length === 0 || !entryPoint) return;
-
-    if (!incrementRateLimit()) {
-      setParsedError({
-        errorType: 'LimitError',
-        message: 'Daily limit reached · see footer for reset time',
-        line: null,
-        raw: '',
-      });
-      setExecutionPhase('error');
-      return;
-    }
-
-    setExecutionPhase('submitting');
-    setOutput('');
-    setParsedError(null);
-    setSubmitResults(null);
-
+    if (isExecutingRef.current) return;
+    isExecutingRef.current = true;
     try {
-      const res = await fetch('/api/code/submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, testCases, entryPoint }),
-      });
+      if (!testCases || testCases.length === 0 || !entryPoint) return;
 
-      if (!res.ok) {
-        const msg = 'Submission service unavailable';
-        setParsedError({ errorType: 'Error', message: msg, line: null, raw: msg });
+      if (!incrementRateLimit()) {
+        setParsedError({
+          errorType: 'LimitError',
+          message: 'Daily limit reached · see footer for reset time',
+          line: null,
+          raw: '',
+        });
         setExecutionPhase('error');
         return;
       }
 
-      const result = await res.json();
-      const { tests, allPassed, statusId, stderr, time, memory } = result;
+      setExecutionPhase('submitting');
+      setOutput('');
+      setParsedError(null);
+      setSubmitResults(null);
+      setMetrics(null);
 
-      setMetrics({ time: time ?? null, memory: memory ?? null });
+      try {
+        const res = await fetch('/api/code/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code, testCases, entryPoint }),
+        });
 
-      if (statusId === 5) {
-        setExecutionPhase('tle');
-      } else if (statusId !== 3 || (tests.length === 0 && stderr)) {
-        const errorText = stderr || `Runtime error (status ${statusId})`;
-        setParsedError(parsePythonError(errorText.trim()));
-        setExecutionPhase('error');
-      } else {
-        setSubmitResults(tests);
-        setExecutionPhase(allPassed ? 'submit-pass' : 'submit-fail');
-
-        if (allPassed) {
-          if (isAuthenticated && !isCompleted) {
-            fetch('/api/progress/lesson', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ lessonId, courseId }),
-            }).catch(() => {});
-          }
-          await new Promise(resolve => setTimeout(resolve, 700));
-          router.push(nextHref);
+        if (!res.ok) {
+          const msg = 'Submission service unavailable';
+          setParsedError({ errorType: 'Error', message: msg, line: null, raw: msg });
+          setExecutionPhase('error');
+          return;
         }
+
+        const result = await res.json() as Judge0SubmitResult;
+        const { tests, allPassed, statusId, stderr, time, memory } = result;
+
+        setMetrics({ time: time ?? null, memory: memory ?? null });
+
+        if (statusId === 5) {
+          setExecutionPhase('tle');
+        } else if (statusId !== 3 || (tests.length === 0 && stderr)) {
+          const errorText = stderr || `Runtime error (status ${statusId})`;
+          setParsedError(parsePythonError(errorText.trim()));
+          setExecutionPhase('error');
+        } else {
+          setSubmitResults(tests);
+          setExecutionPhase(allPassed ? 'submit-pass' : 'submit-fail');
+
+          if (allPassed) {
+            if (isAuthenticated && !isCompleted) {
+              fetch('/api/progress/lesson', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ lessonId, courseId }),
+              }).catch(() => {});
+            }
+            await new Promise(resolve => setTimeout(resolve, 700));
+            router.push(nextHref);
+          }
+        }
+      } catch (err: unknown) {
+        const message = (err as Error).message ?? 'Network error';
+        setParsedError({ errorType: 'Error', message, line: null, raw: message });
+        setExecutionPhase('error');
       }
-    } catch (err: unknown) {
-      const message = (err as Error).message ?? 'Network error';
-      setParsedError({ errorType: 'Error', message, line: null, raw: message });
-      setExecutionPhase('error');
+    } finally {
+      isExecutingRef.current = false;
     }
   };
 
