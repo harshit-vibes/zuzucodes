@@ -91,48 +91,6 @@ export async function getCourses(): Promise<Course[]> {
 }
 
 /**
- * Get all courses with modules for sidebar navigation
- */
-export async function getCoursesWithModules(): Promise<CourseWithModules[]> {
-  try {
-    const courses = await sql`
-      SELECT id, title, slug, description, thumbnail_url, outcomes, tag, "order", created_at
-      FROM courses
-      ORDER BY created_at DESC
-    `;
-
-    const coursesWithModules: CourseWithModules[] = [];
-
-    for (const course of courses) {
-      const modules = await sql`
-        SELECT m.id, m.course_id, m.title, m.description, m."order",
-               m.quiz_form, COALESCE(lc.lesson_count, 0) AS lesson_count
-        FROM modules m
-        LEFT JOIN (
-          SELECT module_id, COUNT(*)::INTEGER AS lesson_count
-          FROM lessons GROUP BY module_id
-        ) lc ON lc.module_id = m.id
-        WHERE m.course_id = ${course.id}
-        ORDER BY m."order" ASC
-      `;
-
-      coursesWithModules.push({
-        ...course,
-        modules: (modules as Module[]).map((m) => ({
-          ...m,
-          contentItems: deriveContentItems(m),
-        })),
-      } as CourseWithModules);
-    }
-
-    return coursesWithModules;
-  } catch (error) {
-    console.error('getCoursesWithModules error:', error);
-    return [];
-  }
-}
-
-/**
  * Get course with all modules and their contents
  * Wrapped with React.cache() for per-request deduplication
  */
@@ -210,11 +168,12 @@ export interface LessonData {
 
 /**
  * Get lesson by module and position (1-indexed).
+ * Wrapped with React.cache() for per-request deduplication.
  */
-export async function getLesson(
+export const getLesson = cache(async (
   moduleId: string,
   position: number
-): Promise<LessonData | null> {
+): Promise<LessonData | null> => {
   const lessonIndex = position - 1;
 
   try {
@@ -246,12 +205,13 @@ export async function getLesson(
     console.error('getLesson error:', error);
     return null;
   }
-}
+});
 
 /**
  * Get lesson count for a module.
+ * Wrapped with React.cache() for per-request deduplication.
  */
-export async function getLessonCount(moduleId: string): Promise<number> {
+export const getLessonCount = cache(async (moduleId: string): Promise<number> => {
   try {
     const result = await sql`
       SELECT COUNT(*)::INTEGER AS count FROM lessons WHERE module_id = ${moduleId}
@@ -261,7 +221,7 @@ export async function getLessonCount(moduleId: string): Promise<number> {
     console.error('getLessonCount error:', error);
     return 0;
   }
-}
+});
 
 /**
  * Get quiz form for a module
@@ -383,11 +343,13 @@ export const getDashboardStats = cache(async (userId: string): Promise<Dashboard
       ? Math.round(quizRows.reduce((sum: number, r: any) => sum + r.score_percent, 0) / quizRows.length)
       : null;
 
-    // Streak: union lesson completions + quiz attempts
+    // Streak: union lesson completions + quiz attempts (capped at 366 days — streak can't exceed that)
     const activityDates = await sql`
-      SELECT completed_at FROM user_lesson_progress WHERE user_id = ${userId}
+      SELECT completed_at FROM user_lesson_progress
+      WHERE user_id = ${userId} AND completed_at >= NOW() - INTERVAL '366 days'
       UNION ALL
-      SELECT attempted_at AS completed_at FROM user_quiz_attempts WHERE user_id = ${userId}
+      SELECT attempted_at AS completed_at FROM user_quiz_attempts
+      WHERE user_id = ${userId} AND attempted_at >= NOW() - INTERVAL '366 days'
       ORDER BY completed_at DESC
     `;
 
@@ -457,17 +419,22 @@ export const getResumeData = cache(async (userId: string): Promise<ResumeData | 
     `;
 
     const incompleteIds = incompleteCourses.map((c: any) => c.course_id);
-    const moduleMap = await sql`
+    const incompleteIdSet = new Set<string>(incompleteIds);
+    const moduleRows = await sql`
       SELECT id, course_id FROM modules WHERE course_id = ANY(${incompleteIds})
     `;
+    const moduleMap = new Map<string, string>(
+      (moduleRows as any[]).map((m) => [m.id, m.course_id])
+    );
 
     let targetCourseId: string | null = null;
     let lastActivity: { module_id: string; section_index: number | null } | null = null;
 
     for (const activity of recentActivity) {
-      const mod = moduleMap.find((m: any) => m.id === (activity as any).module_id);
-      if (mod && incompleteIds.includes((mod as any).course_id)) {
-        targetCourseId = (mod as any).course_id;
+      const courseId = moduleMap.get((activity as any).module_id);
+      if (courseId && incompleteIdSet.has(courseId)) {
+        const mod = { course_id: courseId };
+        targetCourseId = mod.course_id;
         lastActivity = {
           module_id: (activity as any).module_id,
           section_index: (activity as any).section_index,

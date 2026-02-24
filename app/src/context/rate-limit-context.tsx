@@ -98,7 +98,6 @@ export function RateLimitProvider({ children }: { children: ReactNode }) {
 
   const refresh = useCallback(async () => {
     setState(prev => ({ ...prev, isSyncing: true }));
-    await new Promise(resolve => setTimeout(resolve, 300));
     const usage = loadUsage();
     setState({
       remaining: Math.max(0, DAILY_LIMIT - usage.count),
