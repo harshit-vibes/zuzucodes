@@ -40,19 +40,28 @@ function saveUsage(usage: StoredUsage): void {
   }
 }
 
-export interface RateLimitState {
-  remaining: number | null;
-  resetAt: number | null;
-  lastSynced: Date | null;
-  isSyncing: boolean;
-}
+// ─── Actions Context (stable refs — never re-renders consumers) ──────────────
 
-interface RateLimitContextValue extends RateLimitState {
-  increment: () => void;
+interface RateLimitActions {
+  /** Returns false if daily limit already reached (no increment). True if incremented. */
+  increment: () => boolean;
   refresh: () => Promise<void>;
 }
 
-const RateLimitContext = createContext<RateLimitContextValue | null>(null);
+const RateLimitActionsContext = createContext<RateLimitActions | null>(null);
+
+// ─── State Context (re-renders on every count/sync change) ───────────────────
+
+export interface RateLimitState {
+  remaining: number | null;
+  resetAt: number | null;
+  isSyncing: boolean;
+  lastSynced: Date | null;
+}
+
+const RateLimitStateContext = createContext<RateLimitState | null>(null);
+
+// ─── Provider ────────────────────────────────────────────────────────────────
 
 export function RateLimitProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<RateLimitState>({
@@ -73,8 +82,9 @@ export function RateLimitProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const increment = useCallback(() => {
+  const increment = useCallback((): boolean => {
     const usage = loadUsage();
+    if (usage.count >= DAILY_LIMIT) return false;
     usage.count += 1;
     saveUsage(usage);
     setState({
@@ -83,6 +93,7 @@ export function RateLimitProvider({ children }: { children: ReactNode }) {
       lastSynced: new Date(),
       isSyncing: false,
     });
+    return true;
   }, []);
 
   const refresh = useCallback(async () => {
@@ -98,14 +109,29 @@ export function RateLimitProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <RateLimitContext.Provider value={{ ...state, increment, refresh }}>
-      {children}
-    </RateLimitContext.Provider>
+    <RateLimitActionsContext.Provider value={{ increment, refresh }}>
+      <RateLimitStateContext.Provider value={state}>
+        {children}
+      </RateLimitStateContext.Provider>
+    </RateLimitActionsContext.Provider>
   );
 }
 
-export function useRateLimit() {
-  const ctx = useContext(RateLimitContext);
-  if (!ctx) throw new Error('useRateLimit must be used within RateLimitProvider');
+// ─── Hooks ───────────────────────────────────────────────────────────────────
+
+export function useRateLimitActions(): RateLimitActions {
+  const ctx = useContext(RateLimitActionsContext);
+  if (!ctx) throw new Error('useRateLimitActions must be used within RateLimitProvider');
   return ctx;
+}
+
+export function useRateLimitState(): RateLimitState {
+  const ctx = useContext(RateLimitStateContext);
+  if (!ctx) throw new Error('useRateLimitState must be used within RateLimitProvider');
+  return ctx;
+}
+
+/** Combined hook — subscribes to state changes. Prefer useRateLimitActions() in hot paths. */
+export function useRateLimit() {
+  return { ...useRateLimitActions(), ...useRateLimitState() };
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRateLimit } from '@/context/rate-limit-context';
+import { useRateLimitActions, useRateLimitState } from '@/context/rate-limit-context';
 
 function formatTimeUntil(resetAt: number): string {
   const now = Math.floor(Date.now() / 1000);
@@ -13,7 +13,8 @@ function formatTimeUntil(resetAt: number): string {
 }
 
 export function RateLimitIndicator() {
-  const { remaining, resetAt, isSyncing, refresh } = useRateLimit();
+  const { remaining, resetAt, isSyncing } = useRateLimitState();
+  const { refresh } = useRateLimitActions();
 
   const countColor =
     remaining === null

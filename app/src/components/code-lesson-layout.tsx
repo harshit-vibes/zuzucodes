@@ -9,7 +9,7 @@ import { OutputPanel, ExecutionPhase } from '@/components/output-panel';
 import { parsePythonError, ParsedError } from '@/lib/python-output';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { UserButton } from '@/components/user-button';
-import { useRateLimit } from '@/context/rate-limit-context';
+import { useRateLimitActions } from '@/context/rate-limit-context';
 
 interface CodeLessonLayoutProps {
   lessonTitle: string;
@@ -28,15 +28,6 @@ interface CodeLessonLayoutProps {
   isCompleted: boolean;
 }
 
-function formatTimeUntil(resetAt: number): string {
-  const now = Math.floor(Date.now() / 1000);
-  const diff = resetAt - now;
-  if (diff <= 0) return 'soon';
-  const h = Math.floor(diff / 3600);
-  const m = Math.floor((diff % 3600) / 60);
-  if (h > 0) return `${h}h ${m}m`;
-  return `${m}m`;
-}
 
 export function CodeLessonLayout({
   lessonTitle,
@@ -55,7 +46,7 @@ export function CodeLessonLayout({
   isCompleted,
 }: CodeLessonLayoutProps) {
   const router = useRouter();
-  const { increment: incrementRateLimit, remaining, resetAt } = useRateLimit();
+  const { increment: incrementRateLimit } = useRateLimitActions();
   const [code, setCode] = useState(savedCode ?? codeTemplate ?? '');
   const [output, setOutput] = useState('');
   const [parsedError, setParsedError] = useState<ParsedError | null>(null);
@@ -104,12 +95,14 @@ export function CodeLessonLayout({
   }, []);
 
   const handleRun = async () => {
-    // Client-side limit guard
-    if (remaining !== null && remaining <= 0) {
-      const msg = resetAt
-        ? `Daily limit reached · resets in ${formatTimeUntil(resetAt)}`
-        : 'Daily limit reached · resets tomorrow';
-      setParsedError({ errorType: 'LimitError', message: msg, line: null, raw: msg });
+    // Limit guard + optimistic increment (reads localStorage directly — always accurate)
+    if (!incrementRateLimit()) {
+      setParsedError({
+        errorType: 'LimitError',
+        message: 'Daily limit reached · see footer for reset time',
+        line: null,
+        raw: '',
+      });
       setExecutionPhase('error');
       return;
     }
@@ -132,9 +125,6 @@ export function CodeLessonLayout({
         setExecutionPhase('error');
         return;
       }
-
-      // Count this request against the daily limit
-      incrementRateLimit();
 
       const result = await res.json();
       const { stdout, stderr, statusId } = result;
