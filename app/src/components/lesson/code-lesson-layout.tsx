@@ -11,12 +11,15 @@ import { ThemeToggle } from '@/components/shared/theme-toggle';
 import { UserButton } from '@/components/shared/user-button';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useRateLimitActions } from '@/context/rate-limit-context';
+import type { TestCase, TestCaseResult } from '@/lib/judge0';
+import type { ExecutionMetrics } from '@/components/lesson/output-panel';
 
 interface CodeLessonLayoutProps {
   lessonTitle: string;
   content: string;
   codeTemplate: string | null;
-  testCode: string | null;
+  testCases: TestCase[] | null;
+  entryPoint: string | null;
   solutionCode: string | null;
   savedCode: string | null;
   lessonId: string;
@@ -34,7 +37,8 @@ export function CodeLessonLayout({
   lessonTitle,
   content,
   codeTemplate,
-  testCode,
+  testCases,
+  entryPoint,
   solutionCode,
   savedCode,
   lessonId,
@@ -53,11 +57,12 @@ export function CodeLessonLayout({
   const [parsedError, setParsedError] = useState<ParsedError | null>(null);
   const [executionPhase, setExecutionPhase] = useState<ExecutionPhase>('idle');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saved'>('idle');
-  const [testPassed, setTestPassed] = useState(false);
   const [activeTab, setActiveTab] = useState<'lesson' | 'code'>('lesson');
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [submitResults, setSubmitResults] = useState<TestCaseResult[] | null>(null);
+  const [metrics, setMetrics] = useState<ExecutionMetrics | null>(null);
 
-  const hasCode = !!(testCode || codeTemplate);
+  const hasCode = !!(testCases || codeTemplate);
   const hasNext = position < lessonCount;
   const hasPrev = position > 1;
   const progress = (position / lessonCount) * 100;
@@ -96,7 +101,6 @@ export function CodeLessonLayout({
   }, []);
 
   const handleRun = async () => {
-    // Limit guard + optimistic increment (reads localStorage directly — always accurate)
     if (!incrementRateLimit()) {
       setParsedError({
         errorType: 'LimitError',
@@ -111,13 +115,13 @@ export function CodeLessonLayout({
     setExecutionPhase('running');
     setOutput('');
     setParsedError(null);
-    setTestPassed(false);
+    setSubmitResults(null);
 
     try {
       const res = await fetch('/api/code/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, testCode }),
+        body: JSON.stringify({ code }),
       });
 
       if (!res.ok) {
@@ -128,30 +132,86 @@ export function CodeLessonLayout({
       }
 
       const result = await res.json();
-      const { stdout, stderr, statusId } = result;
+      const { stdout, stderr, statusId, time, memory } = result;
 
-      // statusId 3 = Accepted, anything else with stderr = error
-      if (stderr || (statusId !== 3 && statusId !== 0)) {
+      setMetrics({ time: time ?? null, memory: memory ?? null });
+
+      if (statusId === 5) {
+        setExecutionPhase('tle');
+      } else if (stderr || (statusId !== 3 && statusId !== 0)) {
         const errorText = stderr || `Runtime error (status ${statusId})`;
         setParsedError(parsePythonError(errorText.trim()));
         setExecutionPhase('error');
-      } else if (testCode) {
-        setTestPassed(true);
-        setExecutionPhase('success');
-
-        if (isAuthenticated && !isCompleted) {
-          fetch('/api/progress/lesson', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ lessonId, courseId }),
-          }).catch(() => {});
-        }
-
-        await new Promise(resolve => setTimeout(resolve, 700));
-        router.push(nextHref);
       } else {
         setOutput(stdout.trim());
         setExecutionPhase('success');
+      }
+    } catch (err: unknown) {
+      const message = (err as Error).message ?? 'Network error';
+      setParsedError({ errorType: 'Error', message, line: null, raw: message });
+      setExecutionPhase('error');
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!testCases || testCases.length === 0 || !entryPoint) return;
+
+    if (!incrementRateLimit()) {
+      setParsedError({
+        errorType: 'LimitError',
+        message: 'Daily limit reached · see footer for reset time',
+        line: null,
+        raw: '',
+      });
+      setExecutionPhase('error');
+      return;
+    }
+
+    setExecutionPhase('submitting');
+    setOutput('');
+    setParsedError(null);
+    setSubmitResults(null);
+
+    try {
+      const res = await fetch('/api/code/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, testCases, entryPoint }),
+      });
+
+      if (!res.ok) {
+        const msg = 'Submission service unavailable';
+        setParsedError({ errorType: 'Error', message: msg, line: null, raw: msg });
+        setExecutionPhase('error');
+        return;
+      }
+
+      const result = await res.json();
+      const { tests, allPassed, statusId, stderr, time, memory } = result;
+
+      setMetrics({ time: time ?? null, memory: memory ?? null });
+
+      if (statusId === 5) {
+        setExecutionPhase('tle');
+      } else if (statusId !== 3 || (tests.length === 0 && stderr)) {
+        const errorText = stderr || `Runtime error (status ${statusId})`;
+        setParsedError(parsePythonError(errorText.trim()));
+        setExecutionPhase('error');
+      } else {
+        setSubmitResults(tests);
+        setExecutionPhase(allPassed ? 'submit-pass' : 'submit-fail');
+
+        if (allPassed) {
+          if (isAuthenticated && !isCompleted) {
+            fetch('/api/progress/lesson', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ lessonId, courseId }),
+            }).catch(() => {});
+          }
+          await new Promise(resolve => setTimeout(resolve, 700));
+          router.push(nextHref);
+        }
       }
     } catch (err: unknown) {
       const message = (err as Error).message ?? 'Network error';
@@ -198,19 +258,35 @@ export function CodeLessonLayout({
           </button>
           <button
             onClick={handleRun}
-            disabled={executionPhase === 'running'}
-            className="flex items-center gap-1 px-2.5 h-6 rounded bg-primary/90 hover:bg-primary text-primary-foreground text-[11px] font-mono disabled:opacity-50 transition-colors"
+            disabled={executionPhase === 'running' || executionPhase === 'submitting'}
+            className="flex items-center gap-1 px-2.5 h-6 rounded border border-border dark:border-zinc-600 text-[11px] font-mono text-muted-foreground hover:text-foreground hover:bg-muted dark:hover:bg-zinc-700 disabled:opacity-50 transition-colors"
           >
             <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24">
               <path d="M8 5v14l11-7z" />
             </svg>
             {executionPhase === 'running' ? 'running···' : 'run'}
           </button>
+          {testCases && testCases.length > 0 && (
+            <button
+              onClick={handleSubmit}
+              disabled={executionPhase === 'running' || executionPhase === 'submitting'}
+              className="flex items-center gap-1 px-2.5 h-6 rounded bg-primary/90 hover:bg-primary text-primary-foreground text-[11px] font-mono disabled:opacity-50 transition-colors"
+            >
+              {executionPhase === 'submitting' ? 'testing···' : 'submit'}
+            </button>
+          )}
         </div>
       </div>
       <div className="flex-1 overflow-hidden flex flex-col min-h-0">
         <CodeEditor value={code} onChange={handleCodeChange} />
-        <OutputPanel phase={executionPhase} output={output} error={parsedError} hasTestCode={!!testCode} />
+        <OutputPanel
+          phase={executionPhase}
+          output={output}
+          error={parsedError}
+          hasTestCases={!!(testCases && testCases.length > 0)}
+          submitResults={submitResults}
+          metrics={metrics}
+        />
       </div>
     </div>
   );
@@ -237,7 +313,7 @@ export function CodeLessonLayout({
 
       {/* Progress + completion */}
       <div className="flex items-center gap-2.5 shrink-0">
-        {isCompleted && !testPassed && (
+        {isCompleted && (
           <div
             className="flex items-center justify-center w-4 h-4 rounded-full bg-success/15 ring-1 ring-success/40"
             title="Lesson complete"
@@ -322,8 +398,8 @@ export function CodeLessonLayout({
             </Link>
           )}
 
-          {/* Code lesson — manual continue (no test) */}
-          {hasCode && !testCode && (
+          {/* Code lesson — manual continue (no test cases) */}
+          {hasCode && !testCases && (
             <Link
               href={nextHref}
               className="flex items-center gap-1.5 px-3 h-7 rounded bg-primary/90 hover:bg-primary text-primary-foreground text-xs font-mono transition-colors"
