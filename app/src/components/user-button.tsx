@@ -44,16 +44,16 @@ export function UserButton() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+        <Button variant="ghost" className="relative h-7 w-7 rounded-md p-0 hover:bg-transparent focus-visible:ring-0">
           {user.image ? (
             <Image
               src={user.image}
               alt={displayName}
               fill
-              className="rounded-full object-cover"
+              className="rounded-md object-cover"
             />
           ) : (
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
+            <div className="flex h-7 w-7 items-center justify-center rounded-md border border-border/60 bg-muted/50 font-mono text-[10px] font-medium tracking-wider text-foreground/60 hover:border-border hover:bg-muted hover:text-foreground transition-colors">
               {initials}
             </div>
           )}

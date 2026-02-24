@@ -204,7 +204,7 @@ export function AppSidebar({
   const isDashboard = !activeCourse;
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-border/50">
+    <Sidebar collapsible="none" className="border-r border-border/50">
       {/* Header with Logo */}
       <SidebarHeader className="border-b border-border/50 px-3 py-3">
         <Link href="/dashboard" className="flex items-center gap-2.5 group">
@@ -333,7 +333,7 @@ export function AppSidebar({
       </SidebarContent>
 
       {/* Footer */}
-      <SidebarFooter className="border-t border-border/40 px-4 py-3">
+      <SidebarFooter className="border-t border-border/40 h-11 flex items-center justify-center px-4">
         <p className="text-[10px] text-muted-foreground text-center">
           &copy; 2026 zuzu.codes
         </p>

@@ -26,7 +26,6 @@ export function LessonCompletion({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ lessonId, courseId }),
       });
-
       if (res.ok) {
         setIsCompleted(true);
         onComplete?.();
@@ -46,7 +45,6 @@ export function LessonCompletion({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ lessonId, courseId }),
       });
-
       if (res.ok) setIsCompleted(false);
     } catch (error) {
       console.error('Error marking lesson incomplete:', error);
@@ -58,18 +56,20 @@ export function LessonCompletion({
   if (isCompleted) {
     return (
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-success/10 text-success">
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span className="text-sm font-medium">Completed</span>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center w-4 h-4 rounded-full bg-success/15 ring-1 ring-success/40">
+            <svg className="w-2.5 h-2.5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <span className="font-mono text-xs text-success/80 tracking-wide">lesson_complete</span>
         </div>
         <button
           onClick={handleMarkIncomplete}
           disabled={isLoading}
-          className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors disabled:opacity-50"
+          className="font-mono text-xs text-muted-foreground/40 hover:text-muted-foreground transition-colors disabled:opacity-50"
         >
-          {isLoading ? 'Updating...' : 'Mark as not done'}
+          {isLoading ? '···' : 'undo'}
         </button>
       </div>
     );
@@ -79,24 +79,19 @@ export function LessonCompletion({
     <button
       onClick={handleMarkComplete}
       disabled={isLoading}
-      className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+      className="flex items-center gap-2.5 group"
     >
-      {isLoading ? (
-        <>
-          <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+      <div className="w-4 h-4 rounded border border-border/60 group-hover:border-primary/60 transition-colors flex items-center justify-center shrink-0">
+        {isLoading && (
+          <svg className="w-2.5 h-2.5 animate-spin text-muted-foreground" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
           </svg>
-          Saving...
-        </>
-      ) : (
-        <>
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-          Mark as Complete
-        </>
-      )}
+        )}
+      </div>
+      <span className="font-mono text-xs text-muted-foreground/60 group-hover:text-muted-foreground transition-colors">
+        {isLoading ? 'saving···' : 'mark_complete()'}
+      </span>
     </button>
   );
 }

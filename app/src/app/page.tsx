@@ -1,5 +1,3 @@
-import { auth } from "@/lib/auth/server";
-import { redirect } from "next/navigation";
 import { Header } from "@/components/landing/header";
 import { HeroSection } from "@/components/landing/hero-section";
 import { ShiftSection } from "@/components/landing/shift-section";
@@ -9,16 +7,7 @@ import { CoursesSection } from "@/components/landing/courses-section";
 import { PricingSection } from "@/components/landing/pricing-section";
 import { Footer } from "@/components/landing/footer";
 
-export default async function HomePage() {
-  // Check if user is authenticated
-  const { session, user } = await auth();
-
-  // Authenticated users go to dashboard
-  if (user) {
-    redirect("/dashboard");
-  }
-
-  // Unauthenticated users see landing page
+export default function HomePage() {
   return (
     <>
       <Header />

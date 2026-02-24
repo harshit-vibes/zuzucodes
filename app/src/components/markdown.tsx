@@ -52,23 +52,26 @@ export function Markdown({ content }: MarkdownProps) {
             const isInline = !className;
             if (isInline) {
               return (
-                <code className="px-1.5 py-0.5 rounded bg-muted text-[0.9em] font-mono text-primary/90 before:content-none after:content-none">
+                <code className="px-1.5 py-0.5 rounded-md bg-zinc-900 text-[0.875em] font-mono text-primary/85 ring-1 ring-zinc-700/50 before:content-none after:content-none">
                   {children}
                 </code>
               );
             }
             return (
-              <code className="font-mono text-sm leading-relaxed">{children}</code>
+              <code className="font-mono text-[0.82rem] leading-relaxed">{children}</code>
             );
           },
           pre: ({ children }) => (
-            <pre className="relative my-6 p-5 rounded-xl bg-[oklch(0.15_0.015_280)] text-[oklch(0.9_0.01_280)] overflow-x-auto border border-[oklch(0.25_0.02_280)]">
-              <div className="absolute top-3 right-3 flex gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full bg-[oklch(0.5_0.15_25)]" />
-                <div className="w-2.5 h-2.5 rounded-full bg-[oklch(0.7_0.15_85)]" />
-                <div className="w-2.5 h-2.5 rounded-full bg-[oklch(0.6_0.15_145)]" />
+            <pre className="relative my-6 rounded-lg bg-zinc-950 text-zinc-200 overflow-x-auto border border-zinc-800 shadow-[inset_0_1px_0_0_oklch(1_0_0/0.05)]">
+              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-zinc-800/80">
+                <div className="flex gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-zinc-600" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-zinc-600" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-zinc-600" />
+                </div>
+                <span className="ml-1 text-[10px] font-mono text-zinc-500 tracking-wider uppercase">python</span>
               </div>
-              {children}
+              <div className="p-4">{children}</div>
             </pre>
           ),
           a: ({ href, children }) => (
@@ -89,22 +92,22 @@ export function Markdown({ content }: MarkdownProps) {
             <hr className="my-10 border-none h-px bg-gradient-to-r from-transparent via-border to-transparent" />
           ),
           table: ({ children }) => (
-            <div className="my-6 overflow-x-auto rounded-xl border border-border">
+            <div className="my-6 overflow-x-auto rounded-lg border border-zinc-800 shadow-sm">
               <table className="min-w-full text-sm">{children}</table>
             </div>
           ),
           thead: ({ children }) => (
-            <thead className="bg-muted/50 border-b border-border">
+            <thead className="bg-zinc-900 border-b border-zinc-800">
               {children}
             </thead>
           ),
           th: ({ children }) => (
-            <th className="px-4 py-3 text-left font-semibold text-foreground">
+            <th className="px-4 py-2.5 text-left font-mono text-[11px] text-zinc-400 tracking-wider uppercase">
               {children}
             </th>
           ),
           td: ({ children }) => (
-            <td className="px-4 py-3 border-t border-border/50">{children}</td>
+            <td className="px-4 py-2.5 text-sm border-t border-zinc-800/60 text-foreground/80">{children}</td>
           ),
           img: ({ src, alt }) => (
             <span className="block my-6 rounded-xl overflow-hidden border border-border shadow-sm">

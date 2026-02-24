@@ -2,39 +2,14 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import { Breadcrumb } from '@/components/breadcrumb';
+import { useRouter } from 'next/navigation';
 import { Markdown } from '@/components/markdown';
-import { LessonCompletion } from '@/components/lesson-completion';
 import { CodeEditor } from '@/components/code-editor';
-import { OutputPanel } from '@/components/output-panel';
-
-// Pyodide singleton — persists across lesson navigations
-let pyodideInstance: any = null;
-let pyodideLoading: Promise<any> | null = null;
-
-async function getPyodide(): Promise<any> {
-  if (pyodideInstance) return pyodideInstance;
-  if (pyodideLoading) return pyodideLoading;
-
-  pyodideLoading = (async () => {
-    // Inject CDN script if not present
-    if (!(window as any).loadPyodide) {
-      await new Promise<void>((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/pyodide/v0.27.0/full/pyodide.js';
-        script.onload = () => resolve();
-        script.onerror = () => reject(new Error('Failed to load Pyodide script'));
-        document.head.appendChild(script);
-      });
-    }
-    pyodideInstance = await (window as any).loadPyodide({
-      indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.27.0/full/',
-    });
-    return pyodideInstance;
-  })();
-
-  return pyodideLoading;
-}
+import { OutputPanel, ExecutionPhase } from '@/components/output-panel';
+import { parsePythonError, ParsedError } from '@/lib/python-output';
+import { ThemeToggle } from '@/components/theme-toggle';
+import { UserButton } from '@/components/user-button';
+import { useRateLimit } from '@/context/rate-limit-context';
 
 interface CodeLessonLayoutProps {
   lessonTitle: string;
@@ -53,6 +28,16 @@ interface CodeLessonLayoutProps {
   isCompleted: boolean;
 }
 
+function formatTimeUntil(resetAt: number): string {
+  const now = Math.floor(Date.now() / 1000);
+  const diff = resetAt - now;
+  if (diff <= 0) return 'soon';
+  const h = Math.floor(diff / 3600);
+  const m = Math.floor((diff % 3600) / 60);
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
+}
+
 export function CodeLessonLayout({
   lessonTitle,
   content,
@@ -69,18 +54,27 @@ export function CodeLessonLayout({
   isAuthenticated,
   isCompleted,
 }: CodeLessonLayoutProps) {
+  const router = useRouter();
+  const { increment: incrementRateLimit, remaining, resetAt } = useRateLimit();
   const [code, setCode] = useState(savedCode ?? codeTemplate ?? '');
   const [output, setOutput] = useState('');
-  const [hasError, setHasError] = useState(false);
-  const [isRunning, setIsRunning] = useState(false);
+  const [parsedError, setParsedError] = useState<ParsedError | null>(null);
+  const [executionPhase, setExecutionPhase] = useState<ExecutionPhase>('idle');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saved'>('idle');
   const [testPassed, setTestPassed] = useState(false);
   const [activeTab, setActiveTab] = useState<'lesson' | 'code'>('lesson');
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const hasCode = !!(testCode || codeTemplate);
   const hasNext = position < lessonCount;
   const hasPrev = position > 1;
   const progress = (position / lessonCount) * 100;
+
+  const nextHref = hasNext
+    ? `/dashboard/course/${courseId}/${moduleId}/lesson/${position + 1}`
+    : `/dashboard/course/${courseId}/${moduleId}/quiz`;
+
+  const prevHref = `/dashboard/course/${courseId}/${moduleId}/lesson/${position - 1}`;
 
   // Auto-save: 1500ms debounce
   const handleCodeChange = useCallback((val: string) => {
@@ -98,12 +92,11 @@ export function CodeLessonLayout({
         setSaveStatus('saved');
         setTimeout(() => setSaveStatus('idle'), 2000);
       } catch {
-        // silently swallow — user's in-memory code is preserved
+        // silently swallow — in-memory code is preserved
       }
     }, 1500);
   }, [isAuthenticated, lessonId]);
 
-  // Cleanup debounce timer on unmount
   useEffect(() => {
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
@@ -111,234 +104,286 @@ export function CodeLessonLayout({
   }, []);
 
   const handleRun = async () => {
-    setIsRunning(true);
+    // Client-side limit guard
+    if (remaining !== null && remaining <= 0) {
+      const msg = resetAt
+        ? `Daily limit reached · resets in ${formatTimeUntil(resetAt)}`
+        : 'Daily limit reached · resets tomorrow';
+      setParsedError({ errorType: 'LimitError', message: msg, line: null, raw: msg });
+      setExecutionPhase('error');
+      return;
+    }
+
+    setExecutionPhase('running');
     setOutput('');
-    setHasError(false);
+    setParsedError(null);
     setTestPassed(false);
 
     try {
-      const pyodide = await getPyodide();
+      const res = await fetch('/api/code/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, testCode }),
+      });
 
-      let stdout = '';
-      let stderr = '';
-      pyodide.setStdout({ batched: (text: string) => { stdout += text + '\n'; } });
-      pyodide.setStderr({ batched: (text: string) => { stderr += text + '\n'; } });
+      if (!res.ok) {
+        const msg = 'Execution service unavailable';
+        setParsedError({ errorType: 'Error', message: msg, line: null, raw: msg });
+        setExecutionPhase('error');
+        return;
+      }
 
-      await pyodide.runPythonAsync(testCode ? `${code}\n\n${testCode}` : code);
+      // Count this request against the daily limit
+      incrementRateLimit();
 
-      if (stderr) {
-        setOutput(stderr.trim());
-        setHasError(true);
+      const result = await res.json();
+      const { stdout, stderr, statusId } = result;
+
+      // statusId 3 = Accepted, anything else with stderr = error
+      if (stderr || (statusId !== 3 && statusId !== 0)) {
+        const errorText = stderr || `Runtime error (status ${statusId})`;
+        setParsedError(parsePythonError(errorText.trim()));
+        setExecutionPhase('error');
       } else if (testCode) {
-        setOutput('All tests passed!');
         setTestPassed(true);
-        if (isAuthenticated) {
+        setExecutionPhase('success');
+
+        if (isAuthenticated && !isCompleted) {
           fetch('/api/progress/lesson', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ lessonId, courseId }),
           }).catch(() => {});
         }
+
+        await new Promise(resolve => setTimeout(resolve, 700));
+        router.push(nextHref);
       } else {
-        setOutput(stdout.trim() || '(no output)');
+        setOutput(stdout.trim());
+        setExecutionPhase('success');
       }
     } catch (err: unknown) {
-      setOutput((err as any)?.message ?? String(err));
-      setHasError(true);
-    } finally {
-      setIsRunning(false);
+      const message = (err as Error).message ?? 'Network error';
+      setParsedError({ errorType: 'Error', message, line: null, raw: message });
+      setExecutionPhase('error');
     }
   };
 
-  const breadcrumbs = [
-    { label: 'Dashboard', href: '/dashboard' },
-    { label: moduleTitle },
-  ];
-
+  // ─── Prose Pane ─────────────────────────────────────────────────────────────
   const ProsePane = (
-    <div className="overflow-y-auto px-8 py-10">
-      {/* Progress */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
+    <div className="h-full overflow-y-auto">
+      <div className="px-8 pt-8 pb-12">
+        <h1 className="text-2xl md:text-[1.75rem] font-semibold tracking-tight leading-tight text-foreground mb-8">
+          {lessonTitle}
+        </h1>
+        <div className="prose-container">
+          {content ? (
+            <Markdown content={content} />
+          ) : (
+            <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
+              <p className="text-muted-foreground">No content available yet.</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  // ─── Code Pane ──────────────────────────────────────────────────────────────
+  const CodePane = (
+    <div className="flex flex-col flex-1 overflow-hidden">
+      {/* Editor toolbar */}
+      <div className="shrink-0 h-9 flex items-center justify-between px-3 bg-muted/50 dark:bg-zinc-800 border-b border-border dark:border-zinc-700">
+        <span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">editor</span>
+        <div className="flex items-center gap-2">
+          {saveStatus === 'saved' && (
+            <span className="font-mono text-[10px] text-muted-foreground">saved</span>
+          )}
+          <button
+            onClick={() => solutionCode && handleCodeChange(solutionCode)}
+            className="px-2.5 h-6 rounded border border-border dark:border-zinc-600 text-[11px] font-mono text-muted-foreground hover:text-foreground hover:border-foreground/30 hover:bg-muted dark:hover:bg-zinc-700 transition-colors"
+          >
+            solution
+          </button>
+          <button
+            onClick={handleRun}
+            disabled={executionPhase === 'running'}
+            className="flex items-center gap-1 px-2.5 h-6 rounded bg-primary/90 hover:bg-primary text-primary-foreground text-[11px] font-mono disabled:opacity-50 transition-colors"
+          >
+            <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+            {executionPhase === 'running' ? 'running···' : 'run'}
+          </button>
+        </div>
+      </div>
+      <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+        <CodeEditor value={code} onChange={handleCodeChange} />
+        <OutputPanel phase={executionPhase} output={output} error={parsedError} hasTestCode={!!testCode} />
+      </div>
+    </div>
+  );
+
+  // ─── Unified Header ─────────────────────────────────────────────────────────
+  const Header = (
+    <header className="shrink-0 h-14 flex items-center gap-3 px-4 border-b border-border/50 bg-background/95 backdrop-blur-sm">
+
+      {/* Back to dashboard */}
+      <Link
+        href="/dashboard"
+        className="flex items-center justify-center w-7 h-7 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground shrink-0"
+        title="Back to dashboard"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
+        </svg>
+      </Link>
+
+      <div className="w-px h-5 bg-border/50 shrink-0" />
+
+      {/* Lesson path */}
+      <div className="flex-1 flex items-center gap-2 min-w-0 overflow-hidden">
+        <span className="font-mono text-[11px] text-muted-foreground/50 tracking-wider uppercase hidden sm:block shrink-0">
+          {moduleTitle}
+        </span>
+        <span className="text-border/40 hidden sm:block shrink-0 text-xs">/</span>
+        <span className="text-sm font-medium text-foreground truncate">
+          {lessonTitle}
+        </span>
+      </div>
+
+      {/* Progress + completion */}
+      <div className="flex items-center gap-2.5 shrink-0">
+        {isCompleted && !testPassed && (
           <div
-            className="h-full bg-primary transition-all duration-500"
+            className="flex items-center justify-center w-4 h-4 rounded-full bg-success/15 ring-1 ring-success/40"
+            title="Lesson complete"
+          >
+            <svg className="w-2.5 h-2.5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+        )}
+        <div className="w-16 h-0.5 bg-border/40 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-primary/70 rounded-full transition-all duration-700"
             style={{ width: `${progress}%` }}
           />
         </div>
-        <span className="label-mono text-muted-foreground text-sm flex-shrink-0">
+        <span className="font-mono text-[11px] text-muted-foreground/50 tabular-nums">
           {position}/{lessonCount}
         </span>
       </div>
 
-      {/* Title */}
-      <h1 className="text-2xl md:text-3xl font-semibold tracking-tight leading-tight mb-8">
-        {lessonTitle}
-      </h1>
+      <div className="w-px h-5 bg-border/50 shrink-0" />
 
-      {/* Content */}
-      <div className="prose-container">
-        {content ? (
-          <Markdown content={content} />
-        ) : (
-          <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
-            <p className="text-muted-foreground">No content available yet.</p>
-          </div>
-        )}
+      {/* Theme + user */}
+      <div className="flex items-center gap-1.5 shrink-0">
+        <ThemeToggle />
+        {isAuthenticated && <UserButton />}
       </div>
 
-      {/* Completion */}
-      {isAuthenticated && !testCode && (
-        <div className="mt-12 pt-8 border-t border-border/50">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div>
-              <h3 className="font-medium text-foreground mb-1">
-                {isCompleted ? 'Lesson Complete!' : 'Finished this lesson?'}
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {isCompleted
-                  ? 'Great progress! Continue to the next lesson.'
-                  : 'Mark it complete to track your progress.'}
-              </p>
-            </div>
-            <LessonCompletion
-              lessonId={lessonId}
-              courseId={courseId}
-              isInitiallyCompleted={isCompleted}
-            />
-          </div>
-        </div>
-      )}
-    </div>
+    </header>
   );
 
-  const CodePane = (
-    <div className="flex flex-col flex-1 overflow-hidden">
-      {/* Editor toolbar */}
-      <div className="shrink-0 flex items-center justify-between px-3 py-2 border-b border-border/50 bg-zinc-900">
-        <span className="text-xs font-mono text-muted-foreground">Python</span>
-        <div className="flex items-center gap-2">
-          {saveStatus === 'saved' && (
-            <span className="text-xs text-muted-foreground transition-opacity">Saved</span>
-          )}
-          {solutionCode && (
-            <button
-              onClick={() => handleCodeChange(solutionCode)}
-              className="px-3 py-1 rounded border border-border text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            >
-              Show Answer
-            </button>
-          )}
-          <button
-            onClick={handleRun}
-            disabled={isRunning}
-            className="flex items-center gap-1.5 px-3 py-1 rounded bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
+  // ─── Unified Footer ──────────────────────────────────────────────────────────
+  const Footer = (
+    <footer className="shrink-0 bg-muted/50 dark:bg-zinc-900 border-t border-border dark:border-zinc-800">
+      <div className="h-11 px-4 flex items-center justify-between gap-3">
+
+        {/* Left: prev */}
+        {hasPrev ? (
+          <Link
+            href={prevHref}
+            className="flex items-center gap-1.5 px-2.5 h-7 rounded text-xs font-mono text-muted-foreground hover:text-foreground hover:bg-muted dark:hover:bg-zinc-800 transition-colors shrink-0"
           >
-            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M8 5v14l11-7z" />
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            {isRunning ? 'Running\u2026' : 'Run'}
-          </button>
+            prev
+          </Link>
+        ) : (
+          <div className="shrink-0 w-14" />
+        )}
+
+        {/* Center: lesson dots */}
+        <div className="flex items-center gap-1.5">
+          {Array.from({ length: lessonCount }, (_, i) => (
+            <Link
+              key={i}
+              href={`/dashboard/course/${courseId}/${moduleId}/lesson/${i + 1}`}
+              className={`block rounded-full transition-all ${
+                i + 1 === position
+                  ? 'bg-primary w-5 h-1.5'
+                  : i + 1 < position
+                  ? 'bg-muted-foreground/50 w-1.5 h-1.5 hover:bg-muted-foreground/70'
+                  : 'bg-muted-foreground/20 w-1.5 h-1.5 hover:bg-muted-foreground/40'
+              }`}
+            />
+          ))}
         </div>
-      </div>
 
-      {/* Editor */}
-      <div className="flex-1 overflow-hidden flex flex-col min-h-0">
-        <CodeEditor value={code} onChange={handleCodeChange} />
-        <OutputPanel output={output} isRunning={isRunning} hasError={hasError} />
-      </div>
-    </div>
-  );
+        {/* Right: actions */}
+        <div className="flex items-center gap-2 shrink-0">
 
-  const BottomNav = (
-    <nav className="shrink-0 bg-background/95 backdrop-blur-sm border-t border-border/50">
-      <div className="container mx-auto px-6 py-4">
-        <div className="flex items-center justify-between gap-4">
-          {hasPrev ? (
+          {/* Theory lesson — no code — just navigate */}
+          {!hasCode && (
             <Link
-              href={`/dashboard/course/${courseId}/${moduleId}/lesson/${position - 1}`}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-border text-sm font-medium hover:bg-muted transition-colors group"
+              href={nextHref}
+              className="flex items-center gap-1.5 px-3 h-7 rounded bg-primary/90 hover:bg-primary text-primary-foreground text-xs font-mono transition-colors"
             >
-              <svg className="w-4 h-4 text-muted-foreground group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              <span className="hidden sm:inline">Previous</span>
-            </Link>
-          ) : (
-            <div />
-          )}
-
-          <div className="hidden sm:flex items-center gap-1.5">
-            {Array.from({ length: lessonCount }, (_, i) => (
-              <Link
-                key={i}
-                href={`/dashboard/course/${courseId}/${moduleId}/lesson/${i + 1}`}
-                className={`block rounded-full transition-all ${
-                  i + 1 === position
-                    ? 'bg-primary w-6 h-2'
-                    : i + 1 < position
-                    ? 'bg-primary/40 w-2 h-2 hover:bg-primary/60'
-                    : 'bg-muted-foreground/30 w-2 h-2 hover:bg-muted-foreground/50'
-                }`}
-              />
-            ))}
-          </div>
-
-          {hasNext ? (
-            <Link
-              href={`/dashboard/course/${courseId}/${moduleId}/lesson/${position + 1}`}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors group"
-            >
-              <span>Next</span>
-              <svg className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </Link>
-          ) : (
-            <Link
-              href={`/dashboard/course/${courseId}/${moduleId}/quiz`}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors group"
-            >
-              <span>Take Quiz</span>
-              <svg className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              {hasNext ? 'continue' : 'take quiz'}
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </Link>
           )}
+
+          {/* Code lesson — manual continue (no test) */}
+          {hasCode && !testCode && (
+            <Link
+              href={nextHref}
+              className="flex items-center gap-1.5 px-3 h-7 rounded bg-primary/90 hover:bg-primary text-primary-foreground text-xs font-mono transition-colors"
+            >
+              {hasNext ? 'continue' : 'take quiz'}
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
+          )}
+
         </div>
       </div>
-    </nav>
+    </footer>
   );
 
+  // ─── Layout ─────────────────────────────────────────────────────────────────
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
-      {/* Header */}
-      <header className="shrink-0 border-b border-border/50 bg-background/95 backdrop-blur-sm">
-        <div className="container mx-auto px-6 py-4">
-          <Breadcrumb items={breadcrumbs} />
-        </div>
-      </header>
+    <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+
+      {Header}
 
       {/* Mobile: tab bar */}
-      <div className="md:hidden shrink-0 flex border-b border-border/50">
+      <div className="md:hidden shrink-0 flex border-b border-border bg-muted/50 dark:bg-zinc-900">
         <button
           onClick={() => setActiveTab('lesson')}
-          className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
+          className={`flex-1 py-2.5 text-xs font-mono tracking-wide transition-colors ${
             activeTab === 'lesson'
-              ? 'text-primary border-b-2 border-primary'
+              ? 'text-primary border-b border-primary'
               : 'text-muted-foreground hover:text-foreground'
           }`}
         >
-          Lesson
+          lesson
         </button>
         <button
           onClick={() => setActiveTab('code')}
-          className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
+          className={`flex-1 py-2.5 text-xs font-mono tracking-wide transition-colors ${
             activeTab === 'code'
-              ? 'text-primary border-b-2 border-primary'
+              ? 'text-primary border-b border-primary'
               : 'text-muted-foreground hover:text-foreground'
           }`}
         >
-          Code
+          code
         </button>
       </div>
 
@@ -349,15 +394,16 @@ export function CodeLessonLayout({
 
       {/* Desktop: split pane */}
       <div className="hidden md:flex flex-1 overflow-hidden">
-        <div className="flex-1 overflow-y-auto border-r border-border/50">
+        <div className="w-[48%] border-r border-border/50 overflow-hidden flex flex-col">
           {ProsePane}
         </div>
-        <div className="flex-1 flex flex-col overflow-hidden bg-zinc-950">
+        <div className="flex-1 flex flex-col overflow-hidden bg-background dark:bg-zinc-950">
           {CodePane}
         </div>
       </div>
 
-      {BottomNav}
+      {Footer}
+
     </div>
   );
 }
