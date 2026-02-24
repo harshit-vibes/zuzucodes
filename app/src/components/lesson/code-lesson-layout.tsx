@@ -11,7 +11,7 @@ import { ThemeToggle } from '@/components/shared/theme-toggle';
 import { UserButton } from '@/components/shared/user-button';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useRateLimitActions } from '@/context/rate-limit-context';
-import type { TestCase, TestCaseResult, Judge0RunResult, Judge0SubmitResult } from '@/lib/judge0';
+import type { TestCase, TestCaseResult, Judge0RunResult, Judge0TestsResult } from '@/lib/judge0';
 import type { ExecutionMetrics } from '@/components/lesson/output-panel';
 
 interface CodeLessonLayoutProps {
@@ -60,7 +60,8 @@ export function CodeLessonLayout({
   const [activeTab, setActiveTab] = useState<'lesson' | 'code'>('lesson');
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isExecutingRef = useRef(false);
-  const [submitResults, setSubmitResults] = useState<TestCaseResult[] | null>(null);
+  const [testResults, setTestResults] = useState<TestCaseResult[] | null>(null);
+  const [hasRun, setHasRun] = useState(false);
   const [metrics, setMetrics] = useState<ExecutionMetrics | null>(null);
 
   const hasCode = !!(testCases || codeTemplate);
@@ -119,101 +120,61 @@ export function CodeLessonLayout({
       setExecutionPhase('running');
       setOutput('');
       setParsedError(null);
-      setSubmitResults(null);
+      setTestResults(null);
       setMetrics(null);
 
       try {
-        const res = await fetch('/api/code/run', {
+        const hasTests = !!(testCases && testCases.length > 0 && entryPoint);
+
+        const runPromise = fetch('/api/code/run', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ code }),
         });
 
-        if (!res.ok) {
+        const testPromise = hasTests
+          ? fetch('/api/code/test', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ code, testCases, entryPoint }),
+            })
+          : null;
+
+        const [runRes, testRes] = await Promise.all([runPromise, testPromise ?? Promise.resolve(null)]);
+
+        if (!runRes.ok) {
           const msg = 'Execution service unavailable';
           setParsedError({ errorType: 'Error', message: msg, line: null, raw: msg });
           setExecutionPhase('error');
           return;
         }
 
-        const result = await res.json() as Judge0RunResult;
-        const { stdout, stderr, statusId, time, memory } = result;
+        const runResult = await runRes.json() as Judge0RunResult;
+        const { stdout, stderr, statusId, time, memory } = runResult;
 
         setMetrics({ time: time ?? null, memory: memory ?? null });
+        setHasRun(true);
 
         if (statusId === 5) {
           setExecutionPhase('tle');
-        } else if (stderr || (statusId !== 3 && statusId !== 0)) {
+          return;
+        }
+
+        if (stderr || (statusId !== 3 && statusId !== 0)) {
           const errorText = stderr || `Runtime error (status ${statusId})`;
           setParsedError(parsePythonError(errorText.trim()));
-          setExecutionPhase('error');
-        } else {
-          setOutput((stdout ?? '').trim());
-          setExecutionPhase('success');
-        }
-      } catch (err: unknown) {
-        const message = (err as Error).message ?? 'Network error';
-        setParsedError({ errorType: 'Error', message, line: null, raw: message });
-        setExecutionPhase('error');
-      }
-    } finally {
-      isExecutingRef.current = false;
-    }
-  };
-
-  const handleSubmit = async () => {
-    if (isExecutingRef.current) return;
-    isExecutingRef.current = true;
-    try {
-      if (!testCases || testCases.length === 0 || !entryPoint) return;
-
-      if (!incrementRateLimit()) {
-        setParsedError({
-          errorType: 'LimitError',
-          message: 'Daily limit reached · see footer for reset time',
-          line: null,
-          raw: '',
-        });
-        setExecutionPhase('error');
-        return;
-      }
-
-      setExecutionPhase('submitting');
-      setOutput('');
-      setParsedError(null);
-      setSubmitResults(null);
-      setMetrics(null);
-
-      try {
-        const res = await fetch('/api/code/submit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code, testCases, entryPoint }),
-        });
-
-        if (!res.ok) {
-          const msg = 'Submission service unavailable';
-          setParsedError({ errorType: 'Error', message: msg, line: null, raw: msg });
           setExecutionPhase('error');
           return;
         }
 
-        const result = await res.json() as Judge0SubmitResult;
-        const { tests, allPassed, statusId, stderr, time, memory } = result;
+        setOutput((stdout ?? '').trim());
 
-        setMetrics({ time: time ?? null, memory: memory ?? null });
+        if (testRes && testRes.ok) {
+          const testResult = await testRes.json() as Judge0TestsResult;
+          setTestResults(testResult.tests);
+          setExecutionPhase(testResult.allPassed ? 'run-pass' : 'run-fail');
 
-        if (statusId === 5) {
-          setExecutionPhase('tle');
-        } else if (statusId !== 3 || (tests.length === 0 && stderr)) {
-          const errorText = stderr || `Runtime error (status ${statusId})`;
-          setParsedError(parsePythonError(errorText.trim()));
-          setExecutionPhase('error');
-        } else {
-          setSubmitResults(tests);
-          setExecutionPhase(allPassed ? 'submit-pass' : 'submit-fail');
-
-          if (allPassed) {
+          if (testResult.allPassed) {
             if (isAuthenticated && !isCompleted) {
               fetch('/api/progress/lesson', {
                 method: 'POST',
@@ -224,6 +185,9 @@ export function CodeLessonLayout({
             await new Promise(resolve => setTimeout(resolve, 700));
             router.push(nextHref);
           }
+        } else {
+          // No test cases or test service unavailable — show console output only
+          setExecutionPhase('run-pass');
         }
       } catch (err: unknown) {
         const message = (err as Error).message ?? 'Network error';
@@ -234,6 +198,7 @@ export function CodeLessonLayout({
       isExecutingRef.current = false;
     }
   };
+
 
   // ─── Prose Pane ─────────────────────────────────────────────────────────────
   const ProsePane = (
@@ -273,7 +238,7 @@ export function CodeLessonLayout({
           </button>
           <button
             onClick={handleRun}
-            disabled={executionPhase === 'running' || executionPhase === 'submitting'}
+            disabled={executionPhase === 'running'}
             className="flex items-center gap-1 px-2.5 h-6 rounded border border-border dark:border-zinc-600 text-[11px] font-mono text-muted-foreground hover:text-foreground hover:bg-muted dark:hover:bg-zinc-700 disabled:opacity-50 transition-colors"
           >
             <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24">
@@ -281,15 +246,6 @@ export function CodeLessonLayout({
             </svg>
             {executionPhase === 'running' ? 'running···' : 'run'}
           </button>
-          {testCases && testCases.length > 0 && (
-            <button
-              onClick={handleSubmit}
-              disabled={executionPhase === 'running' || executionPhase === 'submitting'}
-              className="flex items-center gap-1 px-2.5 h-6 rounded bg-primary/90 hover:bg-primary text-primary-foreground text-[11px] font-mono disabled:opacity-50 transition-colors"
-            >
-              {executionPhase === 'submitting' ? 'testing···' : 'submit'}
-            </button>
-          )}
         </div>
       </div>
       <div className="flex-1 overflow-hidden flex flex-col min-h-0">
@@ -299,7 +255,8 @@ export function CodeLessonLayout({
           output={output}
           error={parsedError}
           hasTestCases={!!(testCases && testCases.length > 0)}
-          submitResults={submitResults}
+          hasRun={hasRun}
+          testResults={testResults}
           metrics={metrics}
         />
       </div>
