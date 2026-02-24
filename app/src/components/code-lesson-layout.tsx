@@ -9,6 +9,7 @@ import { OutputPanel, ExecutionPhase } from '@/components/output-panel';
 import { parsePythonError, ParsedError } from '@/lib/python-output';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { UserButton } from '@/components/user-button';
+import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useRateLimitActions } from '@/context/rate-limit-context';
 
 interface CodeLessonLayoutProps {
@@ -218,16 +219,8 @@ export function CodeLessonLayout({
   const Header = (
     <header className="shrink-0 h-14 flex items-center gap-3 px-4 border-b border-border/50 bg-background/95 backdrop-blur-sm">
 
-      {/* Back to dashboard */}
-      <Link
-        href="/dashboard"
-        className="flex items-center justify-center w-7 h-7 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground shrink-0"
-        title="Back to dashboard"
-      >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
-        </svg>
-      </Link>
+      {/* Sidebar toggle */}
+      <SidebarTrigger className="flex items-center justify-center w-7 h-7 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground shrink-0" />
 
       <div className="w-px h-5 bg-border/50 shrink-0" />
 

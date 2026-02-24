@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { cn, getUniqueTags, titleCase } from "@/lib/utils";
 import type { Course, CourseProgress } from "@/lib/data";
-import { CourseOverviewDialog } from "./course-overview-dialog";
 
 const STATUS_ORDER = { in_progress: 0, not_started: 1, completed: 2 } as const;
 
@@ -18,7 +18,6 @@ export function CourseGrid({
 }) {
   const tags = getUniqueTags(courses);
   const [activeTag, setActiveTag] = useState<string | null>(null);
-  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
 
   const filtered = (activeTag ? courses.filter((c) => c.tag === activeTag) : [...courses]).sort(
     (a, b) => {
@@ -72,10 +71,10 @@ export function CourseGrid({
             status === "completed" ? "Review" : status === "in_progress" ? "Continue" : "Start";
 
           return (
-            <button
+            <Link
               key={course.id}
-              onClick={() => setSelectedCourse(course)}
-              className="group relative rounded-xl border bg-card p-5 transition-all duration-200 hover:border-primary/50 hover:shadow-sm text-left w-full"
+              href={`/dashboard/course/${course.id}`}
+              className="group relative rounded-xl border bg-card p-5 transition-all duration-200 hover:border-primary/50 hover:shadow-sm text-left w-full block"
             >
               <div className="absolute left-0 top-4 bottom-4 w-1 rounded-full bg-primary" />
               <div className="pl-4">
@@ -125,23 +124,10 @@ export function CourseGrid({
                   </span>
                 </div>
               </div>
-            </button>
+            </Link>
           );
         })}
       </div>
-
-      {/* Course overview dialog — rendered once, keyed by selected course */}
-      {selectedCourse && (
-        <CourseOverviewDialog
-          key={selectedCourse.id}
-          course={selectedCourse}
-          courseProgress={courseProgress[selectedCourse.id]}
-          open={!!selectedCourse}
-          onOpenChange={(open) => {
-            if (!open) setSelectedCourse(null);
-          }}
-        />
-      )}
     </>
   );
 }

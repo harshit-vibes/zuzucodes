@@ -286,6 +286,33 @@ export async function getUserCode(userId: string, lessonId: string): Promise<str
   }
 }
 
+/**
+ * Batch-fetch lesson titles for a set of modules. Returns them grouped by moduleId.
+ */
+export async function getLessonsForCourse(
+  moduleIds: string[]
+): Promise<Record<string, { id: string; lesson_index: number; title: string }[]>> {
+  if (moduleIds.length === 0) return {};
+  try {
+    const rows = await sql`
+      SELECT id, module_id, lesson_index, title
+      FROM lessons
+      WHERE module_id = ANY(${moduleIds})
+      ORDER BY module_id, lesson_index
+    `;
+    const result: Record<string, { id: string; lesson_index: number; title: string }[]> = {};
+    for (const row of rows) {
+      const r = row as { id: string; module_id: string; lesson_index: number; title: string };
+      if (!result[r.module_id]) result[r.module_id] = [];
+      result[r.module_id].push({ id: r.id, lesson_index: r.lesson_index, title: r.title });
+    }
+    return result;
+  } catch (error) {
+    console.error('getLessonsForCourse error:', error);
+    return {};
+  }
+}
+
 // ========================================
 // DASHBOARD STATS
 // ========================================
