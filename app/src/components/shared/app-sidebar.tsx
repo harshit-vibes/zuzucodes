@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import {
   BookOpen,
   ChevronLeft,
@@ -67,7 +67,7 @@ function parseDashboardPath(pathname: string) {
 // Module accordion item
 // ============================================
 
-function ModuleSection({
+const ModuleSection = memo(function ModuleSection({
   module,
   courseId,
   activeModuleId,
@@ -149,7 +149,7 @@ function ModuleSection({
       </div>
     </div>
   );
-}
+});
 
 // ============================================
 // Sidebar stats (compact 2x2 grid)

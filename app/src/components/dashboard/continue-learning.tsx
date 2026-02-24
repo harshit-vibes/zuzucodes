@@ -26,6 +26,7 @@ export function ContinueLearning({ data }: ContinueLearningProps) {
               src={data.course.thumbnail_url}
               alt={data.course.title}
               fill
+              sizes="(max-width: 640px) 64px, 80px"
               className="object-cover"
             />
           ) : (

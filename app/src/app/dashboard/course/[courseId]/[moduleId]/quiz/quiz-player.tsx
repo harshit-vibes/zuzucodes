@@ -60,11 +60,13 @@ export function QuizPlayer({
     }
   }, [storageKey, showPreviouslyPassed]);
 
-  // Persist state on change
+  // Persist state on change (debounced to avoid thrashing on rapid answer changes)
   useEffect(() => {
-    if (Object.keys(answers).length > 0 || currentQuestion > 0) {
+    if (Object.keys(answers).length === 0 && currentQuestion === 0) return;
+    const timer = setTimeout(() => {
       localStorage.setItem(storageKey, JSON.stringify({ answers, currentQuestion }));
-    }
+    }, 300);
+    return () => clearTimeout(timer);
   }, [answers, currentQuestion, storageKey]);
 
   const question = questions[currentQuestion];
