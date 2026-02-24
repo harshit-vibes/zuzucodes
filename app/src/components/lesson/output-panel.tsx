@@ -40,7 +40,7 @@ function MetricsBadge({ metrics }: { metrics: ExecutionMetrics }) {
   );
 }
 
-function HeaderLabel({ phase, hasTestCases }: { phase: ExecutionPhase; hasTestCases: boolean }) {
+function HeaderLabel({ phase }: { phase: ExecutionPhase }) {
   if (phase === 'running' || phase === 'submitting') {
     return (
       <span className="text-xs text-muted-foreground animate-pulse">
@@ -188,7 +188,7 @@ export function OutputPanel({ phase, output, error, hasTestCases, submitResults,
 
   // Auto-switch to tests tab on submit phases
   const showTestsTab = hasTestCases;
-  const isSubmitPhase = phase === 'submitting' || phase === 'submit-pass' || phase === 'submit-fail';
+  const isSubmitPhase = phase === 'submitting' || phase === 'submit-pass' || phase === 'submit-fail' || phase === 'tle';
   const effectiveTab = isSubmitPhase && showTestsTab ? 'tests' : activeTab;
 
   const isIdle = phase === 'idle';
@@ -200,7 +200,7 @@ export function OutputPanel({ phase, output, error, hasTestCases, submitResults,
       {/* Panel header */}
       <div className="flex items-center justify-between px-3 py-1.5 border-b border-border/40">
         <div className="flex items-center gap-3">
-          <HeaderLabel phase={phase} hasTestCases={hasTestCases} />
+          <HeaderLabel phase={phase} />
           {metrics && !isLoading && <MetricsBadge metrics={metrics} />}
         </div>
         {showTestsTab && (
