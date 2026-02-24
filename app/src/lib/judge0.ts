@@ -102,16 +102,21 @@ export function buildTestRunner(
   testCases: TestCase[],
   entryPoint: string,
 ): string {
+  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(entryPoint)) {
+    throw new Error(`Invalid entryPoint: ${entryPoint}`);
+  }
+
   const casesJson = JSON.stringify(
     testCases.map(tc => ({ d: tc.description, args: tc.args, expected: tc.expected }))
   );
+  const casesJsonLiteral = JSON.stringify(casesJson);
 
   const runner = `
 
 # ── auto-generated test runner ──────────────────────────────────────────────
 import json as _json
 
-_cases = ${casesJson}
+_cases = _json.loads(${casesJsonLiteral})
 _fn = ${entryPoint}
 _results = []
 
