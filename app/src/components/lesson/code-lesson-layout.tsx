@@ -13,7 +13,6 @@ import { useRateLimitActions } from '@/context/rate-limit-context';
 import type { TestCase, TestCaseResult, Judge0RunResult, Judge0TestsResult } from '@/lib/judge0';
 import type { ExecutionMetrics } from '@/components/lesson/output-panel';
 import confetti from 'canvas-confetti';
-import { ProblemPanel } from '@/components/lesson/problem-panel';
 
 interface CodeLessonLayoutProps {
   lessonTitle: string;
@@ -276,16 +275,6 @@ export function CodeLessonLayout({
         </div>
       </div>
       <div className="flex-1 overflow-hidden flex flex-col min-h-0">
-        {problemSummary && (
-          <ProblemPanel
-            problemSummary={problemSummary}
-            problemConstraints={problemConstraints}
-            problemHints={problemHints}
-            testCases={testCases}
-            entryPoint={entryPoint}
-            lessonId={lessonId}
-          />
-        )}
         <CodeEditor value={code} onChange={handleCodeChange} />
         <OutputPanel
           phase={executionPhase}
