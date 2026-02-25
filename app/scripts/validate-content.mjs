@@ -36,6 +36,11 @@ function fail(msg) {
 // ── Lessons ──────────────────────────────────────────────────────────────────
 const lessons = await sql`SELECT * FROM lessons ORDER BY lesson_index`;
 
+const tcCounts = await sql`
+  SELECT lesson_id, COUNT(*)::INTEGER AS cnt FROM test_cases GROUP BY lesson_id
+`;
+const tcCountMap = Object.fromEntries(tcCounts.map(r => [r.lesson_id, r.cnt]));
+
 for (const l of lessons) {
   const id = l.id;
 
@@ -46,18 +51,20 @@ for (const l of lessons) {
     fail(`${id}: problem_summary is null or empty`);
 
   // test_cases
-  const tcs = await sql`SELECT * FROM test_cases WHERE lesson_id = ${id}`;
-  if (tcs.length === 0) fail(`${id}: no test_cases`);
+  if ((tcCountMap[id] ?? 0) === 0) fail(`${id}: no test_cases`);
 }
 
 // ── Modules ───────────────────────────────────────────────────────────────────
 const modules = await sql`SELECT * FROM modules`;
 
+const lessonCounts = await sql`
+  SELECT module_id, COUNT(*)::INTEGER AS cnt FROM lessons GROUP BY module_id
+`;
+const lessonCountMap = Object.fromEntries(lessonCounts.map(r => [r.module_id, r.cnt]));
+
 for (const m of modules) {
   // lesson_count accuracy
-  const [{ count }] = await sql`
-    SELECT COUNT(*)::INTEGER AS count FROM lessons WHERE module_id = ${m.id}
-  `;
+  const count = lessonCountMap[m.id] ?? 0;
   if (m.lesson_count !== count)
     fail(`module ${m.id}: lesson_count=${m.lesson_count} but actual=${count}`);
 
