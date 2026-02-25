@@ -113,8 +113,8 @@ export async function runCode(sourceCode: string, stdin?: string): Promise<Judge
 
 /**
  * Run user code against test cases — one Judge0 call per test case, in parallel.
- * Each call builds a small program: userCode + one-liner that calls entryPoint(*args) and prints the result.
- * Pass/fail is determined by comparing stdout.trim() to String(expected).
+ * Each call builds a small program: userCode + harness that calls entryPoint(*args) and prints JSON.
+ * Pass/fail is determined by comparing stdout.trim() to JSON.stringify(expected).
  */
 export async function runTests(
   userCode: string,
