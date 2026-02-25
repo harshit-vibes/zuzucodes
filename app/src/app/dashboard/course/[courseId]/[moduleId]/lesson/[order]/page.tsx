@@ -1,4 +1,4 @@
-import { getLesson, getModule, getLessonCount, isLessonCompleted, getUserCode } from '@/lib/data';
+import { getLesson, getModule, getLessonCount, getUserCode } from '@/lib/data';
 import { auth } from '@/lib/auth/server';
 import { notFound } from 'next/navigation';
 import { CodeLessonLayout } from '@/components/lesson/code-lesson-layout';
@@ -26,10 +26,8 @@ export default async function LessonPage({ params }: LessonPageProps) {
     notFound();
   }
 
-  const [isCompleted, userCode] = await Promise.all([
-    user ? isLessonCompleted(user.id, lessonData.id) : Promise.resolve(false),
-    user ? getUserCode(user.id, lessonData.id) : Promise.resolve(null),
-  ]);
+  const userCode = user ? await getUserCode(user.id, lessonData.id) : null;
+  const isCompleted = !!userCode?.passedAt;
 
   return (
     <CodeLessonLayout

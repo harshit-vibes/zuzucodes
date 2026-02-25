@@ -73,6 +73,8 @@ BEGIN
   SELECT
     m.id AS module_id,
     COALESCE(
+      (SELECT COUNT(*) FROM lessons WHERE module_id = m.id) > 0
+      AND
       (SELECT COUNT(*) FROM user_code uc
        JOIN lessons l ON l.id = uc.lesson_id
        WHERE uc.user_id = p_user_id
