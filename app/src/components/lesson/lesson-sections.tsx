@@ -25,6 +25,8 @@ export function LessonSections({
   problemHints,
   testCases,
   entryPoint,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  lessonId: _lessonId,
 }: LessonSectionsProps) {
   const [activeSectionId, setActiveSectionId] = useState<string>(
     sections[0]?.id ?? 'section-0',
@@ -91,11 +93,11 @@ export function LessonSections({
         >
           {section.isProblemSection ? (
             // Problem section
-            <div className="space-y-2">
-              <h2 className="font-mono text-xs text-muted-foreground/50 uppercase tracking-wider mb-4">
-                challenge
-              </h2>
-              {problemSummary && (
+            problemSummary ? (
+              <div className="space-y-2">
+                <h2 className="font-mono text-xs text-muted-foreground/50 uppercase tracking-wider mb-4">
+                  challenge
+                </h2>
                 <ProblemPanel
                   problemSummary={problemSummary}
                   problemConstraints={problemConstraints}
@@ -103,8 +105,8 @@ export function LessonSections({
                   testCases={testCases}
                   entryPoint={entryPoint}
                 />
-              )}
-            </div>
+              </div>
+            ) : null
           ) : (
             // Theory section
             <>
