@@ -795,31 +795,78 @@ pre code {
 }
 @keyframes katex-fade-in { from { opacity: 0; } to { opacity: 1; } }
 
-/* Code diff line animations */
+/* Code diff line highlight */
 .diff-line {
   display: block;
-  max-height: 200px;
-  overflow: hidden;
-  transition: background-color 0.6s ease, opacity 0.4s ease, max-height 0.3s ease 0.3s;
-  border-radius: 2px;
-  padding: 0 2px; margin: 0 -2px;
+  border-radius: 0 2px 2px 0;
+  padding: 0 2px;
+  margin: 0 -2px;
 }
-.diff-line-added   { background-color: oklch(0.50 0.15 155 / 0.25); color: oklch(0.85 0.10 155); }
-.diff-line-added-clear { background-color: transparent; }
-.diff-line-removed { background-color: oklch(0.50 0.15 25 / 0.25); color: oklch(0.75 0.15 25); }
-.diff-line-removed-gone {
-  opacity: 0;
-  max-height: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
+
+.diff-line-new {
+  border-left: 2px solid oklch(0.65 0.20 155);
+  background-color: oklch(0.50 0.15 155 / 0.15);
+  padding-left: 6px;
+  color: oklch(0.88 0.08 155);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .diff-line { transition: none; }
-  .diff-line-added, .diff-line-added-clear,
-  .diff-line-removed, .diff-line-removed-gone {
-    background-color: transparent; opacity: 1; max-height: none;
+  .diff-line-new {
+    border-left-color: oklch(0.65 0.20 155 / 0.5);
+    background: transparent;
   }
   .section-entering .katex,
   .section-entering .katex-display { animation: none; opacity: 1; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   reveal.js — sizing overrides (disableLayout: true)
+   Scoped under .reveal so they don't affect the rest of the app.
+   ══════════════════════════════════════════════════════════════════ */
+
+.reveal {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+.reveal .slides {
+  height: 100%;
+  width: 100%;
+}
+
+/* Scroll view: each slide fills the pane height */
+.reveal.scroll-view .slides > section,
+.reveal.scroll-view .slides > section > section {
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+/* Reset reveal.js prose styles to inherit from our Tailwind tokens */
+.reveal h1, .reveal h2, .reveal h3 {
+  font-family: inherit;
+  color: inherit;
+  text-transform: none;
+  letter-spacing: inherit;
+}
+
+.reveal p, .reveal li {
+  font-family: inherit;
+  color: inherit;
+  line-height: inherit;
+}
+
+/* Code blocks — ensure reveal.js highlight theme doesn't break our layout */
+.reveal pre {
+  width: 100%;
+  box-shadow: none;
+  margin: 1.5rem 0;
+}
+
+.reveal pre code {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  line-height: 1.6;
+  max-height: none;
+  padding: 1rem;
 }
