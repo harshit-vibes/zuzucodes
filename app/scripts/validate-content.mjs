@@ -26,14 +26,14 @@ function loadEnv() {
   throw new Error('DATABASE_URL not found in app/.env.local');
 }
 
-const sql = neon(loadEnv());
-const errors = [];
-
-function fail(msg) {
-  errors.push(`✗ ${msg}`);
-}
-
 try {
+  const sql = neon(loadEnv());
+  const errors = [];
+
+  function fail(msg) {
+    errors.push(`✗ ${msg}`);
+  }
+
   // ── Lessons ──────────────────────────────────────────────────────────────────
   const lessons = await sql`
     SELECT id, code_template, entry_point, solution_code, problem_summary
