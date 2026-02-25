@@ -16,21 +16,35 @@ export async function POST(req: Request) {
 
   const resultsJson = testResults !== undefined ? testResults : null;
 
+  // Compute allPassed server-side — don't trust the client for this
+  const allPassed =
+    Array.isArray(resultsJson) &&
+    resultsJson.length > 0 &&
+    (resultsJson as Array<{ pass: boolean }>).every(r => r.pass === true);
+
+  const passedAt = allPassed ? new Date().toISOString() : null;
+
   if (resultsJson !== null) {
     await sql`
-      INSERT INTO user_code (user_id, lesson_id, code, last_test_results, updated_at)
-      VALUES (${user.id}, ${lessonId}, ${code}, ${JSON.stringify(resultsJson)}, NOW())
-      ON CONFLICT (user_id, lesson_id)
-      DO UPDATE SET code = EXCLUDED.code,
-                    last_test_results = EXCLUDED.last_test_results,
-                    updated_at = NOW()
+      INSERT INTO user_code (user_id, lesson_id, code, last_test_results, passed_at, updated_at)
+      VALUES (${user.id}, ${lessonId}, ${code}, ${JSON.stringify(resultsJson)}, ${passedAt}, NOW())
+      ON CONFLICT (user_id, lesson_id) DO UPDATE SET
+        code              = EXCLUDED.code,
+        last_test_results = EXCLUDED.last_test_results,
+        passed_at         = CASE
+                              WHEN user_code.passed_at IS NULL
+                              THEN EXCLUDED.passed_at
+                              ELSE user_code.passed_at
+                            END,
+        updated_at        = NOW()
     `;
   } else {
     await sql`
       INSERT INTO user_code (user_id, lesson_id, code, updated_at)
       VALUES (${user.id}, ${lessonId}, ${code}, NOW())
-      ON CONFLICT (user_id, lesson_id)
-      DO UPDATE SET code = EXCLUDED.code, updated_at = NOW()
+      ON CONFLICT (user_id, lesson_id) DO UPDATE SET
+        code       = EXCLUDED.code,
+        updated_at = NOW()
     `;
   }
 
