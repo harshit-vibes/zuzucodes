@@ -10,7 +10,7 @@ export interface TestCase {
   description: string;
   args: unknown[];
   expected: unknown;
-  visible?: boolean; // if true, shown as example in ProblemPanel
+  visible: boolean; // shown as example in ProblemPanel
 }
 
 export interface Judge0RunResult {
@@ -26,7 +26,7 @@ export interface Judge0RunResult {
 
 /**
  * Result for a single test case execution.
- * Note: `expected` should be a string or number primitive — comparison uses String(expected).
+ * Pass/fail is determined by JSON.stringify(expected) vs stdout.trim().
  */
 export interface TestCaseResult {
   d: string;      // description
@@ -113,8 +113,8 @@ export async function runCode(sourceCode: string, stdin?: string): Promise<Judge
 
 /**
  * Run user code against test cases — one Judge0 call per test case, in parallel.
- * Each call builds a small program: userCode + one-liner that calls entryPoint(*args) and prints the result.
- * Pass/fail is determined by comparing stdout.trim() to String(expected).
+ * Each call builds a small program: userCode + harness that calls entryPoint(*args) and prints JSON.
+ * Pass/fail is determined by comparing stdout.trim() to JSON.stringify(expected).
  */
 export async function runTests(
   userCode: string,
@@ -137,7 +137,8 @@ export async function runTests(
         '',
         'import json as _json',
         `_args = _json.loads(${JSON.stringify(argsJson)})`,
-        `print(${entryPoint}(*_args))`,
+        `_result = ${entryPoint}(*_args)`,
+        `print(_json.dumps(_result, separators=(',', ':')))`,
       ].join('\n');
       return runCode(program);
     })
@@ -152,7 +153,7 @@ export async function runTests(
     const r = result.value;
     if (r.statusId === 3) {
       const got = (r.stdout ?? '').trim();
-      return { d: tc.description, pass: got === String(tc.expected), got, exp: tc.expected };
+      return { d: tc.description, pass: got === JSON.stringify(tc.expected), got, exp: tc.expected };
     }
     const got = (r.stderr ?? '').trim() || `Runtime error (status ${r.statusId})`;
     return { d: tc.description, pass: false, got, exp: tc.expected };

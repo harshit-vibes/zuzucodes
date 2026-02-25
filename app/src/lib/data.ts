@@ -56,12 +56,6 @@ export type CourseWithModules = Course & {
   modules: (Module & { contentItems: ContentItem[] })[];
 };
 
-export interface LessonProblem {
-  summary: string;
-  constraints?: string[];
-  hints?: string[];
-}
-
 export interface UserCode {
   code: string;
   lastTestResults: import('@/lib/judge0').TestCaseResult[] | null;
@@ -178,7 +172,9 @@ export interface LessonData {
   solutionCode: string | null;
   moduleId: string;
   moduleTitle: string;
-  problem: LessonProblem | null;
+  problemSummary: string | null;
+  problemConstraints: string[];
+  problemHints: string[];
 }
 
 /**
@@ -194,7 +190,16 @@ export const getLesson = cache(async (
   try {
     const result = await sql`
       SELECT l.id, l.lesson_index, l.title, l.content, l.code_template,
-             l.test_cases, l.entry_point, l.solution_code, l.problem,
+             l.entry_point, l.solution_code,
+             l.problem_summary, l.problem_constraints, l.problem_hints,
+             COALESCE(
+               (SELECT json_agg(
+                  json_build_object('description', tc.description, 'args', tc.args,
+                                    'expected', tc.expected, 'visible', tc.visible)
+                  ORDER BY tc.position
+                ) FROM test_cases tc WHERE tc.lesson_id = l.id),
+               '[]'::json
+             ) AS test_cases,
              m.id AS module_id, m.title AS module_title
       FROM lessons l
       JOIN modules m ON m.id = l.module_id
@@ -216,7 +221,9 @@ export const getLesson = cache(async (
       solutionCode: row.solution_code ?? null,
       moduleId: row.module_id,
       moduleTitle: row.module_title,
-      problem: (row.problem as LessonProblem | null) ?? null,
+      problemSummary: row.problem_summary ?? null,
+      problemConstraints: (row.problem_constraints as string[]) ?? [],
+      problemHints: (row.problem_hints as string[]) ?? [],
     };
   } catch (error) {
     console.error('getLesson error:', error);

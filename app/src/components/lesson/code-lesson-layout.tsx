@@ -14,7 +14,6 @@ import type { TestCase, TestCaseResult, Judge0RunResult, Judge0TestsResult } fro
 import type { ExecutionMetrics } from '@/components/lesson/output-panel';
 import confetti from 'canvas-confetti';
 import { ProblemPanel } from '@/components/lesson/problem-panel';
-import type { LessonProblem } from '@/lib/data';
 
 interface CodeLessonLayoutProps {
   lessonTitle: string;
@@ -33,7 +32,9 @@ interface CodeLessonLayoutProps {
   isAuthenticated: boolean;
   isCompleted: boolean;
   lastTestResults: TestCaseResult[] | null;
-  problem: LessonProblem | null;
+  problemSummary: string | null;
+  problemConstraints: string[];
+  problemHints: string[];
 }
 
 
@@ -54,7 +55,9 @@ export function CodeLessonLayout({
   isAuthenticated,
   isCompleted,
   lastTestResults,
-  problem,
+  problemSummary,
+  problemConstraints,
+  problemHints,
 }: CodeLessonLayoutProps) {
   const { increment: incrementRateLimit } = useRateLimitActions();
   const [code, setCode] = useState(savedCode ?? codeTemplate ?? '');
@@ -273,9 +276,11 @@ export function CodeLessonLayout({
         </div>
       </div>
       <div className="flex-1 overflow-hidden flex flex-col min-h-0">
-        {problem && (
+        {problemSummary && (
           <ProblemPanel
-            problem={problem}
+            problemSummary={problemSummary}
+            problemConstraints={problemConstraints}
+            problemHints={problemHints}
             testCases={testCases}
             entryPoint={entryPoint}
             lessonId={lessonId}

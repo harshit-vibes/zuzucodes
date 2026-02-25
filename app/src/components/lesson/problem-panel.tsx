@@ -1,17 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { LessonProblem } from '@/lib/data';
 import type { TestCase } from '@/lib/judge0';
 
 interface ProblemPanelProps {
-  problem: LessonProblem;
+  problemSummary: string;
+  problemConstraints: string[];
+  problemHints: string[];
   testCases: TestCase[] | null;
   entryPoint: string | null;
   lessonId: string;
 }
 
-export function ProblemPanel({ problem, testCases, entryPoint, lessonId }: ProblemPanelProps) {
+export function ProblemPanel({ problemSummary, problemConstraints, problemHints, testCases, entryPoint, lessonId }: ProblemPanelProps) {
   const storageKey = `problem-panel-collapsed:${lessonId}`;
   const [collapsed, setCollapsed] = useState<boolean | null>(null);
   const [hintsRevealed, setHintsRevealed] = useState(0);
@@ -29,8 +30,6 @@ export function ProblemPanel({ problem, testCases, entryPoint, lessonId }: Probl
   };
 
   const visibleExamples = (testCases ?? []).filter(tc => tc.visible);
-  const hints = problem.hints ?? [];
-  const constraints = problem.constraints ?? [];
 
   return (
     <div className="shrink-0 border-b border-border dark:border-zinc-700">
@@ -53,7 +52,7 @@ export function ProblemPanel({ problem, testCases, entryPoint, lessonId }: Probl
 
           {/* Summary */}
           <p className="text-sm text-foreground/80 leading-relaxed">
-            {problem.summary}
+            {problemSummary}
           </p>
 
           {/* Examples */}
@@ -75,11 +74,11 @@ export function ProblemPanel({ problem, testCases, entryPoint, lessonId }: Probl
           )}
 
           {/* Constraints */}
-          {constraints.length > 0 && (
+          {problemConstraints.length > 0 && (
             <div className="space-y-1">
               <span className="text-[10px] font-mono text-muted-foreground/50 uppercase tracking-wider">constraints</span>
               <div className="flex flex-wrap gap-1.5">
-                {constraints.map((c, i) => (
+                {problemConstraints.map((c, i) => (
                   <span key={i} className="font-mono text-[11px] text-muted-foreground/70 bg-muted/40 dark:bg-zinc-800/60 rounded px-2 py-0.5">
                     {c}
                   </span>
@@ -89,20 +88,20 @@ export function ProblemPanel({ problem, testCases, entryPoint, lessonId }: Probl
           )}
 
           {/* Hints */}
-          {hints.length > 0 && (
+          {problemHints.length > 0 && (
             <div className="space-y-1.5">
               <span className="text-[10px] font-mono text-muted-foreground/50 uppercase tracking-wider">hints</span>
-              {hints.slice(0, hintsRevealed).map((hint, i) => (
+              {problemHints.slice(0, hintsRevealed).map((hint, i) => (
                 <div key={i} className="text-xs text-muted-foreground/70 bg-muted/30 dark:bg-zinc-800/40 rounded px-2.5 py-1.5 border border-border/30">
                   {hint}
                 </div>
               ))}
-              {hintsRevealed < hints.length && (
+              {hintsRevealed < problemHints.length && (
                 <button
                   onClick={() => setHintsRevealed(h => h + 1)}
                   className="text-[11px] font-mono text-muted-foreground/50 hover:text-muted-foreground transition-colors"
                 >
-                  show hint {hintsRevealed + 1}/{hints.length} →
+                  show hint {hintsRevealed + 1}/{problemHints.length} →
                 </button>
               )}
             </div>
