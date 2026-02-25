@@ -193,7 +193,7 @@ export const getLesson = cache(async (
   try {
     const result = await sql`
       SELECT l.id, l.lesson_index, l.title, l.content, l.code_template,
-             l.test_cases, l.entry_point, l.solution_code,
+             l.test_cases, l.entry_point, l.solution_code, l.problem,
              m.id AS module_id, m.title AS module_title
       FROM lessons l
       JOIN modules m ON m.id = l.module_id
@@ -215,6 +215,7 @@ export const getLesson = cache(async (
       solutionCode: row.solution_code ?? null,
       moduleId: row.module_id,
       moduleTitle: row.module_title,
+      problem: (row.problem as LessonProblem | null) ?? null,
     };
   } catch (error) {
     console.error('getLesson error:', error);
@@ -249,12 +250,18 @@ export async function getQuiz(moduleId: string): Promise<QuizForm | null> {
 /**
  * Get user's saved code for a lesson
  */
-export async function getUserCode(userId: string, lessonId: string): Promise<string | null> {
+export async function getUserCode(userId: string, lessonId: string): Promise<UserCode | null> {
   try {
     const result = await sql`
-      SELECT code FROM user_code WHERE user_id = ${userId} AND lesson_id = ${lessonId}
+      SELECT code, last_test_results FROM user_code
+      WHERE user_id = ${userId} AND lesson_id = ${lessonId}
     `;
-    return result.length > 0 ? (result[0] as any).code : null;
+    if (result.length === 0) return null;
+    const row = result[0] as any;
+    return {
+      code: row.code,
+      lastTestResults: (row.last_test_results as import('@/lib/judge0').TestCaseResult[] | null) ?? null,
+    };
   } catch (error) {
     console.error('getUserCode error:', error);
     return null;
