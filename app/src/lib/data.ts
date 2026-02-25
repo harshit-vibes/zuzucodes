@@ -711,9 +711,11 @@ export async function getSectionCompletionStatus(
     const [lessonRows, completedRows, passedRows] = await Promise.all([
       sql`SELECT id, module_id, lesson_index FROM lessons WHERE module_id = ANY(${moduleIds})`,
       sql`
-        SELECT ulp.lesson_id FROM user_lesson_progress ulp
-        JOIN lessons l ON l.id = ulp.lesson_id
-        WHERE ulp.user_id = ${userId} AND l.module_id = ANY(${moduleIds})
+        SELECT uc.lesson_id FROM user_code uc
+        JOIN lessons l ON l.id = uc.lesson_id
+        WHERE uc.user_id = ${userId}
+          AND uc.passed_at IS NOT NULL
+          AND l.module_id = ANY(${moduleIds})
       `,
       sql`
         SELECT DISTINCT module_id FROM user_quiz_attempts
@@ -749,9 +751,12 @@ export async function areAllLessonsCompleted(userId: string, moduleId: string): 
     const [totalResult, completedResult] = await Promise.all([
       sql`SELECT COUNT(*)::INTEGER AS count FROM lessons WHERE module_id = ${moduleId}`,
       sql`
-        SELECT COUNT(*)::INTEGER AS count FROM user_lesson_progress ulp
-        JOIN lessons l ON l.id = ulp.lesson_id
-        WHERE ulp.user_id = ${userId} AND l.module_id = ${moduleId}
+        SELECT COUNT(*)::INTEGER AS count
+        FROM user_code uc
+        JOIN lessons l ON l.id = uc.lesson_id
+        WHERE uc.user_id = ${userId}
+          AND uc.passed_at IS NOT NULL
+          AND l.module_id = ${moduleId}
       `,
     ]);
     const total = (totalResult[0] as any).count;
