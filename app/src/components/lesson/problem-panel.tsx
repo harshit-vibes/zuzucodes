@@ -1,17 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { LessonProblem } from '@/lib/data';
 import type { TestCase } from '@/lib/judge0';
 
 interface ProblemPanelProps {
-  problem: LessonProblem;
+  problemSummary: string;
+  problemConstraints: string[];
+  problemHints: string[];
   testCases: TestCase[] | null;
   entryPoint: string | null;
   lessonId: string;
 }
 
-export function ProblemPanel({ problem, testCases, entryPoint, lessonId }: ProblemPanelProps) {
+export function ProblemPanel({ problemSummary, problemConstraints, problemHints, testCases, entryPoint, lessonId }: ProblemPanelProps) {
   const storageKey = `problem-panel-collapsed:${lessonId}`;
   const [collapsed, setCollapsed] = useState<boolean | null>(null);
   const [hintsRevealed, setHintsRevealed] = useState(0);
@@ -29,8 +30,8 @@ export function ProblemPanel({ problem, testCases, entryPoint, lessonId }: Probl
   };
 
   const visibleExamples = (testCases ?? []).filter(tc => tc.visible);
-  const hints = problem.hints ?? [];
-  const constraints = problem.constraints ?? [];
+  const hints = problemHints;
+  const constraints = problemConstraints;
 
   return (
     <div className="shrink-0 border-b border-border dark:border-zinc-700">
@@ -53,7 +54,7 @@ export function ProblemPanel({ problem, testCases, entryPoint, lessonId }: Probl
 
           {/* Summary */}
           <p className="text-sm text-foreground/80 leading-relaxed">
-            {problem.summary}
+            {problemSummary}
           </p>
 
           {/* Examples */}

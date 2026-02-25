@@ -39,7 +39,9 @@ export default async function LessonPage({ params }: LessonPageProps) {
       solutionCode={lessonData.solutionCode}
       savedCode={userCode?.code ?? null}
       lastTestResults={userCode?.lastTestResults ?? null}
-      problem={lessonData.problem}
+      problemSummary={lessonData.problemSummary}
+      problemConstraints={lessonData.problemConstraints}
+      problemHints={lessonData.problemHints}
       lessonId={lessonData.id}
       courseId={courseId}
       moduleId={moduleId}
