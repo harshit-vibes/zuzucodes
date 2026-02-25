@@ -65,6 +65,7 @@ export interface LessonProblem {
 export interface UserCode {
   code: string;
   lastTestResults: import('@/lib/judge0').TestCaseResult[] | null;
+  passedAt: string | null;
 }
 
 /**
@@ -253,7 +254,7 @@ export async function getQuiz(moduleId: string): Promise<QuizForm | null> {
 export async function getUserCode(userId: string, lessonId: string): Promise<UserCode | null> {
   try {
     const result = await sql`
-      SELECT code, last_test_results FROM user_code
+      SELECT code, last_test_results, passed_at FROM user_code
       WHERE user_id = ${userId} AND lesson_id = ${lessonId}
     `;
     if (result.length === 0) return null;
@@ -261,6 +262,7 @@ export async function getUserCode(userId: string, lessonId: string): Promise<Use
     return {
       code: row.code,
       lastTestResults: (row.last_test_results as import('@/lib/judge0').TestCaseResult[] | null) ?? null,
+      passedAt: row.passed_at ? (row.passed_at as Date).toISOString() : null,
     };
   } catch (error) {
     console.error('getUserCode error:', error);
@@ -367,8 +369,10 @@ export const getDashboardStats = cache(async (userId: string): Promise<Dashboard
 
     // Streak: union lesson completions + quiz attempts (capped at 366 days — streak can't exceed that)
     const activityDates = await sql`
-      SELECT completed_at FROM user_lesson_progress
-      WHERE user_id = ${userId} AND completed_at >= NOW() - INTERVAL '366 days'
+      SELECT passed_at AS completed_at FROM user_code
+      WHERE user_id = ${userId}
+        AND passed_at IS NOT NULL
+        AND passed_at >= NOW() - INTERVAL '366 days'
       UNION ALL
       SELECT attempted_at AS completed_at FROM user_quiz_attempts
       WHERE user_id = ${userId} AND attempted_at >= NOW() - INTERVAL '366 days'
@@ -428,10 +432,10 @@ export const getResumeData = cache(async (userId: string): Promise<ResumeData | 
 
     // Recent activity: union lesson completions + quiz attempts
     const recentActivity = await sql`
-      SELECT l.module_id, l.lesson_index AS section_index, ulp.completed_at
-      FROM user_lesson_progress ulp
-      JOIN lessons l ON l.id = ulp.lesson_id
-      WHERE ulp.user_id = ${userId}
+      SELECT l.module_id, l.lesson_index AS section_index, uc.passed_at AS completed_at
+      FROM user_code uc
+      JOIN lessons l ON l.id = uc.lesson_id
+      WHERE uc.user_id = ${userId} AND uc.passed_at IS NOT NULL
       UNION ALL
       SELECT module_id, NULL AS section_index, attempted_at AS completed_at
       FROM user_quiz_attempts
@@ -515,8 +519,8 @@ export async function getWeeklyActivity(userId: string): Promise<WeeklyActivity[
     const since = weekAgo.toISOString();
 
     const data = await sql`
-      SELECT completed_at FROM user_lesson_progress
-      WHERE user_id = ${userId} AND completed_at >= ${since}
+      SELECT passed_at AS completed_at FROM user_code
+      WHERE user_id = ${userId} AND passed_at IS NOT NULL AND passed_at >= ${since}
       UNION ALL
       SELECT attempted_at AS completed_at FROM user_quiz_attempts
       WHERE user_id = ${userId} AND attempted_at >= ${since}
@@ -555,8 +559,8 @@ export async function getActivityHeatmapData(userId: string): Promise<ActivityDa
     const since = sixMonthsAgo.toISOString();
 
     const data = await sql`
-      SELECT completed_at FROM user_lesson_progress
-      WHERE user_id = ${userId} AND completed_at >= ${since}
+      SELECT passed_at AS completed_at FROM user_code
+      WHERE user_id = ${userId} AND passed_at IS NOT NULL AND passed_at >= ${since}
       UNION ALL
       SELECT attempted_at AS completed_at FROM user_quiz_attempts
       WHERE user_id = ${userId} AND attempted_at >= ${since}
@@ -665,8 +669,8 @@ export async function getSidebarProgress(
 export async function isLessonCompleted(userId: string, lessonId: string): Promise<boolean> {
   try {
     const result = await sql`
-      SELECT 1 FROM user_lesson_progress
-      WHERE user_id = ${userId} AND lesson_id = ${lessonId}
+      SELECT 1 FROM user_code
+      WHERE user_id = ${userId} AND lesson_id = ${lessonId} AND passed_at IS NOT NULL
     `;
     return result.length > 0;
   } catch (error) {
