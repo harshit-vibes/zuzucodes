@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
+
+import { ChevronUp, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Markdown } from '@/components/shared/markdown';
 import { AnimatedCodeBlock } from '@/components/lesson/animated-code-block';
@@ -28,134 +30,116 @@ export function LessonSections({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   lessonId: _lessonId,
 }: LessonSectionsProps) {
-  const [activeSectionId, setActiveSectionId] = useState<string>(
-    sections[0]?.id ?? 'section-0',
-  );
-  const sectionRefs = useRef<Map<string, HTMLElement>>(new Map());
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
 
-  // IntersectionObserver for active section tracking
-  useEffect(() => {
-    const root = scrollContainerRef.current;
-    if (!root) return;
+  const navigateTo = (index: number) => {
+    if (index < 0 || index >= sections.length || index === activeIndex) return;
+    setActiveIndex(index);
+  };
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            const sectionId = (entry.target as HTMLElement).dataset.sectionId;
-            if (sectionId) {
-              setActiveSectionId(sectionId);
-            }
-          }
-        }
-      },
-      { root, threshold: [0.5] },
-    );
-
-    for (const el of sectionRefs.current.values()) {
-      observer.observe(el);
-    }
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [sections]);
-
-  // KaTeX fade-in animation: apply section-entering class when active section changes
-  useEffect(() => {
-    const el = sectionRefs.current.get(activeSectionId);
-    if (!el) return;
-    el.classList.add('section-entering');
-    const timer = setTimeout(() => el.classList.remove('section-entering'), 600);
-    return () => {
-      clearTimeout(timer);
-      el.classList.remove('section-entering');
-    };
-  }, [activeSectionId]);
+  const isFirst = activeIndex <= 0;
+  const isLast = activeIndex >= sections.length - 1;
+  const activeSection = sections[activeIndex];
 
   return (
-    <div
-      ref={scrollContainerRef}
-      className="flex-1 overflow-y-auto relative"
-      style={{ scrollSnapType: 'y mandatory' }}
-    >
-      {sections.map((section, sectionIndex) => (
-        <div
-          key={section.id}
-          data-section-id={section.id}
-          ref={(el) => {
-            if (el) sectionRefs.current.set(section.id, el);
-            else sectionRefs.current.delete(section.id);
-          }}
-          className="flex flex-col overflow-y-auto px-8 pt-8 pb-12"
-          style={{ scrollSnapAlign: 'start', height: '100%', flexShrink: 0 }}
-        >
-          {section.isProblemSection ? (
-            // Problem section
-            problemSummary ? (
-              <div className="space-y-2">
-                <h2 className="font-mono text-xs text-muted-foreground/50 uppercase tracking-wider mb-4">
-                  challenge
-                </h2>
-                <ProblemPanel
-                  problemSummary={problemSummary}
-                  problemConstraints={problemConstraints}
-                  problemHints={problemHints}
-                  testCases={testCases}
-                  entryPoint={entryPoint}
-                />
-              </div>
-            ) : null
-          ) : (
-            // Theory section
-            <>
-              {section.markdownBefore && (
-                <div className="prose-container">
-                  <Markdown content={section.markdownBefore} />
-                </div>
-              )}
+    <div className="flex-1 h-full min-h-0 flex flex-col">
 
-              {section.codeBlock && (
-                <AnimatedCodeBlock
-                  current={section.codeBlock}
-                  previous={sections[sectionIndex - 1]?.codeBlock ?? null}
-                  isActive={activeSectionId === section.id}
-                />
-              )}
+      {/* Up arrow */}
+      <button
+        onClick={() => navigateTo(activeIndex - 1)}
+        disabled={isFirst}
+        aria-label="Previous section"
+        className={cn(
+          'shrink-0 h-8 w-full flex items-center justify-center',
+          'text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors duration-200',
+          isFirst ? 'opacity-0 pointer-events-none' : '',
+        )}
+      >
+        <ChevronUp className="w-5 h-5 stroke-[1.5]" />
+      </button>
 
-              {section.markdownAfter && (
-                <div className="prose-container">
-                  <Markdown content={section.markdownAfter} />
-                </div>
+      {/* Middle area: dots pinned left, fading content right */}
+      <div className="flex-1 min-h-0 relative">
+
+        {/* Dots — fixed position, never fade */}
+        <div className="absolute left-3 top-1/2 -translate-y-1/2 flex flex-col gap-1.5 z-10">
+          {sections.map((s, i) => (
+            <button
+              key={s.id}
+              onClick={() => navigateTo(i)}
+              className={cn(
+                'rounded-full transition-all duration-300',
+                activeIndex === i
+                  ? 'w-1.5 h-5 bg-primary'
+                  : 'w-1.5 h-1.5 bg-muted-foreground/30 hover:bg-muted-foreground/60',
               )}
-            </>
-          )}
+              title={s.isProblemSection ? 'Challenge' : `Section ${i + 1}`}
+            />
+          ))}
         </div>
-      ))}
 
-      {/* Section dot navigation */}
-      <div className="absolute bottom-4 right-4 flex flex-col gap-1.5 z-10 pointer-events-auto">
-        {sections.map((s, i) => (
-          <button
-            key={s.id}
-            onClick={() => {
-              const el = sectionRefs.current.get(s.id);
-              const container = scrollContainerRef.current;
-              if (el && container) {
-                container.scrollTo({ top: el.offsetTop, behavior: 'smooth' });
-              }
-            }}
-            className={cn(
-              'rounded-full transition-all duration-300',
-              activeSectionId === s.id
-                ? 'w-1.5 h-5 bg-primary'
-                : 'w-1.5 h-1.5 bg-muted-foreground/30 hover:bg-muted-foreground/60',
-            )}
-            title={s.isProblemSection ? 'Challenge' : `Section ${i + 1}`}
-          />
-        ))}
+        {/* Fading content area */}
+        <>
+          {activeSection && (
+            <div className="absolute inset-0 overflow-y-auto px-8 pt-8 pb-12">
+              {/* Step indicator */}
+              <div className="flex items-center gap-3 mb-6 shrink-0">
+                <span className="font-mono text-[10px] text-muted-foreground/40 uppercase tracking-widest">
+                  {activeSection.isProblemSection ? 'challenge' : String(activeIndex + 1).padStart(2, '0')}
+                </span>
+                <div className="flex-1 h-px bg-border/20" />
+              </div>
+
+              {activeSection.isProblemSection ? (
+                problemSummary ? (
+                  <ProblemPanel
+                    problemSummary={problemSummary}
+                    problemConstraints={problemConstraints}
+                    problemHints={problemHints}
+                    testCases={testCases}
+                    entryPoint={entryPoint}
+                  />
+                ) : null
+              ) : (
+                <>
+                  {activeSection.markdownBefore && (
+                    <div className="prose-container">
+                      <Markdown content={activeSection.markdownBefore} />
+                    </div>
+                  )}
+                  {activeSection.codeBlock && (
+                    <AnimatedCodeBlock
+                      current={activeSection.codeBlock}
+                      previous={sections[activeIndex - 1]?.codeBlock ?? null}
+                      isActive={true}
+                    />
+                  )}
+                  {activeSection.markdownAfter && (
+                    <div className="prose-container">
+                      <Markdown content={activeSection.markdownAfter} />
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </>
       </div>
+
+      {/* Down arrow */}
+      <button
+        onClick={() => navigateTo(activeIndex + 1)}
+        disabled={isLast}
+        aria-label="Next section"
+        className={cn(
+          'shrink-0 h-8 w-full flex items-center justify-center',
+          'text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors duration-200',
+          isLast ? 'opacity-0 pointer-events-none' : '',
+        )}
+      >
+        <ChevronDown className="w-5 h-5 stroke-[1.5]" />
+      </button>
+
     </div>
   );
 }
