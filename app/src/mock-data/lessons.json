@@ -1,0 +1,78 @@
+[
+  {
+    "id": "lesson-hello-python",
+    "lessonIndex": 0,
+    "moduleId": "mod-basics",
+    "moduleTitle": "The Basics",
+    "title": "Hello, Python!",
+    "content": "# Hello, Python!\n\n## Your First Python Program\n\nIn Python, `print()` displays text on the screen. Call it with any string:\n\n```python\nprint('Hello, World!')\n```\n\nTry running it — you'll see the output appear below.\n\n---\n\n## Variables\n\nA **variable** stores a value under a name. Create one with `=`:\n\n```python\nmessage = 'Hello, World!'\nprint(message)\n```\n\nThe output is identical — but now the value has a reusable name.\n\n---\n\n## Combining Strings\n\nThe `+` operator joins two strings together — this is called **concatenation**:\n\n```python\nname = 'Alice'\nmessage = 'Hello, ' + name\nprint(message)\n```\n\n---\n\n## f-strings\n\nPython 3.6+ has **f-strings** — the modern way to embed variables inside strings:\n\n```python\nname = 'Alice'\nage = 30\nmessage = f'Hello, {name}! You are {age} years old.'\nprint(message)\n```\n\nPrefix the string with `f` and wrap variable names in `{}`.",
+    "codeTemplate": "def greet(name, age):\n    # Your code here\n    pass\n",
+    "solutionCode": "def greet(name, age):\n    return f'Hello, {name}! You are {age} years old.'\n",
+    "entryPoint": "greet",
+    "testCases": [
+      { "description": "Alice, age 30", "args": ["Alice", 30], "expected": "Hello, Alice! You are 30 years old.", "visible": true },
+      { "description": "Bob, age 25", "args": ["Bob", 25], "expected": "Hello, Bob! You are 25 years old.", "visible": true },
+      { "description": "Charlie, age 5", "args": ["Charlie", 5], "expected": "Hello, Charlie! You are 5 years old.", "visible": false }
+    ],
+    "problemSummary": "Write a function `greet(name, age)` that **returns** (not prints) a greeting string in the form:\n\n`Hello, {name}! You are {age} years old.`",
+    "problemConstraints": [
+      "Return the string — do not use print()",
+      "name is always a non-empty string",
+      "age is always a positive integer"
+    ],
+    "problemHints": [
+      "Use an f-string for clean formatting",
+      "Match the punctuation exactly — period at the end"
+    ]
+  },
+  {
+    "id": "lesson-numbers",
+    "lessonIndex": 1,
+    "moduleId": "mod-basics",
+    "moduleTitle": "The Basics",
+    "title": "Numbers & Arithmetic",
+    "content": "# Numbers & Arithmetic\n\n## Basic Arithmetic\n\nPython supports all standard math operators:\n\n```python\nresult = 10 + 3\nprint(result)\n```\n\n`+` adds, `-` subtracts, `*` multiplies, `/` divides.\n\n---\n\n## Integer Division & Modulo\n\n`//` divides and drops the decimal. `%` gives the **remainder**:\n\n```python\nresult = 10 + 3\nquotient = 10 // 3\nremainder = 10 % 3\nprint(quotient, remainder)\n```\n\n`10 // 3` is `3`, and `10 % 3` is `1`.\n\n---\n\n## Floats\n\nDecimals are called **floats**. Use `**` for exponentiation:\n\n```python\nresult = 10 + 3\nquotient = 10 // 3\nremainder = 10 % 3\npi = 3.14159\narea = pi * 5 ** 2\nprint(area)\n```\n\n`5 ** 2` is `25`. The result is `~785.39`.\n\n---\n\n## round() and abs()\n\nBuilt-in functions can transform numbers:\n\n```python\nresult = 10 + 3\nquotient = 10 // 3\nremainder = 10 % 3\npi = 3.14159\narea = pi * 5 ** 2\nrounded = round(area, 2)\ndelta = abs(-42)\nprint(rounded, delta)\n```\n\n`round(n, 2)` keeps 2 decimal places. `abs()` returns the magnitude.",
+    "codeTemplate": "def circle_area(r):\n    # Return area of circle with radius r, rounded to 2 decimal places\n    # Use pi = 3.14159\n    pass\n",
+    "solutionCode": "def circle_area(r):\n    pi = 3.14159\n    return round(pi * r ** 2, 2)\n",
+    "entryPoint": "circle_area",
+    "testCases": [
+      { "description": "radius 5", "args": [5], "expected": 78.54, "visible": true },
+      { "description": "radius 1", "args": [1], "expected": 3.14, "visible": true },
+      { "description": "radius 10", "args": [10], "expected": 314.16, "visible": false }
+    ],
+    "problemSummary": "Write a function `circle_area(r)` that returns the area of a circle with radius `r`, rounded to 2 decimal places.\n\nUse `pi = 3.14159`.",
+    "problemConstraints": [
+      "r is always a positive number",
+      "Return the result rounded to exactly 2 decimal places"
+    ],
+    "problemHints": [
+      "Area of a circle = π × r²",
+      "Use ** for exponentiation and round() for rounding"
+    ]
+  },
+  {
+    "id": "lesson-lists",
+    "lessonIndex": 2,
+    "moduleId": "mod-basics",
+    "moduleTitle": "The Basics",
+    "title": "Lists",
+    "content": "# Lists\n\n## Creating a List\n\nA **list** stores multiple values in order. Wrap items in `[]`:\n\n```python\nfruits = ['apple', 'banana', 'cherry']\nprint(fruits)\n```\n\nItems can be any type — strings, numbers, even other lists.\n\n---\n\n## Indexing\n\nAccess items by position. Positions start at **0**. Use `-1` for the last item:\n\n```python\nfruits = ['apple', 'banana', 'cherry']\nfirst = fruits[0]\nlast = fruits[-1]\nprint(first, last)\n```\n\n---\n\n## Appending Items\n\n`.append()` adds an item to the end of a list:\n\n```python\nfruits = ['apple', 'banana', 'cherry']\nfirst = fruits[0]\nlast = fruits[-1]\nfruits.append('date')\nprint(len(fruits))\n```\n\n`len()` returns the number of items — now `4`.\n\n---\n\n## Slicing\n\nA **slice** `[start:end]` extracts a portion of a list. `end` is exclusive:\n\n```python\nfruits = ['apple', 'banana', 'cherry']\nfirst = fruits[0]\nlast = fruits[-1]\nfruits.append('date')\ntop_two = fruits[:2]\nprint(top_two)\n```\n\n`fruits[:2]` gives `['apple', 'banana']`.",
+    "codeTemplate": "def last_two(lst):\n    # Return a list containing only the last two elements\n    pass\n",
+    "solutionCode": "def last_two(lst):\n    return lst[-2:]\n",
+    "entryPoint": "last_two",
+    "testCases": [
+      { "description": "4-item list", "args": [[1, 2, 3, 4]], "expected": [3, 4], "visible": true },
+      { "description": "strings list", "args": [["a", "b", "c", "d", "e"]], "expected": ["d", "e"], "visible": true },
+      { "description": "exactly 2 items", "args": [[10, 20]], "expected": [10, 20], "visible": false }
+    ],
+    "problemSummary": "Write a function `last_two(lst)` that returns a **new list** containing only the last two elements of the input list.",
+    "problemConstraints": [
+      "lst will always have at least 2 elements",
+      "Return a list — not individual values"
+    ],
+    "problemHints": [
+      "Use a slice with a negative start index",
+      "lst[-2:] gives you the last two elements"
+    ]
+  }
+]
