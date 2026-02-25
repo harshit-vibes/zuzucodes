@@ -26,7 +26,7 @@ export default async function LessonPage({ params }: LessonPageProps) {
     notFound();
   }
 
-  const [isCompleted, savedCode] = await Promise.all([
+  const [isCompleted, userCode] = await Promise.all([
     user ? isLessonCompleted(user.id, lessonData.id) : Promise.resolve(false),
     user ? getUserCode(user.id, lessonData.id) : Promise.resolve(null),
   ]);
@@ -39,7 +39,9 @@ export default async function LessonPage({ params }: LessonPageProps) {
       testCases={lessonData.testCases}
       entryPoint={lessonData.entryPoint}
       solutionCode={lessonData.solutionCode}
-      savedCode={savedCode}
+      savedCode={userCode?.code ?? null}
+      lastTestResults={userCode?.lastTestResults ?? null}
+      problem={lessonData.problem}
       lessonId={lessonData.id}
       courseId={courseId}
       moduleId={moduleId}
