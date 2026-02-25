@@ -10,6 +10,7 @@ export interface TestCase {
   description: string;
   args: unknown[];
   expected: unknown;
+  visible?: boolean; // if true, shown as example in ProblemPanel
 }
 
 export interface Judge0RunResult {

@@ -56,6 +56,17 @@ export type CourseWithModules = Course & {
   modules: (Module & { contentItems: ContentItem[] })[];
 };
 
+export interface LessonProblem {
+  summary: string;
+  constraints?: string[];
+  hints?: string[];
+}
+
+export interface UserCode {
+  code: string;
+  lastTestResults: import('@/lib/judge0').TestCaseResult[] | null;
+}
+
 /**
  * Derive content items from module fields (lesson_count + quiz_form).
  */
@@ -166,6 +177,7 @@ export interface LessonData {
   solutionCode: string | null;
   moduleId: string;
   moduleTitle: string;
+  problem: LessonProblem | null;
 }
 
 /**
