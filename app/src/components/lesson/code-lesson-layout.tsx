@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import { parseLessonSections } from '@/lib/parse-lesson-sections';
-import { LessonSections } from '@/components/lesson/lesson-sections';
+import { SlidesPane } from '@/components/lesson/slides-pane';
 import { CodeEditor } from '@/components/lesson/code-editor';
 import { OutputPanel, ExecutionPhase } from '@/components/lesson/output-panel';
 import { parsePythonError, ParsedError } from '@/lib/python-output';
@@ -72,11 +71,6 @@ export function CodeLessonLayout({
   const [hasRun, setHasRun] = useState(false);
   const [metrics, setMetrics] = useState<ExecutionMetrics | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
-
-  const sections = useMemo(
-    () => parseLessonSections(content, problemSummary),
-    [content, problemSummary],
-  );
 
   // Hydrate output panel with persisted test results on mount
   useEffect(() => {
@@ -234,21 +228,15 @@ export function CodeLessonLayout({
 
   // ─── Prose Pane ─────────────────────────────────────────────────────────────
   const ProsePane = (
-    <div className="h-full relative overflow-hidden flex flex-col">
-      {/* Lesson title pinned above snap sections */}
-      <div className="shrink-0 px-8 pt-8 pb-4 border-b border-border/30">
-        <h1 className="text-2xl md:text-[1.75rem] font-semibold tracking-tight leading-tight text-foreground">
-          {lessonTitle}
-        </h1>
-      </div>
-      <LessonSections
-        sections={sections}
+    <div className="h-full overflow-hidden flex flex-col">
+      <SlidesPane
+        key={lessonId}
+        content={content}
         problemSummary={problemSummary}
         problemConstraints={problemConstraints}
         problemHints={problemHints}
         testCases={testCases}
         entryPoint={entryPoint}
-        lessonId={lessonId}
       />
     </div>
   );
