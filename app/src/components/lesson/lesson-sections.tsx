@@ -139,9 +139,13 @@ export function LessonSections({
         {sections.map((s, i) => (
           <button
             key={s.id}
-            onClick={() =>
-              sectionRefs.current.get(s.id)?.scrollIntoView({ behavior: 'smooth' })
-            }
+            onClick={() => {
+              const el = sectionRefs.current.get(s.id);
+              const container = scrollContainerRef.current;
+              if (el && container) {
+                container.scrollTo({ top: el.offsetTop, behavior: 'smooth' });
+              }
+            }}
             className={cn(
               'rounded-full transition-all duration-300',
               activeSectionId === s.id
