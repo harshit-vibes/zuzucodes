@@ -200,13 +200,6 @@ export function CodeLessonLayout({
           }
 
           if (testResult.allPassed) {
-            if (isAuthenticated && !isCompleted) {
-              fetch('/api/progress/lesson', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ lessonId, courseId }),
-              }).catch(() => {});
-            }
             setShowCelebration(true);
             confetti({
               particleCount: 80,
