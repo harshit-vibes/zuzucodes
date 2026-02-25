@@ -94,7 +94,7 @@ export function parseLessonSections(
     };
   });
 
-  if (problemSummary !== null) {
+  if (problemSummary !== null && problemSummary.trim() !== '') {
     sections.push({
       id: 'problem',
       markdownBefore: '',
