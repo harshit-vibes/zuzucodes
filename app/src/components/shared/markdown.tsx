@@ -1,5 +1,7 @@
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 
 interface MarkdownProps {
   content: string;
@@ -9,7 +11,8 @@ export function Markdown({ content }: MarkdownProps) {
   return (
     <div className="prose-article">
       <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
+        remarkPlugins={[remarkGfm, remarkMath]}
+        rehypePlugins={[rehypeKatex]}
         components={{
           h1: ({ children }) => (
             <h1 className="font-display text-3xl font-semibold tracking-tight mt-12 mb-6 first:mt-0">

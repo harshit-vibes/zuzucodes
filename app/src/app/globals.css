@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "@neondatabase/auth/ui/tailwind";
 @import "tw-animate-css";
+@import "katex/dist/katex.min.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -778,4 +779,44 @@ pre code {
   .nav-underline::after {
     transition: none;
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   LESSON SECTION SNAP SCROLL
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* KaTeX dark mode */
+.dark .katex { color: var(--foreground); }
+
+/* KaTeX fade-in on section entry */
+.section-entering .katex,
+.section-entering .katex-display {
+  animation: katex-fade-in 0.5s ease-out forwards;
+}
+@keyframes katex-fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* Code diff line animations */
+.diff-line {
+  display: block;
+  transition: background-color 0.6s ease, opacity 0.4s ease;
+  border-radius: 2px;
+  padding: 0 2px; margin: 0 -2px;
+}
+.diff-line-added   { background-color: oklch(0.50 0.15 155 / 0.25); color: oklch(0.85 0.10 155); }
+.diff-line-added-clear { background-color: transparent; }
+.diff-line-removed { background-color: oklch(0.50 0.15 25 / 0.25); color: oklch(0.75 0.15 25); }
+.diff-line-removed-gone {
+  opacity: 0; max-height: 0 !important; overflow: hidden;
+  margin: 0 !important; padding: 0 !important;
+  transition: opacity 0.3s ease, max-height 0.3s ease 0.3s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .diff-line { transition: none; }
+  .diff-line-added, .diff-line-added-clear,
+  .diff-line-removed, .diff-line-removed-gone {
+    background-color: transparent; opacity: 1; max-height: none;
+  }
+  .section-entering .katex,
+  .section-entering .katex-display { animation: none; opacity: 1; }
 }
