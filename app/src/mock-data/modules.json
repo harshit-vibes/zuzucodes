@@ -1,0 +1,66 @@
+[
+  {
+    "id": "mod-basics",
+    "course_id": "course-python-101",
+    "title": "The Basics",
+    "description": "Variables, strings, numbers, and your first Python programs.",
+    "order": 1,
+    "lesson_count": 3,
+    "quiz_form": {
+      "title": "Basics Quiz",
+      "passingScore": 70,
+      "questions": [
+        {
+          "id": "q1",
+          "statement": "Which operator joins two strings in Python?",
+          "options": [
+            { "id": "a", "text": "+" },
+            { "id": "b", "text": "*" },
+            { "id": "c", "text": "&" },
+            { "id": "d", "text": "|" }
+          ],
+          "correctOption": "a",
+          "explanation": "The + operator concatenates (joins) strings in Python."
+        },
+        {
+          "id": "q2",
+          "statement": "What prefix do you add for an f-string?",
+          "options": [
+            { "id": "a", "text": "f" },
+            { "id": "b", "text": "s" },
+            { "id": "c", "text": "p" },
+            { "id": "d", "text": "r" }
+          ],
+          "correctOption": "a",
+          "explanation": "f-strings are prefixed with the letter f — e.g. f'Hello, {name}!'"
+        }
+      ]
+    }
+  },
+  {
+    "id": "mod-functions",
+    "course_id": "course-python-101",
+    "title": "Functions",
+    "description": "Write reusable, testable Python functions.",
+    "order": 2,
+    "lesson_count": 3,
+    "quiz_form": {
+      "title": "Functions Quiz",
+      "passingScore": 70,
+      "questions": [
+        {
+          "id": "q1",
+          "statement": "What keyword defines a function in Python?",
+          "options": [
+            { "id": "a", "text": "def" },
+            { "id": "b", "text": "fn" },
+            { "id": "c", "text": "function" },
+            { "id": "d", "text": "func" }
+          ],
+          "correctOption": "a",
+          "explanation": "Python uses 'def' to define functions."
+        }
+      ]
+    }
+  }
+]

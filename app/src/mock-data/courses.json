@@ -1,0 +1,16 @@
+[
+  {
+    "id": "course-python-101",
+    "title": "Python 101",
+    "slug": "python-101",
+    "description": "Learn Python from scratch — variables, strings, numbers, loops, and functions.",
+    "thumbnail_url": null,
+    "outcomes": [
+      "Understand Python syntax and core data types",
+      "Write reusable functions with parameters and return values",
+      "Work with lists, dictionaries, and control flow"
+    ],
+    "tag": "beginner",
+    "order": 1
+  }
+]

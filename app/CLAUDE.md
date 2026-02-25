@@ -2,166 +2,77 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Overview
-
-**zuzu.codes** — An AI-native upskilling platform for modern professionals.
-
-**Single-tenant architecture**: Each deployment serves one organization (e.g., zuzu.codes for public, potential white-label instances later).
-
-Built with Next.js 16 (App Router), Neon Auth (beta) for passwordless authentication, and Neon Postgres as the database.
-
----
+See the root `CLAUDE.md` for full project context. This file covers `app/`-specific details.
 
 ## Commands
 
 ```bash
-npm run dev      # Start development server (localhost:3000)
-npm run build    # Build for production
-npm run lint     # Run ESLint
-npm start        # Start production server
-npx tsc --noEmit # Type check
+npm run dev          # Dev server (localhost:3000)
+npm run build
+npm run lint
+npx tsc --noEmit     # Type check
+
+# Content scripts (require .env.local with DATABASE_URL)
+node scripts/validate-content.mjs   # Validate DB content — exits 0 (clean) / 1 (violations)
+node scripts/seed-content.mjs       # Purge + reseed all course content
 ```
 
----
-
 ## Architecture
-
-### Authentication
-
-**Neon Auth** - Integrated authentication using `@neondatabase/auth` (beta)
-
-**Key Features**:
-- Email OTP (one-time password) authentication - passwordless magic link
-- Email verification required at sign-up (prevents spam accounts)
-- Pre-built UI components (`SignInForm`, `SignUpForm`)
-- Session management via secure HTTP-only cookies
-
-**Implementation**:
-- `src/lib/auth/server.ts` - Server-side auth instance (`authServer`, `auth`)
-- `src/lib/auth/client.ts` - Client-side auth instance (`authClient`)
-- `src/middleware.ts` - Route protection using `neonAuthMiddleware`
-- `src/components/auth-dialog.tsx` - Sign-in/sign-up UI with email verification
-- `src/components/email-verification.tsx` - Email verification flow
-
-**Protected routes**: `/dashboard`, `/learn`, `/account`
-**Public routes**: `/`, `/api/*`
 
 ### Data Model
 
 ```
-courses
-  └── modules (ordered by position)
-        ├── mdx_content (TEXT, sections separated by \n---\n)
-        └── quiz_form (JSONB, optional)
-
-user_progress (tracks completion)
-  ├── lesson progress (module_id + section_index)
-  └── quiz attempts (module_id, section_index IS NULL)
+courses → modules → lessons → test_cases
+                             → user_code
+               → user_quiz_attempts
 ```
 
-**Modules** are the core content unit:
-- `mdx_content`: Markdown sections separated by `\n---\n`
-- `quiz_form`: JSONB quiz structure (optional)
-- `section_count`: Number of sections (lessons) in the module
-- Each section represents one lesson
+- **lessons**: `id, module_id, lesson_index, title, content, code_template, solution_code, entry_point, problem_summary, problem_constraints TEXT[], problem_hints TEXT[]`
+- **test_cases**: `id, lesson_id, position, description, args JSONB, expected JSONB, visible BOOLEAN`
+- **user_code**: `user_id, lesson_id, code, last_test_results JSONB, passed_at` — `passed_at IS NOT NULL` = lesson completed
+- **modules.quiz_form**: JSONB with CHECK constraint enforcing `title`, `questions` array ≥ 1, `passingScore` 0–100
 
-**Progress tracking**:
-- `user_progress` table tracks completion by (user_id, module_id, section_index)
-- `section_index` is the 0-based index of the lesson
-- `section_index IS NULL` indicates a quiz attempt
-- Quiz rows include `score_percent` and `passed` fields
-
-### Content Validation (`src/lib/module-schema.ts`)
-
-The `module_schema` table defines validation rules:
-- **MDX rules**: allowed elements, section limits, character limits
-- **Quiz rules**: required fields, question limits, passing score
-- Schema versioning with `is_active` flag
-- All content validated against active schema
+No ORM — raw SQL via `@neondatabase/serverless`. Migrations in `migrations/`.
 
 ### Key Patterns
 
-- **React.cache()**: Used in `src/lib/data.ts` to deduplicate fetches within a request
-- **Server Components**: Dashboard pages are RSC, use `auth()` from `src/lib/auth/server.ts` to get session
-- **API route auth pattern**: Get session with `auth()`, verify user, then query database
-- **Raw SQL queries**: Direct SQL via `@neondatabase/serverless` instead of ORM
+- `src/lib/data.ts` — all DB access. `React.cache()` on all per-request fetches. `getLesson()` aggregates test_cases via correlated subquery. No `LessonProblem` type — flat `problemSummary/Constraints/Hints` fields on `LessonData`.
+- `src/lib/judge0.ts` — code execution. Test harness uses `json.dumps(_result, separators=(',', ':'))` + `JSON.stringify(expected)` comparison. `visible: boolean` on `TestCase` (required, not optional).
+- Auth: `src/lib/auth/server.ts` (`auth()`) for server, `src/lib/auth/client.ts` (`authClient`) for client. No middleware — routes check `auth()` directly.
+- Rate limiting: `src/context/rate-limit-context.tsx` — client-side Judge0 quota tracking.
+
+### Routing
+
+```
+/dashboard/course/[courseId]/[moduleId]/lesson/[order]  # 1-indexed lesson position
+/dashboard/course/[courseId]/[moduleId]/quiz
+```
+
+### Components
+
+```
+src/components/
+├── ui/          # shadcn/ui primitives
+├── shared/      # app-sidebar, auth-dialog, markdown, user-button
+└── lesson/      # code-lesson-layout (main lesson player), problem-panel, code-editor, output-panel
+```
+
+`CodeLessonLayout` is the main lesson player — manages all execution state, auto-save (1500ms debounce), confetti on pass, and persists test results via `/api/code/save`.
 
 ### API Routes
 
-| Route | Method | Purpose |
-|-------|--------|---------|
-| `/api/progress/lesson` | POST/DELETE | Mark lesson complete/incomplete |
-| `/api/quiz/submit` | POST/DELETE | Submit quiz / reset quiz |
-| `/api/internal/courses` | GET/POST | List/create courses |
-| `/api/internal/courses/[id]` | GET/PUT/DELETE | Get/update/delete course |
-| `/api/internal/modules` | GET/POST | List/create modules |
-| `/api/internal/modules/[id]` | GET/PUT/DELETE | Get/update/delete module |
+| Route | Purpose |
+|-------|---------|
+| `/api/code/run` | Raw Python stdout via Judge0 |
+| `/api/code/test` | Per-test-case pass/fail |
+| `/api/code/save` | Autosave code + persist last_test_results |
+| `/api/progress/lesson` | Mark complete/incomplete |
+| `/api/quiz/submit` | Submit or reset quiz |
 
----
+## Required Env Vars
 
-## Tech Stack
-
-- **Framework**: Next.js 16 with App Router (React 19, Server Components)
-- **Auth**: Neon Auth (`@neondatabase/auth` v0.1.0-beta.21) with email OTP
-- **Database**: Neon Postgres (via `@neondatabase/serverless`)
-- **Email**: Neon's shared email provider (for auth emails)
-- **UI**: shadcn/ui (new-york style) + Tailwind CSS v4
-- **Markdown**: react-markdown + remark-gfm
-- **Icons**: Lucide React
-
----
-
-## Environment Variables
-
-Required:
-- `DATABASE_URL` — Neon Postgres connection string
-- `NEON_AUTH_BASE_URL` — Neon Auth API URL (from Neon Console → Auth)
-- `NEON_AUTH_COOKIE_SECRET` — Cookie encryption secret (generate with `openssl rand -base64 32`)
-- `NEXT_PUBLIC_ROOT_DOMAIN` — Domain for redirects (e.g., `zuzu.codes`)
-- `NEXT_PUBLIC_APP_URL` — Full app URL (e.g., `https://zuzu.codes`)
-
----
-
-## Path Aliases
-
-`@/*` maps to `./src/*` (configured in `tsconfig.json`)
-
----
-
-## Content Management Workflow
-
-1. **Create course**: POST `/api/internal/courses`
-2. **Create module**: POST `/api/internal/modules` with:
-   - `course_id`: Parent course
-   - `mdx_content`: Markdown sections separated by `\n---\n`
-   - `quiz_form`: JSONB quiz structure (optional)
-3. **Section count**: Auto-calculated by splitting `mdx_content`
-4. **Validation**: All creates/updates validate against active schema
-5. **Progress tracking**: Users complete sections and quizzes
-
----
-
-## Database Schema
-
-Neon Postgres database with two schemas:
-
-**`neon_auth` schema** (managed by Neon Auth):
-- `users` → User accounts with email, password hash, verification status
-- `sessions` → Active user sessions
-- `otps` → One-time passwords for email verification
-
-**`public` schema** (application data):
-- `courses` → Top-level content container
-- `modules` → Content units with MDX and quizzes
-- `user_progress` → Completion tracking (references `neon_auth.users.id`)
-
-Auth schema is automatically created and managed by Neon when Auth is enabled. Application schema is managed via migrations.
-
----
-
-## Notes
-
-- No multi-tenancy: single organization per deployment
-- No tracks: courses are standalone entities
-- Module-first content: lessons are sections within modules
-- Progressive disclosure: unlock content as users progress
+```
+DATABASE_URL, NEON_AUTH_BASE_URL, NEON_AUTH_COOKIE_SECRET
+NEXT_PUBLIC_ROOT_DOMAIN, NEXT_PUBLIC_APP_URL
+JUDGE0_API_KEY, JUDGE0_API_HOST
+```
