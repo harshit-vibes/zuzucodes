@@ -13,13 +13,13 @@ interface ProblemPanelProps {
 
 export function ProblemPanel({ problem, testCases, entryPoint, lessonId }: ProblemPanelProps) {
   const storageKey = `problem-panel-collapsed:${lessonId}`;
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState<boolean | null>(null);
   const [hintsRevealed, setHintsRevealed] = useState(0);
 
-  // Restore collapse state from localStorage
+  // Restore collapse state from localStorage (null = not yet hydrated)
   useEffect(() => {
     const stored = localStorage.getItem(storageKey);
-    if (stored === 'true') setCollapsed(true);
+    setCollapsed(stored === 'true');
   }, [storageKey]);
 
   const toggleCollapsed = () => {
@@ -41,14 +41,14 @@ export function ProblemPanel({ problem, testCases, entryPoint, lessonId }: Probl
       >
         <span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">problem</span>
         <svg
-          className={`w-3 h-3 text-muted-foreground/50 transition-transform ${collapsed ? '' : 'rotate-180'}`}
+          className={`w-3 h-3 text-muted-foreground/50 transition-transform ${collapsed === true ? '' : 'rotate-180'}`}
           fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
         >
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
         </svg>
       </button>
 
-      {!collapsed && (
+      {collapsed === false && (
         <div className="px-4 py-3 space-y-3 bg-background dark:bg-zinc-950 max-h-56 overflow-y-auto">
 
           {/* Summary */}
@@ -64,7 +64,7 @@ export function ProblemPanel({ problem, testCases, entryPoint, lessonId }: Probl
                 {visibleExamples.map((tc, i) => (
                   <div key={i} className="font-mono text-xs bg-muted/40 dark:bg-zinc-800/60 rounded px-2.5 py-1.5 flex items-center gap-2">
                     <span className="text-foreground/70">
-                      {entryPoint}({(tc.args as unknown[]).map(a => JSON.stringify(a)).join(', ')})
+                      {entryPoint}({tc.args.map(a => JSON.stringify(a)).join(', ')})
                     </span>
                     <span className="text-muted-foreground/40">→</span>
                     <span className="text-emerald-400/90">{JSON.stringify(tc.expected)}</span>

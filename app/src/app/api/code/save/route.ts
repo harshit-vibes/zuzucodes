@@ -10,7 +10,7 @@ export async function POST(req: Request) {
 
   const { lessonId, code, testResults } = await req.json();
 
-  if (!lessonId || typeof code !== 'string') {
+  if (!lessonId || typeof lessonId !== 'string' || typeof code !== 'string') {
     return NextResponse.json({ error: 'Missing lessonId or code' }, { status: 400 });
   }
 

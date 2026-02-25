@@ -78,7 +78,7 @@ export function CodeLessonLayout({
       setExecutionPhase(allPassed ? 'run-pass' : 'run-fail');
       setHasRun(true);
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // intentional: mount-only — hydrate from persisted lastTestResults once
 
   const hasCode = !!(testCases || codeTemplate);
   const hasNext = position < lessonCount;
