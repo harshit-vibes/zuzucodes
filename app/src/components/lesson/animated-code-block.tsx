@@ -82,7 +82,8 @@ export function AnimatedCodeBlock({ current, previous, isActive }: AnimatedCodeB
       timerRef.current = setTimeout(() => {
         setAnimState('settled');
         timerRef.current = null;
-      }, 1500);
+      // 1500ms > longest CSS transition (background-color 0.6s) to let animations complete
+  }, 1500);
     } else {
       // Reset so re-entry re-animates
       if (timerRef.current !== null) {
@@ -104,7 +105,7 @@ export function AnimatedCodeBlock({ current, previous, isActive }: AnimatedCodeB
   const diffLines = useMemo<DiffLine[]>(() => {
     if (previous === null) return [];
     return computeLineDiff(previous.rawContent, current.rawContent);
-  }, [previous?.rawContent, current.rawContent]);
+  }, [previous, current.rawContent]);
 
   // Determine whether to show plain static block or animated diff
   const hasDiff =
@@ -136,7 +137,7 @@ export function AnimatedCodeBlock({ current, previous, isActive }: AnimatedCodeB
           <code className="font-mono text-[0.82rem] leading-relaxed block">
           {diffLines.map((line, i) => (
             <span
-              key={i}
+              key={`${line.type}-${i}-${line.text}`}
               className={cn(
                 'diff-line',
                 line.type === 'added' && animState === 'animating' ? 'diff-line-added' : '',
