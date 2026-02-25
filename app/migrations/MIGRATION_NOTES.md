@@ -113,3 +113,55 @@ This should be done at the start of each database transaction where user-specifi
 2. **Seed Data**: Add initial courses and modules
 3. **Test RLS**: Verify policies work with session variables
 4. **Update App**: Ensure all queries set the user context
+
+---
+
+## Current Schema State (as of 2026-02-25)
+
+`user_lesson_progress` has been **dropped**. Lesson completion is now tracked exclusively via `user_code.passed_at`.
+
+### `user_code` table (current columns)
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `user_id` | TEXT | References neon_auth user |
+| `lesson_id` | TEXT | References lessons.id |
+| `code` | TEXT | User's latest saved code |
+| `last_test_results` | JSONB | Persisted test-case results from last run |
+| `passed_at` | TIMESTAMPTZ | Set when all tests pass; NULL if not yet passed |
+| `updated_at` | TIMESTAMPTZ | Last save timestamp |
+
+### `modules` table constraint
+
+`quiz_form` is now `NOT NULL` (enforced by CHECK constraint added in `2026-02-25-mandatory-quiz-constraint.sql`).
+
+---
+
+## Migration Order — 2026-02-25 Batch
+
+Run these four migrations **in order** against the Neon database:
+
+1. **`2026-02-25-lesson-player-ux.sql`**
+   - Adds `lessons.problem` JSONB column (problem statement + examples for the code editor)
+   - Adds `user_code.last_test_results` JSONB column (persists test results across sessions)
+
+2. **`2026-02-25-schema-completion-redesign.sql`**
+   - Adds `user_code.passed_at` TIMESTAMPTZ column
+   - Migrates existing completion data from `user_lesson_progress` into `user_code.passed_at`
+   - Drops the `user_lesson_progress` table
+
+3. **`2026-02-25-schema-completion-redesign-functions.sql`**
+   - Rewrites 5 DB functions to use `user_code.passed_at` instead of `user_lesson_progress`:
+     - `get_batch_course_progress`
+     - `get_batch_module_completion_status` (includes empty-module guard: `COUNT(*) > 0 AND ...`)
+     - `get_dashboard_stats`
+     - `get_resume_data`
+     - `get_section_completion_status`
+
+4. **`2026-02-25-mandatory-quiz-constraint.sql`**
+   - Adds `CHECK (quiz_form IS NOT NULL)` constraint on the `modules` table
+   - **Prerequisites**: Before running, verify no modules have a NULL `quiz_form`:
+     ```sql
+     SELECT id, title FROM modules WHERE quiz_form IS NULL;
+     ```
+   - Run this migration **only after** the above query returns 0 rows.
