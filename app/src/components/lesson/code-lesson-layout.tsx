@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { Markdown } from '@/components/shared/markdown';
 import { CodeEditor } from '@/components/lesson/code-editor';
 import { OutputPanel, ExecutionPhase } from '@/components/lesson/output-panel';
@@ -13,6 +12,9 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useRateLimitActions } from '@/context/rate-limit-context';
 import type { TestCase, TestCaseResult, Judge0RunResult, Judge0TestsResult } from '@/lib/judge0';
 import type { ExecutionMetrics } from '@/components/lesson/output-panel';
+import confetti from 'canvas-confetti';
+import { ProblemPanel } from '@/components/lesson/problem-panel';
+import type { LessonProblem } from '@/lib/data';
 
 interface CodeLessonLayoutProps {
   lessonTitle: string;
@@ -30,6 +32,8 @@ interface CodeLessonLayoutProps {
   lessonCount: number;
   isAuthenticated: boolean;
   isCompleted: boolean;
+  lastTestResults: TestCaseResult[] | null;
+  problem: LessonProblem | null;
 }
 
 
@@ -49,8 +53,9 @@ export function CodeLessonLayout({
   lessonCount,
   isAuthenticated,
   isCompleted,
+  lastTestResults,
+  problem,
 }: CodeLessonLayoutProps) {
-  const router = useRouter();
   const { increment: incrementRateLimit } = useRateLimitActions();
   const [code, setCode] = useState(savedCode ?? codeTemplate ?? '');
   const [output, setOutput] = useState('');
@@ -63,6 +68,17 @@ export function CodeLessonLayout({
   const [testResults, setTestResults] = useState<TestCaseResult[] | null>(null);
   const [hasRun, setHasRun] = useState(false);
   const [metrics, setMetrics] = useState<ExecutionMetrics | null>(null);
+  const [showCelebration, setShowCelebration] = useState(false);
+
+  // Hydrate output panel with persisted test results on mount
+  useEffect(() => {
+    if (lastTestResults && lastTestResults.length > 0) {
+      const allPassed = lastTestResults.every(r => r.pass);
+      setTestResults(lastTestResults);
+      setExecutionPhase(allPassed ? 'run-pass' : 'run-fail');
+      setHasRun(true);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const hasCode = !!(testCases || codeTemplate);
   const hasNext = position < lessonCount;
@@ -174,6 +190,15 @@ export function CodeLessonLayout({
           setTestResults(testResult.tests);
           setExecutionPhase(testResult.allPassed ? 'run-pass' : 'run-fail');
 
+          // Save test results immediately (not debounced — deliberate run action)
+          if (isAuthenticated) {
+            fetch('/api/code/save', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ lessonId, code, testResults: testResult.tests }),
+            }).catch(() => {});
+          }
+
           if (testResult.allPassed) {
             if (isAuthenticated && !isCompleted) {
               fetch('/api/progress/lesson', {
@@ -182,8 +207,14 @@ export function CodeLessonLayout({
                 body: JSON.stringify({ lessonId, courseId }),
               }).catch(() => {});
             }
-            await new Promise(resolve => setTimeout(resolve, 700));
-            router.push(nextHref);
+            setShowCelebration(true);
+            confetti({
+              particleCount: 80,
+              spread: 70,
+              origin: { x: 0.5, y: 1 },
+              colors: ['#ffffff', '#a3a3a3', '#22c55e', '#3b82f6'],
+              disableForReducedMotion: true,
+            });
           }
         } else {
           // No test cases or test service unavailable — show console output only
@@ -249,6 +280,14 @@ export function CodeLessonLayout({
         </div>
       </div>
       <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+        {problem && (
+          <ProblemPanel
+            problem={problem}
+            testCases={testCases}
+            entryPoint={entryPoint}
+            lessonId={lessonId}
+          />
+        )}
         <CodeEditor value={code} onChange={handleCodeChange} />
         <OutputPanel
           phase={executionPhase}
@@ -357,7 +396,7 @@ export function CodeLessonLayout({
         {/* Right: actions */}
         <div className="flex items-center gap-2 shrink-0">
 
-          {/* Theory lesson — no code — just navigate */}
+          {/* Theory lesson — no code */}
           {!hasCode && (
             <Link
               href={nextHref}
@@ -370,7 +409,7 @@ export function CodeLessonLayout({
             </Link>
           )}
 
-          {/* Code lesson — manual continue (no test cases) */}
+          {/* Code lesson — no test cases */}
           {hasCode && !testCases && (
             <Link
               href={nextHref}
@@ -380,6 +419,18 @@ export function CodeLessonLayout({
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
+            </Link>
+          )}
+
+          {/* Code lesson with test cases — only shown when passed */}
+          {hasCode && testCases && (showCelebration || isCompleted) && (
+            <Link
+              href={nextHref}
+              className={`flex items-center gap-1.5 px-3 h-7 rounded text-xs font-mono transition-all bg-primary text-primary-foreground hover:bg-primary/90 ${
+                showCelebration ? 'animate-bounce' : ''
+              }`}
+            >
+              {hasNext ? 'next →' : 'take quiz →'}
             </Link>
           )}
 
