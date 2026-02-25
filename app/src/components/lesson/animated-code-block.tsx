@@ -132,7 +132,8 @@ export function AnimatedCodeBlock({ current, previous, isActive }: AnimatedCodeB
     return (
       <pre className="relative my-6 rounded-xl bg-zinc-950 text-zinc-200 overflow-x-auto border border-zinc-800/60 shadow-sm">
         {header}
-        <div className="p-4 font-mono text-[0.82rem] leading-relaxed">
+        <div className="p-4">
+          <code className="font-mono text-[0.82rem] leading-relaxed block">
           {diffLines.map((line, i) => (
             <span
               key={i}
@@ -147,6 +148,7 @@ export function AnimatedCodeBlock({ current, previous, isActive }: AnimatedCodeB
               {line.text || '\u00a0'}
             </span>
           ))}
+          </code>
         </div>
       </pre>
     );
