@@ -11,6 +11,19 @@ interface ProblemPanelProps {
   entryPoint: string | null;
 }
 
+function ChevronIcon({ open }: { open: boolean }) {
+  return (
+    <svg
+      className={`w-3.5 h-3.5 text-muted-foreground/50 transition-transform ${open ? 'rotate-180' : ''}`}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+    </svg>
+  );
+}
+
 export function ProblemPanel({
   problemSummary,
   problemConstraints,
@@ -18,70 +31,107 @@ export function ProblemPanel({
   testCases,
   entryPoint,
 }: ProblemPanelProps) {
+  const [constraintsOpen, setConstraintsOpen] = useState(true);
+  const [hintsOpen, setHintsOpen] = useState(false);
   const [hintsRevealed, setHintsRevealed] = useState(0);
 
   const visibleExamples = (testCases ?? []).filter(tc => tc.visible);
 
   return (
-    <div className="px-6 py-5 space-y-4 bg-background dark:bg-zinc-950 overflow-y-auto">
+    <div className="overflow-y-auto border-b border-border/50 dark:border-zinc-700/50 bg-background dark:bg-zinc-950" style={{ maxHeight: '40%' }}>
+      <div className="px-4 py-3 space-y-3">
 
-      {/* Summary */}
-      <p className="text-base text-foreground/80 leading-relaxed">
-        {problemSummary}
-      </p>
+        {/* Summary */}
+        <p className="text-sm text-foreground/80 leading-relaxed">
+          {problemSummary}
+        </p>
 
-      {/* Examples */}
-      {visibleExamples.length > 0 && entryPoint && (
-        <div className="space-y-2">
-          <span className="text-[11px] font-mono text-muted-foreground/50 uppercase tracking-wider">examples</span>
+        {/* Examples */}
+        {visibleExamples.length > 0 && entryPoint && (
           <div className="space-y-1.5">
-            {visibleExamples.map((tc, i) => (
-              <div key={i} className="font-mono text-sm bg-muted/40 dark:bg-zinc-800/60 rounded px-3 py-2 flex items-center gap-2">
-                <span className="text-foreground/70">
-                  {entryPoint}({tc.args.map(a => JSON.stringify(a)).join(', ')})
-                </span>
-                <span className="text-muted-foreground/40">→</span>
-                <span className="text-emerald-400/90">{JSON.stringify(tc.expected)}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Constraints */}
-      {problemConstraints.length > 0 && (
-        <div className="space-y-2">
-          <span className="text-[11px] font-mono text-muted-foreground/50 uppercase tracking-wider">constraints</span>
-          <div className="flex flex-wrap gap-2">
-            {problemConstraints.map((c, i) => (
-              <span key={i} className="font-mono text-xs text-muted-foreground/70 bg-muted/40 dark:bg-zinc-800/60 rounded px-2.5 py-1">
-                {c}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Hints */}
-      {problemHints.length > 0 && (
-        <div className="space-y-2">
-          <span className="text-[11px] font-mono text-muted-foreground/50 uppercase tracking-wider">hints</span>
-          {problemHints.slice(0, hintsRevealed).map((hint, i) => (
-            <div key={i} className="text-sm text-muted-foreground/70 bg-muted/30 dark:bg-zinc-800/40 rounded px-3 py-2 border border-border/30">
-              {hint}
+            <span className="text-[10px] font-mono text-muted-foreground/40 uppercase tracking-wider">
+              examples
+            </span>
+            <div className="space-y-1">
+              {visibleExamples.map((tc, i) => (
+                <div
+                  key={i}
+                  className="font-mono text-xs bg-muted/40 dark:bg-zinc-800/60 rounded px-2.5 py-1.5 flex items-center gap-2"
+                >
+                  <span className="text-foreground/70">
+                    {entryPoint}({tc.args.map(a => JSON.stringify(a)).join(', ')})
+                  </span>
+                  <span className="text-muted-foreground/40">→</span>
+                  <span className="text-emerald-400/90">{JSON.stringify(tc.expected)}</span>
+                </div>
+              ))}
             </div>
-          ))}
-          {hintsRevealed < problemHints.length && (
-            <button
-              onClick={() => setHintsRevealed(h => h + 1)}
-              className="text-xs font-mono text-muted-foreground/50 hover:text-muted-foreground transition-colors"
-            >
-              show hint {hintsRevealed + 1}/{problemHints.length} →
-            </button>
-          )}
-        </div>
-      )}
+          </div>
+        )}
 
+        {/* Constraints — collapsible */}
+        {problemConstraints.length > 0 && (
+          <div>
+            <button
+              onClick={() => setConstraintsOpen(o => !o)}
+              className="flex items-center gap-1.5 w-full text-left"
+            >
+              <span className="text-[10px] font-mono text-muted-foreground/40 uppercase tracking-wider flex-1">
+                constraints
+              </span>
+              <ChevronIcon open={constraintsOpen} />
+            </button>
+            {constraintsOpen && (
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
+                {problemConstraints.map((c, i) => (
+                  <span
+                    key={i}
+                    className="font-mono text-xs text-muted-foreground/70 bg-muted/40 dark:bg-zinc-800/60 rounded px-2 py-0.5"
+                  >
+                    {c}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Hints — collapsible, reveal one at a time */}
+        {problemHints.length > 0 && (
+          <div>
+            <button
+              onClick={() => setHintsOpen(o => !o)}
+              className="flex items-center gap-1.5 w-full text-left"
+            >
+              <span className="text-[10px] font-mono text-muted-foreground/40 uppercase tracking-wider flex-1">
+                hints
+              </span>
+              <ChevronIcon open={hintsOpen} />
+            </button>
+            {hintsOpen && (
+              <div className="mt-1.5 space-y-1.5">
+                {problemHints.slice(0, hintsRevealed).map((hint, i) => (
+                  <div
+                    key={i}
+                    className="text-xs text-muted-foreground/70 bg-muted/30 dark:bg-zinc-800/40 rounded px-3 py-2 border border-border/30"
+                  >
+                    {hint}
+                  </div>
+                ))}
+                {hintsRevealed < problemHints.length && (
+                  <button
+                    onClick={() => setHintsRevealed(h => h + 1)}
+                    className="text-xs font-mono text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+                  >
+                    show hint {hintsRevealed + 1}/{problemHints.length} →
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+      </div>
     </div>
   );
 }

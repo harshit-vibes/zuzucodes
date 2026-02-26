@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { LessonSections } from '@/components/lesson/lesson-sections';
 import type { DbLessonSection } from '@/lib/data';
+import { ProblemPanel } from '@/components/lesson/problem-panel';
 import { CodeEditor } from '@/components/lesson/code-editor';
 import { OutputPanel, ExecutionPhase } from '@/components/lesson/output-panel';
 import { parsePythonError, ParsedError } from '@/lib/python-output';
@@ -246,6 +247,16 @@ export function CodeLessonLayout({
   // ─── Code Pane ──────────────────────────────────────────────────────────────
   const CodePane = (
     <div className="flex flex-col flex-1 overflow-hidden">
+      {/* Problem panel — pinned above editor, hidden for theory-only lessons */}
+      {problemSummary && (
+        <ProblemPanel
+          problemSummary={problemSummary}
+          problemConstraints={problemConstraints}
+          problemHints={problemHints}
+          testCases={testCases}
+          entryPoint={entryPoint}
+        />
+      )}
       <div className="shrink-0 h-9 flex items-center justify-between px-3 bg-muted/50 dark:bg-zinc-800 border-b border-border dark:border-zinc-700">
         <span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">editor</span>
         <div className="flex items-center gap-2">
