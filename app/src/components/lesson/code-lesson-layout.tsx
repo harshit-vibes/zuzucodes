@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { LessonSections } from '@/components/lesson/lesson-sections';
+import { LessonOverlay } from '@/components/lesson/lesson-overlay';
 import type { DbLessonSection } from '@/lib/data';
 import { ProblemPanel } from '@/components/lesson/problem-panel';
 import { CodeEditor } from '@/components/lesson/code-editor';
@@ -77,6 +78,7 @@ export function CodeLessonLayout({
   const [hasRun, setHasRun] = useState(false);
   const [metrics, setMetrics] = useState<ExecutionMetrics | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [view, setView] = useState<'intro' | 'content' | 'outro'>('intro');
 
   // Hydrate output panel with persisted test results on mount
   useEffect(() => {
@@ -214,6 +216,7 @@ export function CodeLessonLayout({
               colors: ['#ffffff', '#a3a3a3', '#22c55e', '#3b82f6'],
               disableForReducedMotion: true,
             });
+            setTimeout(() => setView('outro'), 1800);
           }
         } else {
           setExecutionPhase('run-pass');
@@ -236,11 +239,7 @@ export function CodeLessonLayout({
           {lessonTitle}
         </h1>
       </div>
-      <LessonSections
-        introContent={introContent}
-        sections={sections}
-        outroContent={outroContent}
-      />
+      <LessonSections sections={sections} />
     </div>
   );
 
@@ -331,55 +330,16 @@ export function CodeLessonLayout({
 
   // ─── Footer ─────────────────────────────────────────────────────────────────
   const Footer = (
-    <footer className="shrink-0 bg-muted/50 dark:bg-zinc-900 border-t border-border dark:border-zinc-800">
-      <div className="h-11 px-4 flex items-center justify-between gap-3">
-        {hasPrev ? (
-          <Link href={prevHref} className="flex items-center gap-1.5 px-2.5 h-7 rounded text-xs font-mono text-muted-foreground hover:text-foreground hover:bg-muted dark:hover:bg-zinc-800 transition-colors shrink-0">
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            prev
-          </Link>
-        ) : (
-          <div className="shrink-0 w-14" />
-        )}
-        <div className="flex items-center gap-1.5">
-          {Array.from({ length: lessonCount }, (_, i) => (
-            <Link
-              key={i}
-              href={`/dashboard/course/${courseId}/${moduleId}/lesson/${i + 1}`}
-              className={`block rounded-full transition-all ${
-                i + 1 === position ? 'bg-primary w-5 h-1.5'
-                  : i + 1 < position ? 'bg-muted-foreground/50 w-1.5 h-1.5 hover:bg-muted-foreground/70'
-                  : 'bg-muted-foreground/20 w-1.5 h-1.5 hover:bg-muted-foreground/40'
-              }`}
-            />
-          ))}
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          {!hasCode && (
-            <Link href={nextHref} className="flex items-center gap-1.5 px-3 h-7 rounded bg-primary/90 hover:bg-primary text-primary-foreground text-xs font-mono transition-colors">
-              {hasNext ? 'continue' : 'take quiz'}
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </Link>
-          )}
-          {hasCode && !testCases && (
-            <Link href={nextHref} className="flex items-center gap-1.5 px-3 h-7 rounded bg-primary/90 hover:bg-primary text-primary-foreground text-xs font-mono transition-colors">
-              {hasNext ? 'continue' : 'take quiz'}
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </Link>
-          )}
-          {hasCode && testCases && (showCelebration || isCompleted) && (
-            <Link href={nextHref} className={`flex items-center gap-1.5 px-3 h-7 rounded text-xs font-mono transition-all bg-primary text-primary-foreground hover:bg-primary/90 ${showCelebration ? 'animate-bounce' : ''}`}>
-              {hasNext ? 'next →' : 'take quiz →'}
-            </Link>
-          )}
-        </div>
-      </div>
+    <footer className="shrink-0 h-11 bg-muted/50 dark:bg-zinc-900 border-t border-border dark:border-zinc-800 flex items-center justify-end px-4">
+      <button
+        onClick={() => setView('outro')}
+        className="flex items-center gap-1.5 px-3 h-7 rounded text-xs font-mono text-muted-foreground hover:text-foreground hover:bg-muted dark:hover:bg-zinc-800 transition-colors"
+      >
+        wrap up
+        <svg aria-hidden="true" className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
     </footer>
   );
 
@@ -387,18 +347,35 @@ export function CodeLessonLayout({
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
       {Header}
-      <div className="md:hidden shrink-0 flex border-b border-border bg-muted/50 dark:bg-zinc-900">
-        <button onClick={() => setActiveTab('lesson')} className={`flex-1 py-2.5 text-xs font-mono tracking-wide transition-colors ${activeTab === 'lesson' ? 'text-primary border-b border-primary' : 'text-muted-foreground hover:text-foreground'}`}>lesson</button>
-        <button onClick={() => setActiveTab('code')} className={`flex-1 py-2.5 text-xs font-mono tracking-wide transition-colors ${activeTab === 'code' ? 'text-primary border-b border-primary' : 'text-muted-foreground hover:text-foreground'}`}>code</button>
-      </div>
-      <div className="md:hidden flex-1 overflow-hidden flex flex-col">
-        {activeTab === 'lesson' ? ProsePane : CodePane}
-      </div>
-      <div className="hidden md:flex flex-1 overflow-hidden">
-        <div className="w-[48%] border-r border-border/50 overflow-hidden flex flex-col">{ProsePane}</div>
-        <div className="flex-1 flex flex-col overflow-hidden bg-background dark:bg-zinc-950">{CodePane}</div>
-      </div>
-      {Footer}
+      {view !== 'content' ? (
+        <LessonOverlay
+          view={view}
+          introContent={introContent}
+          outroContent={outroContent}
+          lessonTitle={lessonTitle}
+          position={position}
+          lessonCount={lessonCount}
+          prevHref={prevHref}
+          nextHref={nextHref}
+          hasPrev={hasPrev}
+          onEnterLesson={() => setView('content')}
+        />
+      ) : (
+        <>
+          <div className="md:hidden shrink-0 flex border-b border-border bg-muted/50 dark:bg-zinc-900">
+            <button onClick={() => setActiveTab('lesson')} className={`flex-1 py-2.5 text-xs font-mono tracking-wide transition-colors ${activeTab === 'lesson' ? 'text-primary border-b border-primary' : 'text-muted-foreground hover:text-foreground'}`}>lesson</button>
+            <button onClick={() => setActiveTab('code')} className={`flex-1 py-2.5 text-xs font-mono tracking-wide transition-colors ${activeTab === 'code' ? 'text-primary border-b border-primary' : 'text-muted-foreground hover:text-foreground'}`}>code</button>
+          </div>
+          <div className="md:hidden flex-1 overflow-hidden flex flex-col">
+            {activeTab === 'lesson' ? ProsePane : CodePane}
+          </div>
+          <div className="hidden md:flex flex-1 overflow-hidden">
+            <div className="w-[48%] border-r border-border/50 overflow-hidden flex flex-col">{ProsePane}</div>
+            <div className="flex-1 flex flex-col overflow-hidden bg-background dark:bg-zinc-950">{CodePane}</div>
+          </div>
+          {Footer}
+        </>
+      )}
     </div>
   );
 }
