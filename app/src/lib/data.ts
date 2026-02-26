@@ -885,7 +885,7 @@ export const getCoursesForSidebar = cache(async (): Promise<CourseWithModules[]>
 
     const courseIds = courses.map((c) => (c as any).id);
     const allModules = await sql`
-      SELECT m.id, m.course_id, m.title, m.description, m."order",
+      SELECT m.id, m.course_id, m.slug, m.title, m.description, m."order",
              m.quiz_form, m.intro_content, m.outro_content,
              COALESCE(lc.lesson_count, 0) AS lesson_count
       FROM modules m

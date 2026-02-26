@@ -61,11 +61,11 @@ export function Markdown({ content }: MarkdownProps) {
               );
             }
             return (
-              <code className="font-mono text-[0.82rem] leading-relaxed">{children}</code>
+              <code className="font-mono text-[0.82rem] leading-relaxed whitespace-pre-wrap break-words">{children}</code>
             );
           },
           pre: ({ children }) => (
-            <pre className="relative my-6 rounded-xl bg-zinc-950 text-zinc-200 overflow-x-auto border border-zinc-800/60 shadow-sm">
+            <pre className="relative my-6 rounded-xl bg-zinc-950 text-zinc-200 border border-zinc-800/60 shadow-sm">
               <div className="flex items-center gap-2 px-4 py-2.5 border-b border-zinc-800/60">
                 <div className="flex gap-1.5">
                   <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
