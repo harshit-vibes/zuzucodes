@@ -14,7 +14,6 @@ import { ModuleOutroTemplate } from './module-outro';
 import { CourseIntroTemplate } from './course-intro';
 import { CourseOutroTemplate } from './course-outro';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type TemplateComponentMap = { [K in TemplateName]: ComponentType<{ content: TemplateContent<K> }> };
 
 /**
