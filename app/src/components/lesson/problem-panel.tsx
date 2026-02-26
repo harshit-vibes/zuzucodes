@@ -100,7 +100,12 @@ export function ProblemPanel({
         {problemHints.length > 0 && (
           <div>
             <button
-              onClick={() => setHintsOpen(o => !o)}
+              onClick={() => {
+                setHintsOpen(o => {
+                  if (o) setHintsRevealed(0); // reset revealed count on collapse
+                  return !o;
+                });
+              }}
               className="flex items-center gap-1.5 w-full text-left"
             >
               <span className="text-[10px] font-mono text-muted-foreground/40 uppercase tracking-wider flex-1">
