@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Link from 'next/link';
-import { SlidesPane } from '@/components/lesson/slides-pane';
+import { parseLessonSections } from '@/lib/parse-lesson-sections';
+import { LessonSections } from '@/components/lesson/lesson-sections';
 import { CodeEditor } from '@/components/lesson/code-editor';
 import { OutputPanel, ExecutionPhase } from '@/components/lesson/output-panel';
 import { parsePythonError, ParsedError } from '@/lib/python-output';
@@ -72,6 +73,14 @@ export function CodeLessonLayout({
   const [metrics, setMetrics] = useState<ExecutionMetrics | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
 
+  // Legacy: keep parseLessonSections for any callers that still need it;
+  // LessonSections now accepts DbLessonSection[] so we pass an empty array.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _sections = useMemo(
+    () => parseLessonSections(content, problemSummary),
+    [content, problemSummary],
+  );
+
   // Hydrate output panel with persisted test results on mount
   useEffect(() => {
     if (lastTestResults && lastTestResults.length > 0) {
@@ -80,7 +89,7 @@ export function CodeLessonLayout({
       setExecutionPhase(allPassed ? 'run-pass' : 'run-fail');
       setHasRun(true);
     }
-  }, []); // intentional: mount-only — hydrate from persisted lastTestResults once
+  }, []); // intentional: mount-only
 
   const hasCode = !!(testCases || codeTemplate);
   const hasNext = position < lessonCount;
@@ -93,7 +102,6 @@ export function CodeLessonLayout({
 
   const prevHref = `/dashboard/course/${courseId}/${moduleId}/lesson/${position - 1}`;
 
-  // Auto-save: 1500ms debounce
   const handleCodeChange = useCallback((val: string) => {
     setCode(val);
     if (!isAuthenticated) return;
@@ -109,7 +117,7 @@ export function CodeLessonLayout({
         setSaveStatus('saved');
         setTimeout(() => setSaveStatus('idle'), 2000);
       } catch {
-        // silently swallow — in-memory code is preserved
+        // silently swallow
       }
     }, 1500);
   }, [isAuthenticated, lessonId]);
@@ -192,7 +200,6 @@ export function CodeLessonLayout({
           setTestResults(testResult.tests);
           setExecutionPhase(testResult.allPassed ? 'run-pass' : 'run-fail');
 
-          // Save test results immediately (not debounced — deliberate run action)
           if (isAuthenticated) {
             fetch('/api/code/save', {
               method: 'POST',
@@ -212,7 +219,6 @@ export function CodeLessonLayout({
             });
           }
         } else {
-          // No test cases or test service unavailable — show console output only
           setExecutionPhase('run-pass');
         }
       } catch (err: unknown) {
@@ -225,13 +231,18 @@ export function CodeLessonLayout({
     }
   };
 
-
   // ─── Prose Pane ─────────────────────────────────────────────────────────────
   const ProsePane = (
-    <div className="h-full overflow-hidden flex flex-col">
-      <SlidesPane
-        key={lessonId}
-        content={content}
+    <div className="h-full relative overflow-hidden flex flex-col">
+      <div className="shrink-0 px-8 pt-8 pb-4 border-b border-border/30">
+        <h1 className="text-2xl md:text-[1.75rem] font-semibold tracking-tight leading-tight text-foreground">
+          {lessonTitle}
+        </h1>
+      </div>
+      <LessonSections
+        introContent={null}
+        sections={[]}
+        outroContent={null}
         problemSummary={problemSummary}
         problemConstraints={problemConstraints}
         problemHints={problemHints}
@@ -244,7 +255,6 @@ export function CodeLessonLayout({
   // ─── Code Pane ──────────────────────────────────────────────────────────────
   const CodePane = (
     <div className="flex flex-col flex-1 overflow-hidden">
-      {/* Editor toolbar */}
       <div className="shrink-0 h-9 flex items-center justify-between px-3 bg-muted/50 dark:bg-zinc-800 border-b border-border dark:border-zinc-700">
         <span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">editor</span>
         <div className="flex items-center gap-2">
@@ -284,71 +294,45 @@ export function CodeLessonLayout({
     </div>
   );
 
-  // ─── Unified Header ─────────────────────────────────────────────────────────
+  // ─── Header ─────────────────────────────────────────────────────────────────
   const Header = (
     <header className="shrink-0 h-14 flex items-center gap-3 px-4 border-b border-border/50 bg-background/95 backdrop-blur-sm">
-
-      {/* Sidebar toggle */}
       <SidebarTrigger className="flex items-center justify-center w-7 h-7 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground shrink-0" />
-
       <div className="w-px h-5 bg-border/50 shrink-0" />
-
-      {/* Lesson path */}
       <div className="flex-1 flex items-center gap-2 min-w-0 overflow-hidden">
         <span className="font-mono text-[11px] text-muted-foreground/50 tracking-wider uppercase hidden sm:block shrink-0">
           {moduleTitle}
         </span>
         <span className="text-border/40 hidden sm:block shrink-0 text-xs">/</span>
-        <span className="text-sm font-medium text-foreground truncate">
-          {lessonTitle}
-        </span>
+        <span className="text-sm font-medium text-foreground truncate">{lessonTitle}</span>
       </div>
-
-      {/* Progress + completion */}
       <div className="flex items-center gap-2.5 shrink-0">
         {isCompleted && (
-          <div
-            className="flex items-center justify-center w-4 h-4 rounded-full bg-success/15 ring-1 ring-success/40"
-            title="Lesson complete"
-          >
+          <div className="flex items-center justify-center w-4 h-4 rounded-full bg-success/15 ring-1 ring-success/40" title="Lesson complete">
             <svg className="w-2.5 h-2.5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           </div>
         )}
         <div className="w-16 h-0.5 bg-border/40 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-primary/70 rounded-full transition-all duration-700"
-            style={{ width: `${progress}%` }}
-          />
+          <div className="h-full bg-primary/70 rounded-full transition-all duration-700" style={{ width: `${progress}%` }} />
         </div>
-        <span className="font-mono text-[11px] text-muted-foreground/50 tabular-nums">
-          {position}/{lessonCount}
-        </span>
+        <span className="font-mono text-[11px] text-muted-foreground/50 tabular-nums">{position}/{lessonCount}</span>
       </div>
-
       <div className="w-px h-5 bg-border/50 shrink-0" />
-
-      {/* Theme + user */}
       <div className="flex items-center gap-1.5 shrink-0">
         <ThemeToggle />
         {isAuthenticated && <UserButton />}
       </div>
-
     </header>
   );
 
-  // ─── Unified Footer ──────────────────────────────────────────────────────────
+  // ─── Footer ─────────────────────────────────────────────────────────────────
   const Footer = (
     <footer className="shrink-0 bg-muted/50 dark:bg-zinc-900 border-t border-border dark:border-zinc-800">
       <div className="h-11 px-4 flex items-center justify-between gap-3">
-
-        {/* Left: prev */}
         {hasPrev ? (
-          <Link
-            href={prevHref}
-            className="flex items-center gap-1.5 px-2.5 h-7 rounded text-xs font-mono text-muted-foreground hover:text-foreground hover:bg-muted dark:hover:bg-zinc-800 transition-colors shrink-0"
-          >
+          <Link href={prevHref} className="flex items-center gap-1.5 px-2.5 h-7 rounded text-xs font-mono text-muted-foreground hover:text-foreground hover:bg-muted dark:hover:bg-zinc-800 transition-colors shrink-0">
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
@@ -357,65 +341,41 @@ export function CodeLessonLayout({
         ) : (
           <div className="shrink-0 w-14" />
         )}
-
-        {/* Center: lesson dots */}
         <div className="flex items-center gap-1.5">
           {Array.from({ length: lessonCount }, (_, i) => (
             <Link
               key={i}
               href={`/dashboard/course/${courseId}/${moduleId}/lesson/${i + 1}`}
               className={`block rounded-full transition-all ${
-                i + 1 === position
-                  ? 'bg-primary w-5 h-1.5'
-                  : i + 1 < position
-                  ? 'bg-muted-foreground/50 w-1.5 h-1.5 hover:bg-muted-foreground/70'
+                i + 1 === position ? 'bg-primary w-5 h-1.5'
+                  : i + 1 < position ? 'bg-muted-foreground/50 w-1.5 h-1.5 hover:bg-muted-foreground/70'
                   : 'bg-muted-foreground/20 w-1.5 h-1.5 hover:bg-muted-foreground/40'
               }`}
             />
           ))}
         </div>
-
-        {/* Right: actions */}
         <div className="flex items-center gap-2 shrink-0">
-
-          {/* Theory lesson — no code */}
           {!hasCode && (
-            <Link
-              href={nextHref}
-              className="flex items-center gap-1.5 px-3 h-7 rounded bg-primary/90 hover:bg-primary text-primary-foreground text-xs font-mono transition-colors"
-            >
+            <Link href={nextHref} className="flex items-center gap-1.5 px-3 h-7 rounded bg-primary/90 hover:bg-primary text-primary-foreground text-xs font-mono transition-colors">
               {hasNext ? 'continue' : 'take quiz'}
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </Link>
           )}
-
-          {/* Code lesson — no test cases */}
           {hasCode && !testCases && (
-            <Link
-              href={nextHref}
-              className="flex items-center gap-1.5 px-3 h-7 rounded bg-primary/90 hover:bg-primary text-primary-foreground text-xs font-mono transition-colors"
-            >
+            <Link href={nextHref} className="flex items-center gap-1.5 px-3 h-7 rounded bg-primary/90 hover:bg-primary text-primary-foreground text-xs font-mono transition-colors">
               {hasNext ? 'continue' : 'take quiz'}
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </Link>
           )}
-
-          {/* Code lesson with test cases — only shown when passed */}
           {hasCode && testCases && (showCelebration || isCompleted) && (
-            <Link
-              href={nextHref}
-              className={`flex items-center gap-1.5 px-3 h-7 rounded text-xs font-mono transition-all bg-primary text-primary-foreground hover:bg-primary/90 ${
-                showCelebration ? 'animate-bounce' : ''
-              }`}
-            >
+            <Link href={nextHref} className={`flex items-center gap-1.5 px-3 h-7 rounded text-xs font-mono transition-all bg-primary text-primary-foreground hover:bg-primary/90 ${showCelebration ? 'animate-bounce' : ''}`}>
               {hasNext ? 'next →' : 'take quiz →'}
             </Link>
           )}
-
         </div>
       </div>
     </footer>
@@ -424,50 +384,19 @@ export function CodeLessonLayout({
   // ─── Layout ─────────────────────────────────────────────────────────────────
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-
       {Header}
-
-      {/* Mobile: tab bar */}
       <div className="md:hidden shrink-0 flex border-b border-border bg-muted/50 dark:bg-zinc-900">
-        <button
-          onClick={() => setActiveTab('lesson')}
-          className={`flex-1 py-2.5 text-xs font-mono tracking-wide transition-colors ${
-            activeTab === 'lesson'
-              ? 'text-primary border-b border-primary'
-              : 'text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          lesson
-        </button>
-        <button
-          onClick={() => setActiveTab('code')}
-          className={`flex-1 py-2.5 text-xs font-mono tracking-wide transition-colors ${
-            activeTab === 'code'
-              ? 'text-primary border-b border-primary'
-              : 'text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          code
-        </button>
+        <button onClick={() => setActiveTab('lesson')} className={`flex-1 py-2.5 text-xs font-mono tracking-wide transition-colors ${activeTab === 'lesson' ? 'text-primary border-b border-primary' : 'text-muted-foreground hover:text-foreground'}`}>lesson</button>
+        <button onClick={() => setActiveTab('code')} className={`flex-1 py-2.5 text-xs font-mono tracking-wide transition-colors ${activeTab === 'code' ? 'text-primary border-b border-primary' : 'text-muted-foreground hover:text-foreground'}`}>code</button>
       </div>
-
-      {/* Mobile: single active pane */}
       <div className="md:hidden flex-1 overflow-hidden flex flex-col">
         {activeTab === 'lesson' ? ProsePane : CodePane}
       </div>
-
-      {/* Desktop: split pane */}
       <div className="hidden md:flex flex-1 overflow-hidden">
-        <div className="w-[48%] border-r border-border/50 overflow-hidden flex flex-col">
-          {ProsePane}
-        </div>
-        <div className="flex-1 flex flex-col overflow-hidden bg-background dark:bg-zinc-950">
-          {CodePane}
-        </div>
+        <div className="w-[48%] border-r border-border/50 overflow-hidden flex flex-col">{ProsePane}</div>
+        <div className="flex-1 flex flex-col overflow-hidden bg-background dark:bg-zinc-950">{CodePane}</div>
       </div>
-
       {Footer}
-
     </div>
   );
 }
