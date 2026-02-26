@@ -20,11 +20,14 @@ export function CodeSectionTemplate({ content }: Props) {
         <Markdown content={fenced} />
       </div>
 
-      {content.takeaway && (
-        <p className="text-sm text-muted-foreground/60 italic border-t border-border/20 pt-4">
-          {content.takeaway}
-        </p>
-      )}
+      {content.takeaway ? (
+        <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
+          <p className="text-[10px] font-mono uppercase tracking-widest text-primary/50 mb-1">
+            Key takeaway
+          </p>
+          <p className="text-sm text-foreground/70">{content.takeaway}</p>
+        </div>
+      ) : null}
     </div>
   );
 }
