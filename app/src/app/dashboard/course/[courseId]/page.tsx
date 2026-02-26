@@ -7,6 +7,7 @@ import {
   getLessonsForCourse,
 } from '@/lib/data';
 import { titleCase } from '@/lib/utils';
+import { renderTemplate } from '@/components/templates';
 
 export default async function CourseOverviewPage({
   params,
@@ -76,11 +77,13 @@ export default async function CourseOverviewPage({
           <h1 className="text-2xl font-semibold tracking-tight text-foreground mb-2">
             {course.title}
           </h1>
-          {course.description && (
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {course.description}
-            </p>
-          )}
+          {course.intro_content
+            ? renderTemplate('course-intro', course.intro_content)
+            : course.description && (
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {course.description}
+                </p>
+              )}
         </div>
 
         {/* ─── Progress + CTA ─────────────────────────────────────── */}
@@ -157,8 +160,11 @@ export default async function CourseOverviewPage({
 
               return (
                 <div key={mod.id} className="rounded-xl border border-border/50 bg-card overflow-hidden">
-                  {/* Module header */}
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
+                  {/* Module header — links to module overview page */}
+                  <Link
+                    href={`/dashboard/course/${courseId}/${mod.id}`}
+                    className="flex items-center justify-between px-4 py-3 border-b border-border/30 hover:bg-muted/30 transition-colors group"
+                  >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <ModuleStatusIcon status={modStatus} />
                       <span className="text-sm font-medium text-foreground truncate">
@@ -168,10 +174,20 @@ export default async function CourseOverviewPage({
                         {mod.title}
                       </span>
                     </div>
-                    <span className="text-[11px] font-mono text-muted-foreground/60 shrink-0 ml-3">
-                      {modDone}/{modTotal}
-                    </span>
-                  </div>
+                    <div className="flex items-center gap-2 shrink-0 ml-3">
+                      <span className="text-[11px] font-mono text-muted-foreground/60">
+                        {modDone}/{modTotal}
+                      </span>
+                      <svg
+                        className="w-3.5 h-3.5 text-muted-foreground/30 opacity-0 group-hover:opacity-100 transition-opacity"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                  </Link>
 
                   {/* Lesson list */}
                   <div className="divide-y divide-border/20">
