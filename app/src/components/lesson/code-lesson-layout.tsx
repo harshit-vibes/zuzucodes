@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import { parseLessonSections } from '@/lib/parse-lesson-sections';
 import { LessonSections } from '@/components/lesson/lesson-sections';
+import type { DbLessonSection } from '@/lib/data';
 import { CodeEditor } from '@/components/lesson/code-editor';
 import { OutputPanel, ExecutionPhase } from '@/components/lesson/output-panel';
 import { parsePythonError, ParsedError } from '@/lib/python-output';
@@ -17,7 +17,9 @@ import confetti from 'canvas-confetti';
 
 interface CodeLessonLayoutProps {
   lessonTitle: string;
-  content: string;
+  introContent: unknown | null;
+  sections: DbLessonSection[];
+  outroContent: unknown | null;
   codeTemplate: string | null;
   testCases: TestCase[] | null;
   entryPoint: string | null;
@@ -40,7 +42,9 @@ interface CodeLessonLayoutProps {
 
 export function CodeLessonLayout({
   lessonTitle,
-  content,
+  introContent,
+  sections,
+  outroContent,
   codeTemplate,
   testCases,
   entryPoint,
@@ -72,14 +76,6 @@ export function CodeLessonLayout({
   const [hasRun, setHasRun] = useState(false);
   const [metrics, setMetrics] = useState<ExecutionMetrics | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
-
-  // Legacy: keep parseLessonSections for any callers that still need it;
-  // LessonSections now accepts DbLessonSection[] so we pass an empty array.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _sections = useMemo(
-    () => parseLessonSections(content, problemSummary),
-    [content, problemSummary],
-  );
 
   // Hydrate output panel with persisted test results on mount
   useEffect(() => {
@@ -240,9 +236,9 @@ export function CodeLessonLayout({
         </h1>
       </div>
       <LessonSections
-        introContent={null}
-        sections={[]}
-        outroContent={null}
+        introContent={introContent}
+        sections={sections}
+        outroContent={outroContent}
         problemSummary={problemSummary}
         problemConstraints={problemConstraints}
         problemHints={problemHints}
