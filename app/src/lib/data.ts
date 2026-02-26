@@ -126,7 +126,8 @@ function deriveContentItems(m: Module): ContentItem[] {
 export async function getCourses(): Promise<Course[]> {
   try {
     const result = await sql`
-      SELECT id, title, slug, description, thumbnail_url, outcomes, tag, "order", created_at
+      SELECT id, title, slug, description, thumbnail_url, outcomes, tag, "order",
+             intro_content, outro_content, created_at
       FROM courses
       ORDER BY created_at ASC
     `;
@@ -869,7 +870,8 @@ export async function getBatchModuleCompletionStatus(
 export const getCoursesForSidebar = cache(async (): Promise<CourseWithModules[]> => {
   try {
     const courses = await sql`
-      SELECT id, title, slug, description, thumbnail_url, outcomes, tag, "order", created_at
+      SELECT id, title, slug, description, thumbnail_url, outcomes, tag, "order",
+             intro_content, outro_content, created_at
       FROM courses
       ORDER BY created_at ASC
     `;
@@ -879,7 +881,8 @@ export const getCoursesForSidebar = cache(async (): Promise<CourseWithModules[]>
     const courseIds = courses.map((c) => (c as any).id);
     const allModules = await sql`
       SELECT m.id, m.course_id, m.title, m.description, m."order",
-             m.quiz_form, COALESCE(lc.lesson_count, 0) AS lesson_count
+             m.quiz_form, m.intro_content, m.outro_content,
+             COALESCE(lc.lesson_count, 0) AS lesson_count
       FROM modules m
       LEFT JOIN (
         SELECT module_id, COUNT(*)::INTEGER AS lesson_count
