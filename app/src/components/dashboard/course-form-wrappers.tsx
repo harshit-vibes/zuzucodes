@@ -46,7 +46,6 @@ export function CompletionFormWrapper({
   courseId: string;
   form: CourseForm;
 }) {
-  const router = useRouter();
   const [done, setDone] = useState(false);
 
   if (done) {
