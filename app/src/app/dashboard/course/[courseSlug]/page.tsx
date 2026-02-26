@@ -6,6 +6,7 @@ import {
   getSectionCompletionStatus,
   getLessonsForCourse,
   getCourseFormResponse,
+  type SectionStatus,
 } from '@/lib/data';
 import { titleCase } from '@/lib/utils';
 import { TemplateRenderer } from '@/components/templates/template-renderer';
@@ -27,7 +28,7 @@ export default async function CourseOverviewPage({
   const [completionStatus, lessonsByModule, onboardingSubmitted, completionSubmitted] = await Promise.all([
     user?.id
       ? getSectionCompletionStatus(user.id, course.modules)
-      : Promise.resolve({} as Record<string, boolean>),
+      : Promise.resolve({} as Record<string, SectionStatus>),
     getLessonsForCourse(moduleIds),
     user?.id && course.onboarding_form
       ? getCourseFormResponse(user.id, course.id, 'onboarding')
@@ -44,9 +45,9 @@ export default async function CourseOverviewPage({
     const lessons = lessonsByModule[mod.id] ?? [];
     totalItems += lessons.length + (mod.quiz_form ? 1 : 0);
     for (const l of lessons) {
-      if (completionStatus[`${mod.id}:lesson-${l.lesson_index}`]) completedItems++;
+      if (completionStatus[`${mod.id}:lesson-${l.lesson_index}`] === 'completed') completedItems++;
     }
-    if (mod.quiz_form && completionStatus[`${mod.id}:quiz`]) completedItems++;
+    if (mod.quiz_form && completionStatus[`${mod.id}:quiz`] === 'completed') completedItems++;
   }
   const progressPct = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
 
@@ -57,12 +58,12 @@ export default async function CourseOverviewPage({
   outer: for (const mod of course.modules) {
     const lessons = lessonsByModule[mod.id] ?? [];
     for (const l of lessons) {
-      if (!completionStatus[`${mod.id}:lesson-${l.lesson_index}`]) {
+      if (completionStatus[`${mod.id}:lesson-${l.lesson_index}`] !== 'completed') {
         resumeHref = `/dashboard/course/${courseSlug}/${mod.slug}/lesson/${l.lesson_index + 1}`;
         break outer;
       }
     }
-    if (mod.quiz_form && !completionStatus[`${mod.id}:quiz`]) {
+    if (mod.quiz_form && completionStatus[`${mod.id}:quiz`] !== 'completed') {
       resumeHref = `/dashboard/course/${courseSlug}/${mod.slug}/quiz`;
       break;
     }
@@ -185,9 +186,9 @@ export default async function CourseOverviewPage({
             {course.modules.map((mod, modIdx) => {
               const lessons = lessonsByModule[mod.id] ?? [];
               const lessonsDone = lessons.filter(
-                l => completionStatus[`${mod.id}:lesson-${l.lesson_index}`]
+                l => completionStatus[`${mod.id}:lesson-${l.lesson_index}`] === 'completed'
               ).length;
-              const quizDone = mod.quiz_form ? completionStatus[`${mod.id}:quiz`] ?? false : null;
+              const quizDone = mod.quiz_form ? (completionStatus[`${mod.id}:quiz`] ?? 'not-started') === 'completed' : null;
               const modTotal = lessons.length + (mod.quiz_form ? 1 : 0);
               const modDone = lessonsDone + (quizDone ? 1 : 0);
 
@@ -232,7 +233,7 @@ export default async function CourseOverviewPage({
                   {/* Lesson list */}
                   <div className="divide-y divide-border/20">
                     {lessons.map((lesson, lessonIdx) => {
-                      const done = completionStatus[`${mod.id}:lesson-${lesson.lesson_index}`] ?? false;
+                      const done = (completionStatus[`${mod.id}:lesson-${lesson.lesson_index}`] ?? 'not-started') === 'completed';
                       const href = `/dashboard/course/${courseSlug}/${mod.slug}/lesson/${lesson.lesson_index + 1}`;
                       return (
                         <Link

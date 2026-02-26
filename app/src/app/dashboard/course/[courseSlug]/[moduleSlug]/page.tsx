@@ -6,6 +6,7 @@ import {
   getModule,
   getLessonsForCourse,
   getSectionCompletionStatus,
+  type SectionStatus,
 } from '@/lib/data';
 import { TemplateRenderer } from '@/components/templates/template-renderer';
 
@@ -35,13 +36,13 @@ export default async function ModuleOverviewPage({
 
   const completionStatus = user?.id
     ? await getSectionCompletionStatus(user.id, [mod])
-    : ({} as Record<string, boolean>);
+    : ({} as Record<string, SectionStatus>);
 
   const lessonsDone = lessons.filter(
-    (l) => completionStatus[`${mod.id}:lesson-${l.lesson_index}`]
+    (l) => completionStatus[`${mod.id}:lesson-${l.lesson_index}`] === 'completed'
   ).length;
   const quizDone = mod.quiz_form
-    ? (completionStatus[`${mod.id}:quiz`] ?? false)
+    ? (completionStatus[`${mod.id}:quiz`] ?? 'not-started') === 'completed'
     : false;
   const totalItems = lessons.length + (mod.quiz_form ? 1 : 0);
   const completedItems = lessonsDone + (quizDone ? 1 : 0);
@@ -52,7 +53,7 @@ export default async function ModuleOverviewPage({
   // First incomplete lesson or quiz
   let resumeHref = `/dashboard/course/${courseSlug}/${moduleSlug}/lesson/1`;
   for (const l of lessons) {
-    if (!completionStatus[`${mod.id}:lesson-${l.lesson_index}`]) {
+    if (completionStatus[`${mod.id}:lesson-${l.lesson_index}`] !== 'completed') {
       resumeHref = `/dashboard/course/${courseSlug}/${moduleSlug}/lesson/${l.lesson_index + 1}`;
       break;
     }
@@ -156,7 +157,7 @@ export default async function ModuleOverviewPage({
           <div className="rounded-xl border border-border/50 bg-card overflow-hidden divide-y divide-border/20">
             {lessons.map((lesson) => {
               const done =
-                completionStatus[`${mod.id}:lesson-${lesson.lesson_index}`] ?? false;
+                (completionStatus[`${mod.id}:lesson-${lesson.lesson_index}`] ?? 'not-started') === 'completed';
               return (
                 <Link
                   key={lesson.id}

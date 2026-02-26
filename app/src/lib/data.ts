@@ -79,6 +79,8 @@ export interface UserCode {
   passedAt: string | null;
 }
 
+export type SectionStatus = 'not-started' | 'in-progress' | 'completed';
+
 // ── Template system ──────────────────────────────────────────────────────────
 
 export interface DbLessonSection {
@@ -773,13 +775,13 @@ export async function isQuizCompleted(userId: string, moduleId: string): Promise
 export async function getSectionCompletionStatus(
   userId: string,
   modules: Module[]
-): Promise<Record<string, boolean>> {
+): Promise<Record<string, SectionStatus>> {
   if (modules.length === 0) return {};
 
   try {
     const moduleIds = modules.map(m => m.id);
 
-    const [lessonRows, completedRows, passedRows] = await Promise.all([
+    const [lessonRows, completedRows, startedRows, passedRows] = await Promise.all([
       sql`SELECT id, module_id, lesson_index FROM lessons WHERE module_id = ANY(${moduleIds})`,
       sql`
         SELECT uc.lesson_id FROM user_code uc
@@ -789,21 +791,33 @@ export async function getSectionCompletionStatus(
           AND l.module_id = ANY(${moduleIds})
       `,
       sql`
+        SELECT DISTINCT uc.lesson_id FROM user_code uc
+        JOIN lessons l ON l.id = uc.lesson_id
+        WHERE uc.user_id = ${userId}
+          AND uc.passed_at IS NULL
+          AND l.module_id = ANY(${moduleIds})
+      `,
+      sql`
         SELECT DISTINCT module_id FROM user_quiz_attempts
         WHERE user_id = ${userId} AND module_id = ANY(${moduleIds}) AND passed = true
       `,
     ]);
 
     const completedSet = new Set((completedRows as any[]).map(r => r.lesson_id));
+    const startedSet = new Set((startedRows as any[]).map(r => r.lesson_id));
     const passedQuizSet = new Set((passedRows as any[]).map(r => r.module_id));
-    const result: Record<string, boolean> = {};
+    const result: Record<string, SectionStatus> = {};
 
     for (const m of modules) {
       for (const l of (lessonRows as any[]).filter(l => l.module_id === m.id)) {
-        result[`${m.id}:lesson-${l.lesson_index}`] = completedSet.has(l.id);
+        result[`${m.id}:lesson-${l.lesson_index}`] = completedSet.has(l.id)
+          ? 'completed'
+          : startedSet.has(l.id)
+          ? 'in-progress'
+          : 'not-started';
       }
       if (m.quiz_form) {
-        result[`${m.id}:quiz`] = passedQuizSet.has(m.id);
+        result[`${m.id}:quiz`] = passedQuizSet.has(m.id) ? 'completed' : 'not-started';
       }
     }
 

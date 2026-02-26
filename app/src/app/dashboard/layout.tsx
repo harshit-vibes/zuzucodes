@@ -1,6 +1,6 @@
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/shared/app-sidebar";
-import { getCoursesForSidebar, getSidebarProgress, getSectionCompletionStatus, getDashboardStats } from "@/lib/data";
+import { getCoursesForSidebar, getSidebarProgress, getSectionCompletionStatus, getDashboardStats, type SectionStatus } from "@/lib/data";
 import { auth } from "@/lib/auth/server";
 import { redirect } from "next/navigation";
 import { DashboardHeader } from "@/components/dashboard/header";
@@ -27,7 +27,7 @@ export default async function DashboardLayout({
     getSidebarProgress(user.id, courseIds),
     allModules.length > 0
       ? getSectionCompletionStatus(user.id, allModules)
-      : Promise.resolve({}),
+      : Promise.resolve({} as Record<string, SectionStatus>),
     getDashboardStats(user.id),
   ]);
 
