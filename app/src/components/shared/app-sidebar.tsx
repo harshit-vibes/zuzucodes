@@ -74,6 +74,7 @@ const ModuleSection = memo(function ModuleSection({
   activeContentType,
   activeOrder,
   contentCompletion,
+  isActiveModule,
 }: {
   module: CourseWithModules["modules"][number];
   courseSlug: string;
@@ -81,28 +82,28 @@ const ModuleSection = memo(function ModuleSection({
   activeContentType: "lesson" | "quiz" | null;
   activeOrder: number | null;
   contentCompletion: Record<string, boolean>;
+  isActiveModule: boolean;
 }) {
   const totalCount = module.contentItems.length;
   const completedCount = module.contentItems.filter((item) => {
     const key = item.type === "quiz" ? `${module.id}:quiz` : `${module.id}:lesson-${item.index}`;
     return contentCompletion[key];
   }).length;
-  const isModuleComplete = totalCount > 0 && completedCount === totalCount;
 
   return (
-    <div>
-      {/* Module header */}
-      <div className="flex items-center gap-2 px-3 py-2">
-        <span className={cn(
-          "text-xs font-medium truncate flex-1",
-          isModuleComplete ? "text-muted-foreground" : "text-foreground"
-        )}>
+    <div className={isActiveModule ? 'rounded-lg bg-primary/5 ring-1 ring-primary/10 px-1 py-1' : ''}>
+      {/* Module header — link to module overview */}
+      <Link
+        href={`/dashboard/course/${courseSlug}/${module.slug}`}
+        className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted/40 transition-colors"
+      >
+        <span className="text-xs font-semibold text-foreground truncate flex-1">
           {module.title}
         </span>
         <span className="text-[10px] text-muted-foreground tabular-nums shrink-0">
           {completedCount}/{totalCount}
         </span>
-      </div>
+      </Link>
 
       {/* Content items — always visible */}
       <div className="ml-3 pl-3 border-l border-border/50 mt-0.5 space-y-0.5">
@@ -110,7 +111,6 @@ const ModuleSection = memo(function ModuleSection({
           const completionKey = item.type === "quiz" ? `${module.id}:quiz` : `${module.id}:lesson-${item.index}`;
           const isCompleted = contentCompletion[completionKey] ?? false;
 
-          // For lessons, order is 1-indexed in the URL
           const order = item.type === "lesson" ? item.index + 1 : null;
           const isActive =
             activeModuleSlug === module.slug &&
@@ -301,7 +301,7 @@ export function AppSidebar({
             {/* Module accordion */}
             <SidebarGroup className="py-1">
               <SidebarGroupContent>
-                <div className="space-y-0.5">
+                <div className="space-y-3">
                   {activeCourse.modules.map((mod) => (
                     <ModuleSection
                       key={mod.id}
@@ -311,6 +311,7 @@ export function AppSidebar({
                       activeContentType={contentType}
                       activeOrder={order}
                       contentCompletion={contentCompletion}
+                      isActiveModule={moduleSlug === mod.slug}
                     />
                   ))}
                 </div>
