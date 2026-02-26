@@ -105,7 +105,7 @@ export function LessonSections({
         <div className="absolute left-3 top-1/2 -translate-y-1/2 flex flex-col gap-1.5 z-10">
           {navItems.map((item, i) => (
             <button
-              key={i}
+              key={item.kind === 'section' ? item.section.id : item.kind}
               onClick={() => navigateTo(i)}
               className={cn(
                 'rounded-full transition-all duration-300',
@@ -117,6 +117,13 @@ export function LessonSections({
             />
           ))}
         </div>
+
+        {/* Empty state */}
+        {navItems.length === 0 && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="font-mono text-xs text-muted-foreground/30">No content</span>
+          </div>
+        )}
 
         {/* Content */}
         {active && (
