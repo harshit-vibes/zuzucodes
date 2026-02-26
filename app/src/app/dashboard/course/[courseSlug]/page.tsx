@@ -5,9 +5,11 @@ import {
   getCourseWithModules,
   getSectionCompletionStatus,
   getLessonsForCourse,
+  getCourseFormResponse,
 } from '@/lib/data';
 import { titleCase } from '@/lib/utils';
 import { TemplateRenderer } from '@/components/templates/template-renderer';
+import { OnboardingFormWrapper, CompletionFormWrapper } from '@/components/dashboard/course-form-wrappers';
 
 export default async function CourseOverviewPage({
   params,
@@ -22,11 +24,17 @@ export default async function CourseOverviewPage({
 
   const moduleIds = course.modules.map(m => m.id);
 
-  const [completionStatus, lessonsByModule] = await Promise.all([
+  const [completionStatus, lessonsByModule, onboardingSubmitted, completionSubmitted] = await Promise.all([
     user?.id
       ? getSectionCompletionStatus(user.id, course.modules)
       : Promise.resolve({} as Record<string, boolean>),
     getLessonsForCourse(moduleIds),
+    user?.id && course.onboarding_form
+      ? getCourseFormResponse(user.id, course.id, 'onboarding')
+      : Promise.resolve(true),
+    user?.id && course.completion_form
+      ? getCourseFormResponse(user.id, course.id, 'completion')
+      : Promise.resolve(true),
   ]);
 
   // Compute overall progress
@@ -86,39 +94,53 @@ export default async function CourseOverviewPage({
               )}
         </div>
 
-        {/* ─── Progress + CTA ─────────────────────────────────────── */}
+        {/* ─── Progress + CTA / Onboarding form / Completion form ── */}
         {user && (
-          <div className="rounded-xl border border-border/50 bg-card p-5 space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-foreground">
-                  {isCompleted ? 'Course complete' : hasStarted ? 'In progress' : 'Not started'}
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {completedItems} / {totalItems} items completed
-                </p>
-              </div>
-              <span className="font-mono text-lg font-semibold text-primary tabular-nums">
-                {progressPct}%
-              </span>
-            </div>
-            {/* Progress bar */}
-            <div className="h-1.5 bg-border/40 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-primary/70 rounded-full transition-all duration-700"
-                style={{ width: `${progressPct}%` }}
+          <>
+            {course.onboarding_form && !onboardingSubmitted && !hasStarted ? (
+              <OnboardingFormWrapper
+                courseId={course.id}
+                form={course.onboarding_form}
               />
-            </div>
-            <Link
-              href={resumeHref}
-              className="flex items-center justify-center gap-2 w-full h-9 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
-            >
-              {isCompleted ? 'Review course' : hasStarted ? 'Continue learning' : 'Start course'}
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </Link>
-          </div>
+            ) : course.completion_form && !completionSubmitted && isCompleted ? (
+              <CompletionFormWrapper
+                courseId={course.id}
+                form={course.completion_form}
+              />
+            ) : (
+              <div className="rounded-xl border border-border/50 bg-card p-5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">
+                      {isCompleted ? 'Course complete' : hasStarted ? 'In progress' : 'Not started'}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {completedItems} / {totalItems} items completed
+                    </p>
+                  </div>
+                  <span className="font-mono text-lg font-semibold text-primary tabular-nums">
+                    {progressPct}%
+                  </span>
+                </div>
+                {/* Progress bar */}
+                <div className="h-1.5 bg-border/40 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary/70 rounded-full transition-all duration-700"
+                    style={{ width: `${progressPct}%` }}
+                  />
+                </div>
+                <Link
+                  href={resumeHref}
+                  className="flex items-center justify-center gap-2 w-full h-9 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+                >
+                  {isCompleted ? 'Review course' : hasStarted ? 'Continue learning' : 'Start course'}
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </Link>
+              </div>
+            )}
+          </>
         )}
 
         {/* ─── Outcomes ───────────────────────────────────────────── */}
