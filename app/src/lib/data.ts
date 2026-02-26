@@ -21,6 +21,8 @@ export interface Course {
   outcomes: string[] | null;
   tag: string | null;
   order: number;
+  intro_content: unknown | null;
+  outro_content: unknown | null;
 }
 
 export interface QuizQuestion {
@@ -45,6 +47,8 @@ export interface Module {
   order: number;
   quiz_form: QuizForm | null;
   lesson_count: number;
+  intro_content: unknown | null;
+  outro_content: unknown | null;
 }
 
 export interface ContentItem {
@@ -140,7 +144,8 @@ export async function getCourses(): Promise<Course[]> {
 export const getCourseWithModules = cache(async (courseId: string): Promise<CourseWithModules | null> => {
   try {
     const courses = await sql`
-      SELECT id, title, slug, description, thumbnail_url, outcomes, tag, "order", created_at
+      SELECT id, title, slug, description, thumbnail_url, outcomes, tag, "order",
+             intro_content, outro_content, created_at
       FROM courses
       WHERE id = ${courseId}
     `;
@@ -181,7 +186,8 @@ export const getModule = cache(async (moduleId: string): Promise<Module | null> 
   try {
     const result = await sql`
       SELECT m.id, m.course_id, m.title, m.description, m."order",
-             m.quiz_form, COALESCE(lc.lesson_count, 0) AS lesson_count
+             m.quiz_form, m.intro_content, m.outro_content,
+             COALESCE(lc.lesson_count, 0) AS lesson_count
       FROM modules m
       LEFT JOIN (
         SELECT module_id, COUNT(*)::INTEGER AS lesson_count
