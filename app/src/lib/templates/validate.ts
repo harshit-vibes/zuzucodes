@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import type { z } from 'zod';
 import { schemas, type TemplateName } from './schemas';
 import type { TemplateContent } from './types';
 
