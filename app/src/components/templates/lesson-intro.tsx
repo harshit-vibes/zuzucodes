@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckCircle2, Clock } from 'lucide-react';
+import { Clock } from 'lucide-react';
 import type { TemplateContent } from '@/lib/templates/types';
 
 interface Props {
@@ -20,8 +20,10 @@ export function LessonIntroTemplate({ content }: Props) {
         </p>
         <ul className="flex flex-col gap-2.5">
           {content.outcomes.map((outcome, i) => (
-            <li key={i} className="flex items-start gap-2.5 text-sm text-foreground/75">
-              <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+            <li key={i} className="flex items-start gap-3 text-sm text-foreground/75">
+              <span className="font-mono text-[10px] text-muted-foreground/40 shrink-0 mt-0.5 tabular-nums">
+                {String(i + 1).padStart(2, '0')}
+              </span>
               {outcome}
             </li>
           ))}

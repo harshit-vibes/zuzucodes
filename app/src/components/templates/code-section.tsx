@@ -12,7 +12,7 @@ export function CodeSectionTemplate({ content }: Props) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="prose-container">
+      <div className="border-l-2 border-primary/20 pl-4 prose-container">
         <Markdown content={content.explanation} />
       </div>
 
@@ -21,7 +21,7 @@ export function CodeSectionTemplate({ content }: Props) {
       </div>
 
       {content.takeaway ? (
-        <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
+        <div className="rounded-lg ring-1 ring-primary/20 bg-primary/5 p-3">
           <p className="text-[10px] font-mono uppercase tracking-widest text-primary/50 mb-1">
             Key takeaway
           </p>

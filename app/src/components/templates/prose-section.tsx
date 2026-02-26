@@ -9,7 +9,7 @@ interface Props {
 
 export function ProseSectionTemplate({ content }: Props) {
   return (
-    <div className="prose-container">
+    <div className="prose-container max-w-prose">
       <Markdown content={content.markdown} />
     </div>
   );

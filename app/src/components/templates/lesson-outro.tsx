@@ -20,14 +20,14 @@ export function LessonOutroTemplate({ content }: Props) {
       <p className="text-foreground/80 leading-relaxed">{content.recap}</p>
 
       {content.next_lesson_teaser ? (
-        <div className="rounded-lg border border-border/50 bg-muted/30 p-4 flex items-start gap-3">
+        <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 flex items-start gap-3">
           <div className="flex-1">
-            <p className="text-xs font-mono uppercase tracking-widest text-muted-foreground/50 mb-1">
+            <p className="text-[10px] font-mono uppercase tracking-widest text-primary/60 mb-1">
               Up next
             </p>
             <p className="text-sm text-foreground/70">{content.next_lesson_teaser}</p>
           </div>
-          <ArrowRight className="w-4 h-4 text-muted-foreground/30 shrink-0 mt-1" />
+          <ArrowRight className="w-4 h-4 text-primary/30 shrink-0 mt-1" />
         </div>
       ) : null}
     </div>
