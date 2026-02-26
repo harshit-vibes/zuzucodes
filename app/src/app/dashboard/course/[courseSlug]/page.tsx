@@ -7,7 +7,7 @@ import {
   getLessonsForCourse,
 } from '@/lib/data';
 import { titleCase } from '@/lib/utils';
-import { renderTemplate } from '@/components/templates';
+import { TemplateRenderer } from '@/components/templates/template-renderer';
 
 export default async function CourseOverviewPage({
   params,
@@ -78,7 +78,7 @@ export default async function CourseOverviewPage({
             {course.title}
           </h1>
           {course.intro_content
-            ? renderTemplate('course-intro', course.intro_content)
+            ? <TemplateRenderer name="course-intro" content={course.intro_content} />
             : course.description && (
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   {course.description}

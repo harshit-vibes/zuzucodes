@@ -7,7 +7,7 @@ import {
   getLessonsForCourse,
   getSectionCompletionStatus,
 } from '@/lib/data';
-import { renderTemplate } from '@/components/templates';
+import { TemplateRenderer } from '@/components/templates/template-renderer';
 
 export default async function ModuleOverviewPage({
   params,
@@ -110,14 +110,14 @@ export default async function ModuleOverviewPage({
         {/* Intro content (not started) */}
         {isNotStarted && mod.intro_content ? (
           <div className="rounded-xl border border-border/50 bg-card p-6">
-            {renderTemplate('module-intro', mod.intro_content)}
+            <TemplateRenderer name="module-intro" content={mod.intro_content} />
           </div>
         ) : null}
 
         {/* Outro content (completed) */}
         {isCompleted && mod.outro_content ? (
           <div className="rounded-xl border border-border/50 bg-card p-6">
-            {renderTemplate('module-outro', mod.outro_content)}
+            <TemplateRenderer name="module-outro" content={mod.outro_content} />
           </div>
         ) : null}
 
