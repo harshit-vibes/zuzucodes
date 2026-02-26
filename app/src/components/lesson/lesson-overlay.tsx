@@ -13,6 +13,7 @@ interface LessonOverlayProps {
   prevHref: string;
   nextHref: string;
   hasPrev: boolean;
+  hasNext: boolean;
   onEnterLesson: () => void;
 }
 
@@ -26,6 +27,7 @@ export function LessonOverlay({
   prevHref,
   nextHref,
   hasPrev,
+  hasNext,
   onEnterLesson,
 }: LessonOverlayProps) {
   const content = view === 'intro' ? introContent : outroContent;
@@ -54,7 +56,7 @@ export function LessonOverlay({
         </span>
 
         <div className="w-20 flex justify-end">
-          {view === 'outro' ? (
+          {(view === 'outro' || (view === 'intro' && hasNext)) ? (
             <Link
               href={nextHref}
               className="flex items-center gap-1.5 text-xs font-mono text-muted-foreground/50 hover:text-foreground transition-colors"

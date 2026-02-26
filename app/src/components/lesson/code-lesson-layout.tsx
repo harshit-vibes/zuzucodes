@@ -359,6 +359,7 @@ export function CodeLessonLayout({
           prevHref={prevHref}
           nextHref={nextHref}
           hasPrev={hasPrev}
+          hasNext={hasNext}
           onEnterLesson={() => setView('content')}
         />
       ) : (
