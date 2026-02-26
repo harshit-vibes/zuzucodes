@@ -12,6 +12,15 @@ import type { TestCase } from '@/lib/judge0';
 // TYPES
 // ========================================
 
+export interface CourseForm {
+  title: string;
+  questions: {
+    id: string;
+    statement: string;
+    options: { id: string; text: string }[];
+  }[];
+}
+
 export interface Course {
   id: string;
   title: string;
@@ -23,6 +32,8 @@ export interface Course {
   order: number;
   intro_content: unknown | null;
   outro_content: unknown | null;
+  onboarding_form: CourseForm | null;
+  completion_form: CourseForm | null;
 }
 
 export interface QuizQuestion {
@@ -128,7 +139,7 @@ export async function getCourses(): Promise<Course[]> {
   try {
     const result = await sql`
       SELECT id, title, slug, description, thumbnail_url, outcomes, tag, "order",
-             intro_content, outro_content, created_at
+             intro_content, outro_content, onboarding_form, completion_form, created_at
       FROM courses
       ORDER BY created_at ASC
     `;
@@ -147,7 +158,7 @@ export const getCourseWithModules = cache(async (courseSlug: string): Promise<Co
   try {
     const courses = await sql`
       SELECT id, title, slug, description, thumbnail_url, outcomes, tag, "order",
-             intro_content, outro_content, created_at
+             intro_content, outro_content, onboarding_form, completion_form, created_at
       FROM courses
       WHERE slug = ${courseSlug}
     `;
@@ -804,6 +815,44 @@ export async function getSectionCompletionStatus(
 }
 
 /**
+ * Check whether a user has submitted a course form.
+ */
+export async function getCourseFormResponse(
+  userId: string,
+  courseId: string,
+  formType: 'onboarding' | 'completion'
+): Promise<boolean> {
+  try {
+    const result = await sql`
+      SELECT 1 FROM user_course_form_responses
+      WHERE user_id = ${userId}
+        AND course_id = ${courseId}
+        AND form_type = ${formType}
+    `;
+    return result.length > 0;
+  } catch (error) {
+    console.error('getCourseFormResponse error:', error);
+    return false;
+  }
+}
+
+/**
+ * Persist a course form submission (idempotent via ON CONFLICT DO NOTHING).
+ */
+export async function submitCourseFormResponse(
+  userId: string,
+  courseId: string,
+  formType: 'onboarding' | 'completion',
+  responses: Record<string, string>
+): Promise<void> {
+  await sql`
+    INSERT INTO user_course_form_responses (user_id, course_id, form_type, responses)
+    VALUES (${userId}, ${courseId}, ${formType}, ${JSON.stringify(responses)}::JSONB)
+    ON CONFLICT (user_id, course_id, form_type) DO NOTHING
+  `;
+}
+
+/**
  * Check if all lessons in a module are completed
  */
 export async function areAllLessonsCompleted(userId: string, moduleId: string): Promise<boolean> {
@@ -876,7 +925,7 @@ export const getCoursesForSidebar = cache(async (): Promise<CourseWithModules[]>
   try {
     const courses = await sql`
       SELECT id, title, slug, description, thumbnail_url, outcomes, tag, "order",
-             intro_content, outro_content, created_at
+             intro_content, outro_content, onboarding_form, completion_form, created_at
       FROM courses
       ORDER BY created_at ASC
     `;
