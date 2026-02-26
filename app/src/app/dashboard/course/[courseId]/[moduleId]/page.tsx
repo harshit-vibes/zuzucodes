@@ -158,7 +158,7 @@ export default async function ModuleOverviewPage({
                 >
                   {done ? (
                     <svg
-                      className="w-4 h-4 text-green-500 shrink-0"
+                      className="w-4 h-4 text-success shrink-0"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -200,7 +200,7 @@ export default async function ModuleOverviewPage({
               >
                 {quizDone ? (
                   <svg
-                    className="w-4 h-4 text-green-500 shrink-0"
+                    className="w-4 h-4 text-success shrink-0"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"

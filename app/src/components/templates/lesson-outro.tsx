@@ -11,8 +11,8 @@ export function LessonOutroTemplate({ content }: Props) {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-2">
-        <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
-        <span className="text-xs font-mono uppercase tracking-widest text-green-500/70">
+        <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
+        <span className="text-xs font-mono uppercase tracking-widest text-success/70">
           Lesson complete
         </span>
       </div>
