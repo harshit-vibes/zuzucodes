@@ -85,14 +85,22 @@ export default async function CourseOverviewPage({
           <h1 className="text-2xl font-semibold tracking-tight text-foreground mb-2">
             {course.title}
           </h1>
-          {course.intro_content
-            ? <TemplateRenderer name="course-intro" content={course.intro_content} />
-            : course.description && (
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {course.description}
-                </p>
-              )}
+          {!course.intro_content && course.description ? (
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {course.description}
+            </p>
+          ) : null}
         </div>
+
+        {/* ─── Course intro ───────────────────────────────────────── */}
+        {course.intro_content ? (
+          <div className="rounded-xl border border-border/30 bg-card p-5">
+            <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/40 mb-4">
+              About this course
+            </p>
+            <TemplateRenderer name="course-intro" content={course.intro_content} />
+          </div>
+        ) : null}
 
         {/* ─── Progress + CTA / Onboarding form / Completion form ── */}
         {user && (
@@ -142,6 +150,16 @@ export default async function CourseOverviewPage({
             )}
           </>
         )}
+
+        {/* ─── Course outro (completed) ───────────────────────────── */}
+        {isCompleted && course.outro_content ? (
+          <div className="rounded-xl border border-success/20 bg-success/5 p-5">
+            <p className="text-[10px] font-mono uppercase tracking-widest text-success/50 mb-4">
+              Course complete
+            </p>
+            <TemplateRenderer name="course-outro" content={course.outro_content} />
+          </div>
+        ) : null}
 
         {/* ─── Outcomes ───────────────────────────────────────────── */}
         {course.outcomes && course.outcomes.length > 0 && (

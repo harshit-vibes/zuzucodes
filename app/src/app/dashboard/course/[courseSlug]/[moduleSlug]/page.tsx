@@ -109,14 +109,20 @@ export default async function ModuleOverviewPage({
 
         {/* Intro content (not started) */}
         {isNotStarted && mod.intro_content ? (
-          <div className="rounded-xl border border-border/50 bg-card p-6">
+          <div className="rounded-xl border border-primary/20 bg-primary/5 p-6">
+            <p className="text-[10px] font-mono uppercase tracking-widest text-primary/50 mb-4">
+              In this module
+            </p>
             <TemplateRenderer name="module-intro" content={mod.intro_content} />
           </div>
         ) : null}
 
         {/* Outro content (completed) */}
         {isCompleted && mod.outro_content ? (
-          <div className="rounded-xl border border-border/50 bg-card p-6">
+          <div className="rounded-xl border border-success/20 bg-success/5 p-6">
+            <p className="text-[10px] font-mono uppercase tracking-widest text-success/50 mb-4">
+              Module complete
+            </p>
             <TemplateRenderer name="module-outro" content={mod.outro_content} />
           </div>
         ) : null}
