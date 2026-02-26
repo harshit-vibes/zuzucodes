@@ -25,7 +25,7 @@ export function ProblemPanel({
 
   const visibleExamples = (testCases ?? []).filter(tc => tc.visible);
   const hasHints = problemHints.length > 0;
-  const isLastHint = hintIndex === problemHints.length - 1;
+  const isLastHint = problemHints.length > 0 && hintIndex === problemHints.length - 1;
 
   function handleClose() {
     setHintsOpen(false);
@@ -102,6 +102,7 @@ export function ProblemPanel({
 
       {/* Hint overlay — slides in from right, covers entire panel */}
       <div
+        aria-hidden={!hintsOpen}
         className={`absolute inset-0 bg-background/95 dark:bg-zinc-950/95 backdrop-blur-sm transition-transform duration-200 ease-out flex flex-col px-4 py-3 ${
           hintsOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
