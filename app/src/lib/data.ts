@@ -62,6 +62,41 @@ export interface UserCode {
   passedAt: string | null;
 }
 
+// ── Template system ──────────────────────────────────────────────────────────
+
+export interface DbLessonSection {
+  id: string;
+  lessonId: string;
+  position: number;
+  template: string;        // TemplateName — kept as string here to avoid server bundle coupling
+  content: unknown;        // Validated JSONB; cast to TemplateContent<T> at render time
+}
+
+/**
+ * Fetch all sections for a lesson, ordered by position.
+ * Wrapped with React.cache() for per-request deduplication.
+ */
+export const getLessonSections = cache(async (lessonId: string): Promise<DbLessonSection[]> => {
+  try {
+    const result = await sql`
+      SELECT id, lesson_id, position, template, content
+      FROM lesson_sections
+      WHERE lesson_id = ${lessonId}
+      ORDER BY position ASC
+    `;
+    return (result as any[]).map((row) => ({
+      id: row.id,
+      lessonId: row.lesson_id,
+      position: row.position,
+      template: row.template,
+      content: row.content,
+    }));
+  } catch (error) {
+    console.error('getLessonSections error:', error);
+    return [];
+  }
+});
+
 /**
  * Derive content items from module fields (lesson_count + quiz_form).
  */
@@ -175,6 +210,8 @@ export interface LessonData {
   problemSummary: string | null;
   problemConstraints: string[];
   problemHints: string[];
+  introContent: unknown | null;   // LessonIntroContent if present
+  outroContent: unknown | null;   // LessonOutroContent if present
 }
 
 /**
@@ -192,6 +229,7 @@ export const getLesson = cache(async (
       SELECT l.id, l.lesson_index, l.title, l.content, l.code_template,
              l.entry_point, l.solution_code,
              l.problem_summary, l.problem_constraints, l.problem_hints,
+             l.intro_content, l.outro_content,
              COALESCE(
                (SELECT json_agg(
                   json_build_object('description', tc.description, 'args', tc.args,
@@ -224,6 +262,8 @@ export const getLesson = cache(async (
       problemSummary: row.problem_summary ?? null,
       problemConstraints: (row.problem_constraints as string[]) ?? [],
       problemHints: (row.problem_hints as string[]) ?? [],
+      introContent: row.intro_content ?? null,
+      outroContent: row.outro_content ?? null,
     };
   } catch (error) {
     console.error('getLesson error:', error);
