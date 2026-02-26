@@ -11,6 +11,35 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { neon } from '@neondatabase/serverless';
 import { execSync } from 'child_process';
+import { z } from 'zod';
+
+// ── Inline validation schemas (mirrors src/lib/templates/schemas.ts) ──────────
+const lessonIntroSchema = z.object({
+  hook: z.string().min(1),
+  outcomes: z.array(z.string().min(1)).min(1),
+  estimated_minutes: z.number().int().positive().optional(),
+});
+
+const lessonOutroSchema = z.object({
+  recap: z.string().min(1),
+  next_lesson_teaser: z.string().optional(),
+});
+
+const codeSectionSchema = z.object({
+  explanation: z.string().min(1),
+  code: z.string().min(1),
+  language: z.string().default('python'),
+  takeaway: z.string().optional(),
+});
+
+function assertValid(schema, data, label) {
+  const result = schema.safeParse(data);
+  if (!result.success) {
+    console.error(`Validation failed for ${label}:`, result.error.format());
+    process.exit(1);
+  }
+  return result.data;
+}
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -209,6 +238,80 @@ await sql`
     )
 `;
 console.log('  inserted lesson 2 + test cases');
+
+// ── Template sections for lesson 0: What is Python? ──────────────────────────
+const lesson0Id = 'lesson-intro-python-hello-world-00';
+
+const lesson0Intro = assertValid(lessonIntroSchema, {
+  hook: 'Python is one of the most readable and versatile programming languages in the world — and it runs exactly the code you write.',
+  outcomes: [
+    'Understand what Python is and why it matters',
+    'Write a function that returns a value',
+    'Recognise Python syntax basics: def, return, and booleans',
+  ],
+  estimated_minutes: 5,
+}, 'lesson-0 intro');
+
+await sql`
+  UPDATE lessons
+  SET intro_content = ${JSON.stringify(lesson0Intro)}
+  WHERE id = ${lesson0Id}
+`;
+
+const lesson0Outro = assertValid(lessonOutroSchema, {
+  recap: 'You learned that Python executes code line by line, and that functions use def and return to produce values. True (capital T) is Python\'s boolean for yes.',
+  next_lesson_teaser: 'Next up: write your very first function from scratch.',
+}, 'lesson-0 outro');
+
+await sql`
+  UPDATE lessons
+  SET outro_content = ${JSON.stringify(lesson0Outro)}
+  WHERE id = ${lesson0Id}
+`;
+
+const lesson0Section0 = assertValid(codeSectionSchema, {
+  explanation: 'Every Python program you write is executed from top to bottom. Python reads your code line by line and runs it. The simplest thing you can do is display some output with print().',
+  code: 'print("Hello!")  # Python runs this and displays Hello!',
+  language: 'python',
+  takeaway: 'print() is how Python shows output to the console.',
+}, 'lesson-0 code-section-0');
+
+await sql`
+  INSERT INTO lesson_sections (id, lesson_id, position, template, content)
+  VALUES (
+    ${'ls-intro-python-hello-world-00-0'},
+    ${lesson0Id},
+    ${0},
+    'code-section',
+    ${JSON.stringify(lesson0Section0)}
+  )
+  ON CONFLICT (lesson_id, position) DO UPDATE
+    SET template = EXCLUDED.template,
+        content  = EXCLUDED.content
+`;
+
+const lesson0Section1 = assertValid(codeSectionSchema, {
+  explanation: 'Functions are the building blocks of Python programs. You define one with the def keyword, give it a name, and use return to send a value back to whoever called it.',
+  code: 'def greet():\n    return "Hello!"\n\nresult = greet()  # result is now "Hello!"',
+  language: 'python',
+  takeaway: 'def names a function; return sends a value back.',
+}, 'lesson-0 code-section-1');
+
+await sql`
+  INSERT INTO lesson_sections (id, lesson_id, position, template, content)
+  VALUES (
+    ${'ls-intro-python-hello-world-00-1'},
+    ${lesson0Id},
+    ${1},
+    'code-section',
+    ${JSON.stringify(lesson0Section1)}
+  )
+  ON CONFLICT (lesson_id, position) DO UPDATE
+    SET template = EXCLUDED.template,
+        content  = EXCLUDED.content
+`;
+
+console.log('  seeded lesson_sections, intro_content, and outro_content for lesson 0');
 
 // ── Validate ──────────────────────────────────────────────────────────────────
 console.log('\nRunning validation...');
