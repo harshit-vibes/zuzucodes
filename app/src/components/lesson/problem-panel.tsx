@@ -80,6 +80,8 @@ export function ProblemPanel({
           <div>
             <button
               onClick={() => setConstraintsOpen(o => !o)}
+              aria-expanded={constraintsOpen}
+              aria-controls="constraints-region"
               className="flex items-center gap-1.5 w-full text-left"
             >
               <span className="text-[10px] font-mono text-muted-foreground/40 uppercase tracking-wider flex-1">
@@ -88,7 +90,7 @@ export function ProblemPanel({
               <ChevronIcon open={constraintsOpen} />
             </button>
             {constraintsOpen && (
-              <div className="mt-1.5 flex flex-wrap gap-1.5">
+              <div id="constraints-region" className="mt-1.5 flex flex-wrap gap-1.5">
                 {problemConstraints.map((c, i) => (
                   <span
                     key={i}
@@ -110,6 +112,8 @@ export function ProblemPanel({
                 if (hintsOpen) setHintsRevealed(0);
                 setHintsOpen(o => !o);
               }}
+              aria-expanded={hintsOpen}
+              aria-controls="hints-region"
               className="flex items-center gap-1.5 w-full text-left"
             >
               <span className="text-[10px] font-mono text-muted-foreground/40 uppercase tracking-wider flex-1">
@@ -118,7 +122,7 @@ export function ProblemPanel({
               <ChevronIcon open={hintsOpen} />
             </button>
             {hintsOpen && (
-              <div className="mt-1.5 space-y-1.5">
+              <div id="hints-region" className="mt-1.5 space-y-1.5">
                 {problemHints.slice(0, hintsRevealed).map((hint, i) => (
                   <div
                     key={i}
@@ -133,6 +137,7 @@ export function ProblemPanel({
                 {hintsRevealed < problemHints.length && (
                   <button
                     onClick={() => setHintsRevealed(h => h + 1)}
+                    aria-label={`Show hint ${hintsRevealed + 1} of ${problemHints.length}`}
                     className="text-xs font-mono text-muted-foreground/50 hover:text-muted-foreground transition-colors"
                   >
                     show hint {hintsRevealed + 1}/{problemHints.length} →
