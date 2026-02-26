@@ -73,11 +73,11 @@ export function CodeLessonLayout({
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saved'>('idle');
   const [activeTab, setActiveTab] = useState<'lesson' | 'code'>('lesson');
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const viewTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isExecutingRef = useRef(false);
   const [testResults, setTestResults] = useState<TestCaseResult[] | null>(null);
   const [hasRun, setHasRun] = useState(false);
   const [metrics, setMetrics] = useState<ExecutionMetrics | null>(null);
-  const [showCelebration, setShowCelebration] = useState(false);
   const [view, setView] = useState<'intro' | 'content' | 'outro'>('intro');
 
   // Hydrate output panel with persisted test results on mount
@@ -124,6 +124,7 @@ export function CodeLessonLayout({
   useEffect(() => {
     return () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      if (viewTimerRef.current) clearTimeout(viewTimerRef.current);
     };
   }, []);
 
@@ -208,7 +209,6 @@ export function CodeLessonLayout({
           }
 
           if (testResult.allPassed) {
-            setShowCelebration(true);
             confetti({
               particleCount: 80,
               spread: 70,
@@ -216,7 +216,8 @@ export function CodeLessonLayout({
               colors: ['#ffffff', '#a3a3a3', '#22c55e', '#3b82f6'],
               disableForReducedMotion: true,
             });
-            setTimeout(() => setView('outro'), 1800);
+            if (viewTimerRef.current) clearTimeout(viewTimerRef.current);
+            viewTimerRef.current = setTimeout(() => setView('outro'), 1800);
           }
         } else {
           setExecutionPhase('run-pass');
