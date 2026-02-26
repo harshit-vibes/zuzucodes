@@ -131,7 +131,10 @@ interface CodeEditorProps {
 export function CodeEditor({ value, onChange }: CodeEditorProps) {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
+  }, []);
 
   const handleChange = useCallback((val: string) => onChange(val), [onChange]);
 

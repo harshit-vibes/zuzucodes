@@ -74,6 +74,7 @@ export function RateLimitProvider({ children }: { children: ReactNode }) {
   // Load from localStorage on mount (client-only)
   useEffect(() => {
     const usage = loadUsage();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setState({
       remaining: Math.max(0, DAILY_LIMIT - usage.count),
       resetAt: getNextMidnightUTC(),

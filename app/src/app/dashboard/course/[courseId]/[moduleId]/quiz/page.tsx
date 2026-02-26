@@ -13,13 +13,13 @@ export default async function QuizPage({ params }: QuizPageProps) {
   const { courseId, moduleId } = await params;
   const { user } = await auth();
 
-  const module = await getModule(moduleId);
+  const mod = await getModule(moduleId);
 
-  if (!module || !module.quiz_form) {
+  if (!mod || !mod.quiz_form) {
     notFound();
   }
 
-  const quizForm = module.quiz_form;
+  const quizForm = mod.quiz_form;
 
   // Parallelize independent completion checks
   let isCompleted = false;
@@ -49,7 +49,7 @@ export default async function QuizPage({ params }: QuizPageProps) {
           <Breadcrumb
             items={[
               { label: 'Dashboard', href: '/dashboard' },
-              { label: module.title },
+              { label: mod.title },
               { label: 'Quiz' },
             ]}
           />
@@ -62,7 +62,7 @@ export default async function QuizPage({ params }: QuizPageProps) {
           {/* Module badge */}
           <div className="inline-flex items-center gap-2 mb-4">
             <span className="label-mono text-primary bg-primary/10 px-2.5 py-1 rounded-md">
-              {module.title}
+              {mod.title}
             </span>
             {isCompleted && (
               <span className="label-mono text-success bg-success/10 px-2.5 py-1 rounded-md">
@@ -106,7 +106,7 @@ export default async function QuizPage({ params }: QuizPageProps) {
 
               <h2 className="text-xl font-semibold mb-2">Quiz Locked</h2>
               <p className="text-muted-foreground mb-6">
-                Complete all {module.lesson_count} lesson{module.lesson_count !== 1 ? 's' : ''} in this module to unlock the quiz.
+                Complete all {mod.lesson_count} lesson{mod.lesson_count !== 1 ? 's' : ''} in this module to unlock the quiz.
               </p>
 
               <Link

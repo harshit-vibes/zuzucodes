@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Data layer for zuzu.codes
  * Uses Neon database with raw SQL queries via @neondatabase/serverless
@@ -291,8 +292,8 @@ export const getLessonCount = cache(async (moduleId: string): Promise<number> =>
  * Get quiz form for a module
  */
 export async function getQuiz(moduleId: string): Promise<QuizForm | null> {
-  const module = await getModule(moduleId);
-  return module?.quiz_form ?? null;
+  const mod = await getModule(moduleId);
+  return mod?.quiz_form ?? null;
 }
 
 /**
@@ -883,10 +884,10 @@ export const getCoursesForSidebar = cache(async (): Promise<CourseWithModules[]>
     `;
 
     const modulesByCourse = new Map<string, Module[]>();
-    for (const module of allModules) {
-      const courseId = (module as any).course_id;
+    for (const mod of allModules) {
+      const courseId = (mod as any).course_id;
       if (!modulesByCourse.has(courseId)) modulesByCourse.set(courseId, []);
-      modulesByCourse.get(courseId)!.push(module as Module);
+      modulesByCourse.get(courseId)!.push(mod as Module);
     }
 
     return courses.map((course) => ({

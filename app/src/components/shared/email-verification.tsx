@@ -128,7 +128,7 @@ export function EmailVerification({ email, onVerified }: EmailVerificationProps)
       </div>
 
       <p className="text-xs text-muted-foreground text-center">
-        Didn't receive the code? Check your spam folder or click "Resend Code"
+        Didn&apos;t receive the code? Check your spam folder or click &quot;Resend Code&quot;
       </p>
     </div>
   );

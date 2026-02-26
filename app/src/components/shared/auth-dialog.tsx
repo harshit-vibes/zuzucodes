@@ -57,7 +57,7 @@ export function AuthDialog({ open, onOpenChange, defaultView = "sign-in" }: Auth
             <>
               <SignInForm localization={{}} />
               <div className="text-center text-sm">
-                Don't have an account?{" "}
+                Don&apos;t have an account?{" "}
                 <button
                   onClick={() => setView("sign-up")}
                   className="text-primary hover:underline"
