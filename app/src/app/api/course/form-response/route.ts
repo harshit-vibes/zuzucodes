@@ -35,7 +35,8 @@ export async function POST(req: Request) {
       !formType ||
       !['onboarding', 'completion'].includes(formType) ||
       typeof responses !== 'object' ||
-      responses === null
+      responses === null ||
+      Array.isArray(responses)
     ) {
       return NextResponse.json({ error: 'Missing or invalid params' }, { status: 400 });
     }
