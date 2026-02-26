@@ -239,11 +239,6 @@ export function CodeLessonLayout({
         introContent={introContent}
         sections={sections}
         outroContent={outroContent}
-        problemSummary={problemSummary}
-        problemConstraints={problemConstraints}
-        problemHints={problemHints}
-        testCases={testCases}
-        entryPoint={entryPoint}
       />
     </div>
   );

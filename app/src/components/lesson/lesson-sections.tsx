@@ -1,20 +1,13 @@
 'use client';
 
-import { ProblemPanel } from '@/components/lesson/problem-panel';
 import { renderTemplate } from '@/components/templates';
 import type { DbLessonSection } from '@/lib/data';
 import type { TemplateName } from '@/lib/templates/schemas';
-import type { TestCase } from '@/lib/judge0';
 
 interface LessonSectionsProps {
   introContent: unknown | null;
   sections: DbLessonSection[];
   outroContent: unknown | null;
-  problemSummary: string | null;
-  problemConstraints: string[];
-  problemHints: string[];
-  testCases: TestCase[] | null;
-  entryPoint: string | null;
 }
 
 function SectionDivider({ label }: { label: string }) {
@@ -32,17 +25,9 @@ export function LessonSections({
   introContent,
   sections,
   outroContent,
-  problemSummary,
-  problemConstraints,
-  problemHints,
-  testCases,
-  entryPoint,
 }: LessonSectionsProps) {
   const hasContent =
-    introContent !== null ||
-    sections.length > 0 ||
-    outroContent !== null ||
-    !!problemSummary;
+    introContent !== null || sections.length > 0 || outroContent !== null;
 
   if (!hasContent) {
     return (
@@ -72,19 +57,6 @@ export function LessonSections({
         <div className="mb-12">
           <SectionDivider label="outro" />
           {renderTemplate('lesson-outro', outroContent)}
-        </div>
-      )}
-
-      {problemSummary && (
-        <div className="mb-12">
-          <SectionDivider label="challenge" />
-          <ProblemPanel
-            problemSummary={problemSummary}
-            problemConstraints={problemConstraints}
-            problemHints={problemHints}
-            testCases={testCases}
-            entryPoint={entryPoint}
-          />
         </div>
       )}
     </div>
