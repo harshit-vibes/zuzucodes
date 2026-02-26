@@ -40,7 +40,7 @@ export function ProblemPanel({
   return (
     <div className="relative border-b border-border/50 dark:border-zinc-700/50 bg-background dark:bg-zinc-950 overflow-hidden">
       {/* Main content */}
-      <div className="px-4 py-3 space-y-2.5">
+      <div className="px-4 py-3 space-y-2.5" inert={hintsOpen ? true : undefined}>
 
         {/* Header row: label + hints button */}
         <div className="flex items-center justify-between">
@@ -139,21 +139,15 @@ export function ProblemPanel({
           >
             ← prev
           </button>
-          {isLastHint ? (
-            <button
-              onClick={handleViewSolution}
-              className="text-xs font-mono text-primary hover:text-primary/80 transition-colors"
-            >
+          {isLastHint && onViewSolution ? (
+            <button onClick={handleViewSolution} className="text-xs font-mono text-primary hover:text-primary/80 transition-colors">
               view solution →
             </button>
-          ) : (
-            <button
-              onClick={() => setHintIndex(i => i + 1)}
-              className="text-xs font-mono text-muted-foreground/50 hover:text-foreground transition-colors"
-            >
+          ) : !isLastHint ? (
+            <button onClick={() => setHintIndex(i => i + 1)} className="text-xs font-mono text-muted-foreground/50 hover:text-foreground transition-colors">
               next →
             </button>
-          )}
+          ) : null}
         </div>
       </div>
     </div>
