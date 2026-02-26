@@ -154,7 +154,7 @@ export default async function ModuleOverviewPage({
             {totalItems} {totalItems === 1 ? 'item' : 'items'} &middot; {completedItems} completed
           </h2>
           <div className="rounded-xl border border-border/50 bg-card overflow-hidden divide-y divide-border/20">
-            {lessons.map((lesson, i) => {
+            {lessons.map((lesson) => {
               const done =
                 completionStatus[`${mod.id}:lesson-${lesson.lesson_index}`] ?? false;
               return (
@@ -181,7 +181,7 @@ export default async function ModuleOverviewPage({
                       done ? 'text-muted-foreground/60' : 'text-foreground'
                     }`}
                   >
-                    {i + 1}. {lesson.title}
+                    {lesson.lesson_index + 1}. {lesson.title}
                   </span>
                   <svg
                     className="w-3.5 h-3.5 text-muted-foreground/30 opacity-0 group-hover:opacity-100 transition-opacity"
