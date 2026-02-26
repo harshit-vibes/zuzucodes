@@ -845,11 +845,16 @@ export async function submitCourseFormResponse(
   formType: 'onboarding' | 'completion',
   responses: Record<string, string>
 ): Promise<void> {
-  await sql`
-    INSERT INTO user_course_form_responses (user_id, course_id, form_type, responses)
-    VALUES (${userId}, ${courseId}, ${formType}, ${JSON.stringify(responses)}::JSONB)
-    ON CONFLICT (user_id, course_id, form_type) DO NOTHING
-  `;
+  try {
+    await sql`
+      INSERT INTO user_course_form_responses (user_id, course_id, form_type, responses)
+      VALUES (${userId}, ${courseId}, ${formType}, ${JSON.stringify(responses)}::JSONB)
+      ON CONFLICT (user_id, course_id, form_type) DO NOTHING
+    `;
+  } catch (error) {
+    console.error('submitCourseFormResponse error:', error);
+    throw error;
+  }
 }
 
 /**
