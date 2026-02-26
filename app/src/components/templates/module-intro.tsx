@@ -1,5 +1,6 @@
 'use client';
 
+import { CheckCircle2 } from 'lucide-react';
 import type { TemplateContent } from '@/lib/templates/types';
 
 interface Props {
@@ -18,10 +19,10 @@ export function ModuleIntroTemplate({ content }: Props) {
         <p className="text-xs font-mono uppercase tracking-widest text-muted-foreground/50 mb-3">
           In this module
         </p>
-        <ul className="flex flex-col gap-2">
+        <ul className={`grid gap-2.5 ${content.what_you_learn.length >= 4 ? 'sm:grid-cols-2' : ''}`}>
           {content.what_you_learn.map((item, i) => (
-            <li key={i} className="flex items-start gap-2 text-sm text-foreground/70">
-              <span className="mt-1 shrink-0 w-1 h-1 rounded-full bg-primary" />
+            <li key={i} className="flex items-start gap-2.5 text-sm text-foreground/75">
+              <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
               {item}
             </li>
           ))}
