@@ -156,7 +156,8 @@ export const getCourseWithModules = cache(async (courseId: string): Promise<Cour
 
     const modules = await sql`
       SELECT m.id, m.course_id, m.title, m.description, m."order",
-             m.quiz_form, COALESCE(lc.lesson_count, 0) AS lesson_count
+             m.quiz_form, m.intro_content, m.outro_content,
+             COALESCE(lc.lesson_count, 0) AS lesson_count
       FROM modules m
       LEFT JOIN (
         SELECT module_id, COUNT(*)::INTEGER AS lesson_count
