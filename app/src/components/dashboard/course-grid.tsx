@@ -73,7 +73,7 @@ export function CourseGrid({
           return (
             <Link
               key={course.id}
-              href={`/dashboard/course/${course.id}`}
+              href={`/dashboard/course/${course.slug}`}
               className="group relative rounded-xl border bg-card p-5 transition-all duration-200 hover:border-primary/50 hover:shadow-sm text-left w-full block"
             >
               <div className="absolute left-0 top-4 bottom-4 w-1 rounded-full bg-primary" />

@@ -6,14 +6,14 @@ import { Breadcrumb } from '@/components/shared/breadcrumb';
 import { QuizPlayer } from './quiz-player';
 
 interface QuizPageProps {
-  params: Promise<{ courseId: string; moduleId: string }>;
+  params: Promise<{ courseSlug: string; moduleSlug: string }>;
 }
 
 export default async function QuizPage({ params }: QuizPageProps) {
-  const { courseId, moduleId } = await params;
+  const { courseSlug, moduleSlug } = await params;
   const { user } = await auth();
 
-  const mod = await getModule(moduleId);
+  const mod = await getModule(moduleSlug);
 
   if (!mod || !mod.quiz_form) {
     notFound();
@@ -27,8 +27,8 @@ export default async function QuizPage({ params }: QuizPageProps) {
 
   if (user) {
     [isCompleted, allLessonsCompleted] = await Promise.all([
-      isQuizCompleted(user.id, moduleId),
-      areAllLessonsCompleted(user.id, moduleId),
+      isQuizCompleted(user.id, mod.id),
+      areAllLessonsCompleted(user.id, mod.id),
     ]);
   }
 
@@ -110,7 +110,7 @@ export default async function QuizPage({ params }: QuizPageProps) {
               </p>
 
               <Link
-                href={`/dashboard/course/${courseId}/${moduleId}/lesson/1`}
+                href={`/dashboard/course/${courseSlug}/${moduleSlug}/lesson/1`}
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -123,10 +123,10 @@ export default async function QuizPage({ params }: QuizPageProps) {
         ) : (
           /* Quiz player */
           <QuizPlayer
-            moduleId={moduleId}
+            moduleId={mod.id}
             questions={clientQuestions}
             passingScore={quizForm.passingScore}
-            courseId={courseId}
+            courseId={courseSlug}
             isAlreadyPassed={isCompleted}
           />
         )}

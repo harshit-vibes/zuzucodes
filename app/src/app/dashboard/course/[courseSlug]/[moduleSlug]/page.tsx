@@ -12,35 +12,36 @@ import { renderTemplate } from '@/components/templates';
 export default async function ModuleOverviewPage({
   params,
 }: {
-  params: Promise<{ courseId: string; moduleId: string }>;
+  params: Promise<{ courseSlug: string; moduleSlug: string }>;
 }) {
-  const { courseId, moduleId } = await params;
+  const { courseSlug, moduleSlug } = await params;
   const { user } = await auth();
 
-  // async-parallel: all three fetches are independent — run together
-  const [course, mod, lessonsMap] = await Promise.all([
-    getCourseWithModules(courseId),
-    getModule(moduleId),
-    getLessonsForCourse([moduleId]),
+  // Fetch course + module in parallel (slugs known from params)
+  const [course, mod] = await Promise.all([
+    getCourseWithModules(courseSlug),
+    getModule(moduleSlug),
   ]);
 
   if (!course || !mod) notFound();
 
-  // Guard against cross-course URL mismatch (moduleId belongs to a different course)
-  const modIndex = course.modules.findIndex((m) => m.id === moduleId);
-  if (modIndex === -1 || mod.course_id !== courseId) notFound();
+  // Guard against cross-course URL mismatch
+  const modIndex = course.modules.findIndex((m) => m.id === mod.id);
+  if (modIndex === -1 || mod.course_id !== course.id) notFound();
 
-  const lessons = lessonsMap[moduleId] ?? [];
+  // Lessons require mod.id (DB UUID), fetched after module resolves
+  const lessonsMap = await getLessonsForCourse([mod.id]);
+  const lessons = lessonsMap[mod.id] ?? [];
 
   const completionStatus = user?.id
     ? await getSectionCompletionStatus(user.id, [mod])
     : ({} as Record<string, boolean>);
 
   const lessonsDone = lessons.filter(
-    (l) => completionStatus[`${moduleId}:lesson-${l.lesson_index}`]
+    (l) => completionStatus[`${mod.id}:lesson-${l.lesson_index}`]
   ).length;
   const quizDone = mod.quiz_form
-    ? (completionStatus[`${moduleId}:quiz`] ?? false)
+    ? (completionStatus[`${mod.id}:quiz`] ?? false)
     : false;
   const totalItems = lessons.length + (mod.quiz_form ? 1 : 0);
   const completedItems = lessonsDone + (quizDone ? 1 : 0);
@@ -49,22 +50,22 @@ export default async function ModuleOverviewPage({
   const isCompleted = totalItems > 0 && completedItems === totalItems;
 
   // First incomplete lesson or quiz
-  let resumeHref = `/dashboard/course/${courseId}/${moduleId}/lesson/1`;
+  let resumeHref = `/dashboard/course/${courseSlug}/${moduleSlug}/lesson/1`;
   for (const l of lessons) {
-    if (!completionStatus[`${moduleId}:lesson-${l.lesson_index}`]) {
-      resumeHref = `/dashboard/course/${courseId}/${moduleId}/lesson/${l.lesson_index + 1}`;
+    if (!completionStatus[`${mod.id}:lesson-${l.lesson_index}`]) {
+      resumeHref = `/dashboard/course/${courseSlug}/${moduleSlug}/lesson/${l.lesson_index + 1}`;
       break;
     }
   }
   if (lessonsDone === lessons.length && mod.quiz_form && !quizDone) {
-    resumeHref = `/dashboard/course/${courseId}/${moduleId}/quiz`;
+    resumeHref = `/dashboard/course/${courseSlug}/${moduleSlug}/quiz`;
   }
 
   // Next module
   const nextMod = course.modules[modIndex + 1];
   const completedHref = nextMod
-    ? `/dashboard/course/${courseId}/${nextMod.id}`
-    : `/dashboard/course/${courseId}`;
+    ? `/dashboard/course/${courseSlug}/${nextMod.slug}`
+    : `/dashboard/course/${courseSlug}`;
 
   const ctaLabel = isCompleted
     ? nextMod
@@ -82,7 +83,7 @@ export default async function ModuleOverviewPage({
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-xs text-muted-foreground/50">
           <Link
-            href={`/dashboard/course/${courseId}`}
+            href={`/dashboard/course/${courseSlug}`}
             className="hover:text-muted-foreground transition-colors"
           >
             {course.title}
@@ -149,11 +150,11 @@ export default async function ModuleOverviewPage({
           <div className="rounded-xl border border-border/50 bg-card overflow-hidden divide-y divide-border/20">
             {lessons.map((lesson, i) => {
               const done =
-                completionStatus[`${moduleId}:lesson-${lesson.lesson_index}`] ?? false;
+                completionStatus[`${mod.id}:lesson-${lesson.lesson_index}`] ?? false;
               return (
                 <Link
                   key={lesson.id}
-                  href={`/dashboard/course/${courseId}/${moduleId}/lesson/${lesson.lesson_index + 1}`}
+                  href={`/dashboard/course/${courseSlug}/${moduleSlug}/lesson/${lesson.lesson_index + 1}`}
                   className="flex items-center gap-3 px-4 py-3 hover:bg-muted/40 transition-colors group"
                 >
                   {done ? (
@@ -195,7 +196,7 @@ export default async function ModuleOverviewPage({
 
             {mod.quiz_form ? (
               <Link
-                href={`/dashboard/course/${courseId}/${moduleId}/quiz`}
+                href={`/dashboard/course/${courseSlug}/${moduleSlug}/quiz`}
                 className="flex items-center gap-3 px-4 py-3 hover:bg-muted/40 transition-colors group"
               >
                 {quizDone ? (

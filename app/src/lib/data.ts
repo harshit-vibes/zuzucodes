@@ -42,6 +42,7 @@ export interface QuizForm {
 export interface Module {
   id: string;
   course_id: string;
+  slug: string;
   title: string;
   description: string | null;
   order: number;
@@ -142,20 +143,20 @@ export async function getCourses(): Promise<Course[]> {
  * Get course with all modules and their contents
  * Wrapped with React.cache() for per-request deduplication
  */
-export const getCourseWithModules = cache(async (courseId: string): Promise<CourseWithModules | null> => {
+export const getCourseWithModules = cache(async (courseSlug: string): Promise<CourseWithModules | null> => {
   try {
     const courses = await sql`
       SELECT id, title, slug, description, thumbnail_url, outcomes, tag, "order",
              intro_content, outro_content, created_at
       FROM courses
-      WHERE id = ${courseId}
+      WHERE slug = ${courseSlug}
     `;
 
     if (courses.length === 0) return null;
     const course = courses[0];
 
     const modules = await sql`
-      SELECT m.id, m.course_id, m.title, m.description, m."order",
+      SELECT m.id, m.course_id, m.slug, m.title, m.description, m."order",
              m.quiz_form, m.intro_content, m.outro_content,
              COALESCE(lc.lesson_count, 0) AS lesson_count
       FROM modules m
@@ -163,7 +164,7 @@ export const getCourseWithModules = cache(async (courseId: string): Promise<Cour
         SELECT module_id, COUNT(*)::INTEGER AS lesson_count
         FROM lessons GROUP BY module_id
       ) lc ON lc.module_id = m.id
-      WHERE m.course_id = ${courseId}
+      WHERE m.course_id = ${course.id}
       ORDER BY m."order" ASC
     `;
 
@@ -184,10 +185,10 @@ export const getCourseWithModules = cache(async (courseId: string): Promise<Cour
  * Get module by ID
  * Wrapped with React.cache() for per-request deduplication
  */
-export const getModule = cache(async (moduleId: string): Promise<Module | null> => {
+export const getModule = cache(async (moduleSlug: string): Promise<Module | null> => {
   try {
     const result = await sql`
-      SELECT m.id, m.course_id, m.title, m.description, m."order",
+      SELECT m.id, m.course_id, m.slug, m.title, m.description, m."order",
              m.quiz_form, m.intro_content, m.outro_content,
              COALESCE(lc.lesson_count, 0) AS lesson_count
       FROM modules m
@@ -195,7 +196,7 @@ export const getModule = cache(async (moduleId: string): Promise<Module | null> 
         SELECT module_id, COUNT(*)::INTEGER AS lesson_count
         FROM lessons GROUP BY module_id
       ) lc ON lc.module_id = m.id
-      WHERE m.id = ${moduleId}
+      WHERE m.slug = ${moduleSlug}
     `;
 
     return result.length > 0 ? (result[0] as Module) : null;
@@ -472,7 +473,7 @@ export const getDashboardStats = cache(async (userId: string): Promise<Dashboard
  */
 export const getResumeData = cache(async (userId: string): Promise<ResumeData | null> => {
   try {
-    const allCourses = await sql`SELECT id FROM courses ORDER BY created_at ASC`;
+    const allCourses = await sql`SELECT id, slug FROM courses ORDER BY created_at ASC`;
     const courseIds = allCourses.map((c: any) => c.id);
     if (courseIds.length === 0) return null;
 
@@ -528,22 +529,25 @@ export const getResumeData = cache(async (userId: string): Promise<ResumeData | 
     if (!targetCourseId) targetCourseId = (incompleteCourses[0] as any).course_id;
     if (!targetCourseId) return null;
 
-    const course = await getCourseWithModules(targetCourseId);
+    const targetCourseSlug = (allCourses as any[]).find((c) => c.id === targetCourseId)?.slug;
+    if (!targetCourseSlug) return null;
+
+    const course = await getCourseWithModules(targetCourseSlug);
     if (!course) return null;
 
     const progressPercent = (incompleteCourses.find(
       (c: any) => c.course_id === targetCourseId
     ) as any)?.progress_percent || 0;
 
-    let href = `/dashboard/course/${course.id}`;
+    let href = `/dashboard/course/${course.slug}`;
     if (lastActivity) {
       const moduleId = lastActivity.module_id;
       const currentModule = course.modules.find(m => m.id === moduleId);
       if (currentModule) {
         if (lastActivity.section_index === null) {
-          href = `/dashboard/course/${course.id}/${moduleId}/quiz`;
+          href = `/dashboard/course/${course.slug}/${currentModule.slug}/quiz`;
         } else {
-          href = `/dashboard/course/${course.id}/${moduleId}/lesson/${lastActivity.section_index + 1}`;
+          href = `/dashboard/course/${course.slug}/${currentModule.slug}/lesson/${lastActivity.section_index + 1}`;
         }
       }
     }

@@ -53,14 +53,14 @@ function parseDashboardPath(pathname: string) {
   const parts = pathname.split("/").filter(Boolean);
 
   const courseIdx = parts.indexOf("course");
-  if (courseIdx === -1) return { courseId: null, moduleId: null, contentType: null, order: null };
+  if (courseIdx === -1) return { courseSlug: null, moduleSlug: null, contentType: null, order: null };
 
-  const courseId = parts[courseIdx + 1] || null;
-  const moduleId = parts[courseIdx + 2] || null;
+  const courseSlug = parts[courseIdx + 1] || null;
+  const moduleSlug = parts[courseIdx + 2] || null;
   const contentType = parts[courseIdx + 3] as "lesson" | "quiz" | null;
   const order = contentType === "lesson" ? Number(parts[courseIdx + 4]) || null : null;
 
-  return { courseId, moduleId, contentType, order };
+  return { courseSlug, moduleSlug, contentType, order };
 }
 
 // ============================================
@@ -69,15 +69,15 @@ function parseDashboardPath(pathname: string) {
 
 const ModuleSection = memo(function ModuleSection({
   module,
-  courseId,
-  activeModuleId,
+  courseSlug,
+  activeModuleSlug,
   activeContentType,
   activeOrder,
   contentCompletion,
 }: {
   module: CourseWithModules["modules"][number];
-  courseId: string;
-  activeModuleId: string | null;
+  courseSlug: string;
+  activeModuleSlug: string | null;
   activeContentType: "lesson" | "quiz" | null;
   activeOrder: number | null;
   contentCompletion: Record<string, boolean>;
@@ -113,14 +113,14 @@ const ModuleSection = memo(function ModuleSection({
           // For lessons, order is 1-indexed in the URL
           const order = item.type === "lesson" ? item.index + 1 : null;
           const isActive =
-            activeModuleId === module.id &&
+            activeModuleSlug === module.slug &&
             activeContentType === item.type &&
             (item.type === "quiz" || activeOrder === order);
 
           const href =
             item.type === "quiz"
-              ? `/dashboard/course/${courseId}/${module.id}/quiz`
-              : `/dashboard/course/${courseId}/${module.id}/lesson/${order}`;
+              ? `/dashboard/course/${courseSlug}/${module.slug}/quiz`
+              : `/dashboard/course/${courseSlug}/${module.slug}/lesson/${order}`;
 
           return (
             <Link
@@ -187,15 +187,15 @@ export function AppSidebar({
   stats,
 }: AppSidebarProps) {
   const pathname = usePathname();
-  const { courseId, moduleId, contentType, order } = useMemo(
+  const { courseSlug, moduleSlug, contentType, order } = useMemo(
     () => parseDashboardPath(pathname),
     [pathname]
   );
 
   // Find active course from URL
   const activeCourse = useMemo(
-    () => (courseId ? courses.find((c) => c.id === courseId) ?? null : null),
-    [courseId, courses]
+    () => (courseSlug ? courses.find((c) => c.slug === courseSlug) ?? null : null),
+    [courseSlug, courses]
   );
 
   const activeProgress = activeCourse ? courseProgress?.[activeCourse.id] : null;
@@ -306,8 +306,8 @@ export function AppSidebar({
                     <ModuleSection
                       key={mod.id}
                       module={mod}
-                      courseId={activeCourse.id}
-                      activeModuleId={moduleId}
+                      courseSlug={activeCourse.slug}
+                      activeModuleSlug={moduleSlug}
                       activeContentType={contentType}
                       activeOrder={order}
                       contentCompletion={contentCompletion}

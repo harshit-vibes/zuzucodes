@@ -4,11 +4,11 @@ import { notFound } from 'next/navigation';
 import { CodeLessonLayout } from '@/components/lesson/code-lesson-layout';
 
 interface LessonPageProps {
-  params: Promise<{ courseId: string; moduleId: string; order: string }>;
+  params: Promise<{ courseSlug: string; moduleSlug: string; order: string }>;
 }
 
 export default async function LessonPage({ params }: LessonPageProps) {
-  const { courseId, moduleId, order } = await params;
+  const { courseSlug, moduleSlug, order } = await params;
   const { user } = await auth();
 
   const position = parseInt(order, 10);
@@ -16,13 +16,15 @@ export default async function LessonPage({ params }: LessonPageProps) {
     notFound();
   }
 
-  const [lessonData, module, lessonCount] = await Promise.all([
-    getLesson(moduleId, position),
-    getModule(moduleId),
-    getLessonCount(moduleId),
+  const module = await getModule(moduleSlug);
+  if (!module) notFound();
+
+  const [lessonData, lessonCount] = await Promise.all([
+    getLesson(module.id, position),
+    getLessonCount(module.id),
   ]);
 
-  if (!lessonData || !module) {
+  if (!lessonData) {
     notFound();
   }
 
@@ -46,8 +48,8 @@ export default async function LessonPage({ params }: LessonPageProps) {
       problemConstraints={lessonData.problemConstraints}
       problemHints={lessonData.problemHints}
       lessonId={lessonData.id}
-      courseId={courseId}
-      moduleId={moduleId}
+      courseId={courseSlug}
+      moduleId={moduleSlug}
       moduleTitle={module.title}
       position={position}
       lessonCount={lessonCount}

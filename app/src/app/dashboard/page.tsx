@@ -56,9 +56,9 @@ export default async function DashboardPage() {
   // Compute first lesson URL for "Start Your Journey" button
   let startUrl: string | null = null;
   if (!resumeData && courses.length > 0) {
-    const firstCourse = await getCourseWithModules(courses[0].id);
+    const firstCourse = await getCourseWithModules(courses[0].slug);
     if (firstCourse?.modules[0]) {
-      startUrl = `/dashboard/course/${firstCourse.id}/${firstCourse.modules[0].id}/lesson/1`;
+      startUrl = `/dashboard/course/${firstCourse.slug}/${firstCourse.modules[0].slug}/lesson/1`;
     }
   }
 

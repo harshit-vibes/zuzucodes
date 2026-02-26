@@ -12,12 +12,12 @@ import { renderTemplate } from '@/components/templates';
 export default async function CourseOverviewPage({
   params,
 }: {
-  params: Promise<{ courseId: string }>;
+  params: Promise<{ courseSlug: string }>;
 }) {
-  const { courseId } = await params;
+  const { courseSlug } = await params;
   const { user } = await auth();
 
-  const course = await getCourseWithModules(courseId);
+  const course = await getCourseWithModules(courseSlug);
   if (!course) notFound();
 
   const moduleIds = course.modules.map(m => m.id);
@@ -44,18 +44,18 @@ export default async function CourseOverviewPage({
 
   // Compute resume href — first incomplete lesson or quiz
   let resumeHref = course.modules[0]
-    ? `/dashboard/course/${courseId}/${course.modules[0].id}/lesson/1`
+    ? `/dashboard/course/${courseSlug}/${course.modules[0].slug}/lesson/1`
     : `/dashboard`;
   outer: for (const mod of course.modules) {
     const lessons = lessonsByModule[mod.id] ?? [];
     for (const l of lessons) {
       if (!completionStatus[`${mod.id}:lesson-${l.lesson_index}`]) {
-        resumeHref = `/dashboard/course/${courseId}/${mod.id}/lesson/${l.lesson_index + 1}`;
+        resumeHref = `/dashboard/course/${courseSlug}/${mod.slug}/lesson/${l.lesson_index + 1}`;
         break outer;
       }
     }
     if (mod.quiz_form && !completionStatus[`${mod.id}:quiz`]) {
-      resumeHref = `/dashboard/course/${courseId}/${mod.id}/quiz`;
+      resumeHref = `/dashboard/course/${courseSlug}/${mod.slug}/quiz`;
       break;
     }
   }
@@ -162,7 +162,7 @@ export default async function CourseOverviewPage({
                 <div key={mod.id} className="rounded-xl border border-border/50 bg-card overflow-hidden">
                   {/* Module header — links to module overview page */}
                   <Link
-                    href={`/dashboard/course/${courseId}/${mod.id}`}
+                    href={`/dashboard/course/${courseSlug}/${mod.slug}`}
                     className="flex items-center justify-between px-4 py-3 border-b border-border/30 hover:bg-muted/30 transition-colors group"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
@@ -193,7 +193,7 @@ export default async function CourseOverviewPage({
                   <div className="divide-y divide-border/20">
                     {lessons.map((lesson, lessonIdx) => {
                       const done = completionStatus[`${mod.id}:lesson-${lesson.lesson_index}`] ?? false;
-                      const href = `/dashboard/course/${courseId}/${mod.id}/lesson/${lesson.lesson_index + 1}`;
+                      const href = `/dashboard/course/${courseSlug}/${mod.slug}/lesson/${lesson.lesson_index + 1}`;
                       return (
                         <Link
                           key={lesson.id}
@@ -214,7 +214,7 @@ export default async function CourseOverviewPage({
                     {/* Quiz row */}
                     {mod.quiz_form && (
                       <Link
-                        href={`/dashboard/course/${courseId}/${mod.id}/quiz`}
+                        href={`/dashboard/course/${courseSlug}/${mod.slug}/quiz`}
                         className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted/40 transition-colors group"
                       >
                         <QuizStatusDot done={quizDone ?? false} />
