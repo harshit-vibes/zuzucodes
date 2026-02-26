@@ -11,7 +11,7 @@ export function LessonOutroTemplate({ content }: Props) {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-2">
-        <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
+        <CheckCircle2 aria-hidden="true" className="w-4 h-4 text-success shrink-0" />
         <span className="text-xs font-mono uppercase tracking-widest text-success/70">
           Lesson complete
         </span>
@@ -27,7 +27,7 @@ export function LessonOutroTemplate({ content }: Props) {
             </p>
             <p className="text-sm text-foreground/70">{content.next_lesson_teaser}</p>
           </div>
-          <ArrowRight className="w-4 h-4 text-primary/30 shrink-0 mt-1" />
+          <ArrowRight aria-hidden="true" className="w-4 h-4 text-primary/30 shrink-0 mt-1" />
         </div>
       ) : null}
     </div>

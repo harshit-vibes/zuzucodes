@@ -20,7 +20,7 @@ export function LessonIntroTemplate({ content }: Props) {
         </p>
         <ul className="flex flex-col gap-2.5">
           {content.outcomes.map((outcome, i) => (
-            <li key={i} className="flex items-start gap-3 text-sm text-foreground/75">
+            <li key={`outcome-${i}`} className="flex items-start gap-3 text-sm text-foreground/75">
               <span className="font-mono text-[10px] text-muted-foreground/40 shrink-0 mt-0.5 tabular-nums">
                 {String(i + 1).padStart(2, '0')}
               </span>
@@ -32,7 +32,7 @@ export function LessonIntroTemplate({ content }: Props) {
 
       {content.estimated_minutes ? (
         <div className="flex items-center gap-1.5">
-          <Clock className="w-3.5 h-3.5 text-muted-foreground/40" />
+          <Clock aria-hidden="true" className="w-3.5 h-3.5 text-muted-foreground/40" />
           <span className="text-xs text-muted-foreground/40 font-mono">
             ~{content.estimated_minutes} min
           </span>
