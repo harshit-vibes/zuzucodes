@@ -6,7 +6,6 @@ import {
   ChevronLeft,
   CircleDot,
   Diamond,
-  FileText,
   Flame,
   GraduationCap,
   Home,
@@ -32,7 +31,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
-import type { CourseWithModules, SidebarCourseProgress, DashboardStats } from "@/lib/data";
+import type { CourseWithModules, SidebarCourseProgress, DashboardStats, SectionStatus } from "@/lib/data";
 
 // ============================================
 // Types
@@ -41,7 +40,7 @@ import type { CourseWithModules, SidebarCourseProgress, DashboardStats } from "@
 interface AppSidebarProps {
   courses: CourseWithModules[];
   courseProgress?: Record<string, SidebarCourseProgress>;
-  contentCompletion?: Record<string, boolean>;
+  contentCompletion?: Record<string, SectionStatus>;
   stats?: DashboardStats;
 }
 
@@ -81,17 +80,30 @@ const ModuleSection = memo(function ModuleSection({
   activeModuleSlug: string | null;
   activeContentType: "lesson" | "quiz" | null;
   activeOrder: number | null;
-  contentCompletion: Record<string, boolean>;
+  contentCompletion: Record<string, SectionStatus>;
   isActiveModule: boolean;
 }) {
   const totalCount = module.contentItems.length;
   const completedCount = module.contentItems.filter((item) => {
     const key = item.type === "quiz" ? `${module.id}:quiz` : `${module.id}:lesson-${item.index}`;
-    return contentCompletion[key];
+    return (contentCompletion[key] ?? 'not-started') === 'completed';
   }).length;
 
+  // Compute module completion for tint
+  const allItemStatuses = module.contentItems.map(item => {
+    const key = item.type === "quiz" ? `${module.id}:quiz` : `${module.id}:lesson-${item.index}`;
+    return contentCompletion[key] ?? 'not-started';
+  });
+  const moduleCompleted = allItemStatuses.length > 0 && allItemStatuses.every(s => s === 'completed');
+
   return (
-    <div className={isActiveModule ? 'rounded-lg bg-primary/5 ring-1 ring-primary/10 px-1 py-1' : ''}>
+    <div className={
+      isActiveModule
+        ? 'rounded-lg bg-primary/5 ring-1 ring-primary/10 px-1 py-1'
+        : moduleCompleted
+        ? 'rounded-lg bg-success/5 ring-1 ring-success/10 px-1 py-1'
+        : ''
+    }>
       {/* Module header — link to module overview */}
       <Link
         href={`/dashboard/course/${courseSlug}/${module.slug}`}
@@ -109,7 +121,8 @@ const ModuleSection = memo(function ModuleSection({
       <div className="ml-3 pl-3 border-l border-border/50 mt-0.5 space-y-0.5">
         {module.contentItems.map((item) => {
           const completionKey = item.type === "quiz" ? `${module.id}:quiz` : `${module.id}:lesson-${item.index}`;
-          const isCompleted = contentCompletion[completionKey] ?? false;
+          const itemStatus = (contentCompletion[completionKey] ?? 'not-started') as SectionStatus;
+          const isCompleted = itemStatus === 'completed';
 
           const order = item.type === "lesson" ? item.index + 1 : null;
           const isActive =
@@ -131,16 +144,22 @@ const ModuleSection = memo(function ModuleSection({
                 isActive
                   ? "bg-primary/10 text-primary font-medium"
                   : isCompleted
-                    ? "text-muted-foreground/60 hover:text-muted-foreground hover:bg-muted/40"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
+                  ? "text-muted-foreground/60 hover:text-muted-foreground hover:bg-muted/40"
+                  : itemStatus === 'in-progress'
+                  ? "text-foreground/80 hover:text-foreground hover:bg-muted/40"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
               )}
             >
               {isActive ? (
                 <CircleDot className="h-3.5 w-3.5 text-primary shrink-0" />
               ) : item.type === "quiz" ? (
-                <Diamond className="h-3.5 w-3.5 shrink-0" />
+                <Diamond className={cn("h-3.5 w-3.5 shrink-0", isCompleted ? "text-success" : "text-muted-foreground/40")} />
+              ) : isCompleted ? (
+                <div className="h-3 w-3 rounded-full bg-success/70 shrink-0" />
+              ) : itemStatus === 'in-progress' ? (
+                <div className="h-3 w-3 rounded-full ring-1 ring-primary/50 bg-primary/10 shrink-0" />
               ) : (
-                <FileText className="h-3.5 w-3.5 shrink-0" />
+                <div className="h-3 w-3 rounded-full ring-1 ring-border/40 shrink-0" />
               )}
               <span className="truncate">{item.title}</span>
             </Link>
