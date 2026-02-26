@@ -14,6 +14,7 @@ interface ProblemPanelProps {
 function ChevronIcon({ open }: { open: boolean }) {
   return (
     <svg
+      aria-hidden="true"
       className={`w-3.5 h-3.5 text-muted-foreground/50 transition-transform ${open ? 'rotate-180' : ''}`}
       fill="none"
       stroke="currentColor"
@@ -42,9 +43,14 @@ export function ProblemPanel({
       <div className="px-4 py-3 space-y-3">
 
         {/* Summary */}
-        <p className="text-sm text-foreground/80 leading-relaxed">
-          {problemSummary}
-        </p>
+        <div>
+          <span className="text-[10px] font-mono text-muted-foreground/40 uppercase tracking-wider">
+            challenge
+          </span>
+          <p className="text-sm font-medium text-foreground/80 leading-relaxed mt-1">
+            {problemSummary}
+          </p>
+        </div>
 
         {/* Examples */}
         {visibleExamples.length > 0 && entryPoint && (
@@ -56,7 +62,7 @@ export function ProblemPanel({
               {visibleExamples.map((tc, i) => (
                 <div
                   key={i}
-                  className="font-mono text-xs bg-muted/40 dark:bg-zinc-800/60 rounded px-2.5 py-1.5 flex items-center gap-2"
+                  className="font-mono text-xs bg-muted/40 dark:bg-zinc-900 rounded px-2.5 py-1.5 flex items-center gap-2 border-l-2 border-primary/30"
                 >
                   <span className="text-foreground/70">
                     {entryPoint}({tc.args.map(a => JSON.stringify(a)).join(', ')})
@@ -86,7 +92,7 @@ export function ProblemPanel({
                 {problemConstraints.map((c, i) => (
                   <span
                     key={i}
-                    className="font-mono text-xs text-muted-foreground/70 bg-muted/40 dark:bg-zinc-800/60 rounded px-2 py-0.5"
+                    className="font-mono text-xs text-muted-foreground/70 ring-1 ring-border/40 rounded px-2 py-0.5"
                   >
                     {c}
                   </span>
@@ -118,6 +124,9 @@ export function ProblemPanel({
                     key={i}
                     className="text-xs text-muted-foreground/70 bg-muted/30 dark:bg-zinc-800/40 rounded px-3 py-2 border border-border/30"
                   >
+                    <span className="font-mono text-[10px] text-muted-foreground/40 block mb-1">
+                      hint {i + 1}
+                    </span>
                     {hint}
                   </div>
                 ))}
