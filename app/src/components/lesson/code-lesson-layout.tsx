@@ -78,7 +78,9 @@ export function CodeLessonLayout({
   const [testResults, setTestResults] = useState<TestCaseResult[] | null>(null);
   const [hasRun, setHasRun] = useState(false);
   const [metrics, setMetrics] = useState<ExecutionMetrics | null>(null);
-  const [view, setView] = useState<'intro' | 'content' | 'outro'>('intro');
+  const [view, setView] = useState<'intro' | 'content' | 'outro'>(
+    isCompleted || savedCode !== null ? 'content' : 'intro'
+  );
 
   // Hydrate output panel with persisted test results on mount
   useEffect(() => {
@@ -255,6 +257,7 @@ export function CodeLessonLayout({
           problemHints={problemHints}
           testCases={testCases}
           entryPoint={entryPoint}
+          onViewSolution={solutionCode ? () => handleCodeChange(solutionCode) : undefined}
         />
       )}
       <div className="shrink-0 h-9 flex items-center justify-between px-3 bg-muted/50 dark:bg-zinc-800 border-b border-border dark:border-zinc-700">
@@ -263,12 +266,6 @@ export function CodeLessonLayout({
           {saveStatus === 'saved' && (
             <span className="font-mono text-[10px] text-muted-foreground">saved</span>
           )}
-          <button
-            onClick={() => solutionCode && handleCodeChange(solutionCode)}
-            className="px-2.5 h-6 rounded border border-border dark:border-zinc-600 text-[11px] font-mono text-muted-foreground hover:text-foreground hover:border-foreground/30 hover:bg-muted dark:hover:bg-zinc-700 transition-colors"
-          >
-            solution
-          </button>
           <button
             onClick={handleRun}
             disabled={executionPhase === 'running'}
