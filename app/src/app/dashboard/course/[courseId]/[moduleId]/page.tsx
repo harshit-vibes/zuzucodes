@@ -17,16 +17,20 @@ export default async function ModuleOverviewPage({
   const { courseId, moduleId } = await params;
   const { user } = await auth();
 
-  // async-parallel: fetch course + module in parallel (independent)
-  const [course, mod] = await Promise.all([
+  // async-parallel: all three fetches are independent — run together
+  const [course, mod, lessonsMap] = await Promise.all([
     getCourseWithModules(courseId),
     getModule(moduleId),
+    getLessonsForCourse([moduleId]),
   ]);
 
   if (!course || !mod) notFound();
 
-  // These depend on moduleId which is now resolved, so sequential is fine
-  const lessons = (await getLessonsForCourse([moduleId]))[moduleId] ?? [];
+  // Guard against cross-course URL mismatch (moduleId belongs to a different course)
+  const modIndex = course.modules.findIndex((m) => m.id === moduleId);
+  if (modIndex === -1 || mod.course_id !== courseId) notFound();
+
+  const lessons = lessonsMap[moduleId] ?? [];
 
   const completionStatus = user?.id
     ? await getSectionCompletionStatus(user.id, [mod])
@@ -52,12 +56,11 @@ export default async function ModuleOverviewPage({
       break;
     }
   }
-  if (completedItems === lessons.length && mod.quiz_form && !quizDone) {
+  if (lessonsDone === lessons.length && mod.quiz_form && !quizDone) {
     resumeHref = `/dashboard/course/${courseId}/${moduleId}/quiz`;
   }
 
   // Next module
-  const modIndex = course.modules.findIndex((m) => m.id === moduleId);
   const nextMod = course.modules[modIndex + 1];
   const completedHref = nextMod
     ? `/dashboard/course/${courseId}/${nextMod.id}`
