@@ -46,6 +46,7 @@ export function CompletionFormWrapper({
   courseId: string;
   form: ConfidenceForm;
 }) {
+  const router = useRouter();
   const [done, setDone] = useState(false);
 
   if (done) {
@@ -62,7 +63,7 @@ export function CompletionFormWrapper({
       courseId={courseId}
       formType="completion"
       form={form}
-      onComplete={() => setDone(true)}
+      onComplete={() => { setDone(true); router.refresh(); }}
     />
   );
 }

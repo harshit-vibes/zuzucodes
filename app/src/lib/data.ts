@@ -857,7 +857,7 @@ export async function submitCourseFormResponse(
   userId: string,
   courseId: string,
   formType: 'onboarding' | 'completion',
-  responses: Record<string, string>
+  responses: Record<string, number>
 ): Promise<void> {
   try {
     await sql`
