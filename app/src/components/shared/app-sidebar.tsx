@@ -64,7 +64,10 @@ function parseDashboardPath(pathname: string) {
     return { courseSlug, moduleSlug, contentType: null as "lesson" | "quiz" | null, order: null };
   }
 
-  const contentType = segment3 as "lesson" | "quiz" | null;
+  const knownTypes = ["lesson", "quiz"] as const;
+  const contentType = knownTypes.includes(segment3 as "lesson" | "quiz")
+    ? (segment3 as "lesson" | "quiz")
+    : null;
   // /[mod]/lesson/[order], /[mod]/lesson/[order]/intro, /[mod]/lesson/[order]/outro
   const order = contentType === "lesson" ? Number(parts[courseIdx + 4]) || null : null;
 
