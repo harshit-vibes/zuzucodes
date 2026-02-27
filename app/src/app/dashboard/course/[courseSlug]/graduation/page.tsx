@@ -75,7 +75,7 @@ export default async function GraduationPage({
         </div>
 
         {/* Course outro */}
-        {course.outro_content ? (
+        {isCompleted && course.outro_content ? (
           <div className="rounded-xl border border-success/20 bg-success/5 p-5">
             <p className="text-[10px] font-mono uppercase tracking-widest text-success/50 mb-4">
               Course complete
