@@ -1,6 +1,6 @@
-import { getLesson, getModule, getLessonCount, getUserCode } from '@/lib/data';
+import { getLesson, getModule, getLessonCount, getUserCode, getCourseWithModules, getCourseConfidenceResponses } from '@/lib/data';
 import { auth } from '@/lib/auth/server';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { CodeLessonLayout } from '@/components/lesson/code-lesson-layout';
 
 interface LessonPageProps {
@@ -16,13 +16,23 @@ export default async function LessonPage({ params }: LessonPageProps) {
     notFound();
   }
 
-  const module = await getModule(moduleSlug);
-  if (!module) notFound();
+  const [module, course] = await Promise.all([
+    getModule(moduleSlug),
+    getCourseWithModules(courseSlug),
+  ]);
+  if (!module || !course) notFound();
 
-  const [lessonData, lessonCount] = await Promise.all([
+  const [lessonData, lessonCount, confidenceResponses] = await Promise.all([
     getLesson(module.id, position),
     getLessonCount(module.id),
+    user?.id
+      ? getCourseConfidenceResponses(user.id, course.id)
+      : Promise.resolve({ onboarding: null, completion: null }),
   ]);
+
+  if (course.confidence_form && user?.id && confidenceResponses.onboarding === null) {
+    redirect(`/dashboard/course/${courseSlug}`);
+  }
 
   if (!lessonData) {
     notFound();
