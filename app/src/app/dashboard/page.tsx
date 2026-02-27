@@ -48,19 +48,20 @@ export default async function DashboardPage() {
   };
   const resumeData = userData?.[1] ?? null;
 
-  const courseProgress: Record<string, CourseProgress> =
+  // Parallel: course progress + first course URL (for unauthenticated "Start" CTA)
+  const [courseProgress, firstCourse] = await Promise.all([
     userId && courses.length > 0
-      ? await getUserCoursesProgress(userId, courses.map((c) => c.id))
-      : {};
+      ? getUserCoursesProgress(userId, courses.map((c) => c.id))
+      : Promise.resolve({} as Record<string, CourseProgress>),
+    !resumeData && courses.length > 0
+      ? getCourseWithModules(courses[0].slug)
+      : Promise.resolve(null),
+  ]);
 
-  // Compute first lesson URL for "Start Your Journey" button
-  let startUrl: string | null = null;
-  if (!resumeData && courses.length > 0) {
-    const firstCourse = await getCourseWithModules(courses[0].slug);
-    if (firstCourse?.modules[0]) {
-      startUrl = `/dashboard/course/${firstCourse.slug}/${firstCourse.modules[0].slug}/lesson/1`;
-    }
-  }
+  const startUrl: string | null =
+    firstCourse?.modules[0]
+      ? `/dashboard/course/${firstCourse.slug}/${firstCourse.modules[0].slug}/lesson/1`
+      : null;
 
   return (
     <div className="min-h-screen">

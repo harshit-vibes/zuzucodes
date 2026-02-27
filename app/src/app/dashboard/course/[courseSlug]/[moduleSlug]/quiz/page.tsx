@@ -25,23 +25,21 @@ export default async function QuizPage({ params }: QuizPageProps) {
 
   const quizForm = mod.quiz_form;
 
-  let isCompleted = false;
-  let allLessonsCompleted = false;
+  // Parallel: user state + lesson map for nav (getLessonsForCourse doesn't need user)
+  const [quizCompleted, lessonsCompleted, confidenceResponses, allLessonsMap] = await Promise.all([
+    user ? isQuizCompleted(user.id, mod.id) : Promise.resolve(false),
+    user ? areAllLessonsCompleted(user.id, mod.id) : Promise.resolve(false),
+    user && course.confidence_form
+      ? getCourseConfidenceResponses(user.id, course.id)
+      : Promise.resolve({ onboarding: null as Record<string, number> | null, completion: null as Record<string, number> | null }),
+    getLessonsForCourse(course.modules.map((m) => m.id)),
+  ]);
 
-  if (user) {
-    const [quizCompleted, lessonsCompleted, confidenceResponses] = await Promise.all([
-      isQuizCompleted(user.id, mod.id),
-      areAllLessonsCompleted(user.id, mod.id),
-      course.confidence_form
-        ? getCourseConfidenceResponses(user.id, course.id)
-        : Promise.resolve({ onboarding: null as Record<string, number> | null, completion: null as Record<string, number> | null }),
-    ]);
-    isCompleted = quizCompleted;
-    allLessonsCompleted = lessonsCompleted;
+  const isCompleted = quizCompleted;
+  const allLessonsCompleted = lessonsCompleted;
 
-    if (course.confidence_form && confidenceResponses.onboarding === null) {
-      redirect(`/dashboard/course/${courseSlug}`);
-    }
+  if (user && course.confidence_form && confidenceResponses.onboarding === null) {
+    redirect(`/dashboard/course/${courseSlug}`);
   }
 
   const isQuizLocked = !allLessonsCompleted && !isCompleted;
@@ -52,9 +50,6 @@ export default async function QuizPage({ params }: QuizPageProps) {
     statement: q.statement,
     options: q.options,
   }));
-
-  // Build sequence for prev/next navigation
-  const allLessonsMap = await getLessonsForCourse(course.modules.map((m) => m.id));
 
   const modIndex = course.modules.findIndex((m) => m.id === mod.id);
   const eyebrow = `Module ${String(modIndex + 1).padStart(2, '0')} · Quiz`;
