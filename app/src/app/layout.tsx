@@ -43,7 +43,7 @@ export const metadata: Metadata = {
   creator: "zuzu.codes",
   publisher: "zuzu.codes",
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_APP_URL || "https://zuzu.codes"
+    process.env.NEXT_PUBLIC_APP_URL || "https://app.zuzu.codes"
   ),
   openGraph: {
     type: "website",
