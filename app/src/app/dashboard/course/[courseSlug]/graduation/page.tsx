@@ -6,10 +6,14 @@ import {
   getSectionCompletionStatus,
   getLessonsForCourse,
   getCourseConfidenceResponses,
+  type ConfidenceForm,
   type SectionStatus,
 } from '@/lib/data';
 import { TemplateRenderer } from '@/components/templates/template-renderer';
 import { CompletionFormWrapper } from '@/components/dashboard/course-form-wrappers';
+import { ReportCard } from '@/components/dashboard/report-card';
+import { CoursePlayerShell } from '@/components/course/course-player-shell';
+import { buildCourseSequence } from '@/lib/course-sequence';
 
 export default async function GraduationPage({
   params,
@@ -47,9 +51,28 @@ export default async function GraduationPage({
   }
   const isCompleted = totalItems > 0 && completedItems === totalItems;
   const completionSubmitted = confidenceResponses.completion !== null;
+  const bothSubmitted =
+    confidenceResponses.onboarding !== null &&
+    confidenceResponses.completion !== null;
+
+  // Build sequence for prev/next navigation
+  const steps = buildCourseSequence(courseSlug, course.modules, lessonsByModule);
+  const currentHref = `/dashboard/course/${courseSlug}/graduation`;
+  const currentIdx = steps.findIndex((s) => s.href === currentHref);
+  const prevStep = currentIdx > 0 ? steps[currentIdx - 1] : null;
+  const nextStep = currentIdx < steps.length - 1 ? steps[currentIdx + 1] : null;
 
   return (
-    <div className="flex-1 overflow-auto">
+    <CoursePlayerShell
+      eyebrow="GRADUATION"
+      title={course.title}
+      prevHref={prevStep?.href ?? null}
+      prevLabel={prevStep?.label ?? null}
+      nextHref={nextStep?.href ?? null}
+      nextLabel={nextStep?.label ?? null}
+      nextLocked={!completionSubmitted}
+      isAuthenticated={!!user}
+    >
       <div className="max-w-2xl mx-auto px-6 py-8 space-y-8">
 
         {/* Breadcrumb */}
@@ -102,18 +125,27 @@ export default async function GraduationPage({
               </Link>
             </div>
           ) : completionSubmitted ? (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-success/5 border border-success/20">
-              <svg className="w-3.5 h-3.5 text-success shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-              <span className="text-xs text-success/70 font-mono">Post-course survey completed</span>
-            </div>
+            <>
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-success/5 border border-success/20">
+                <svg className="w-3.5 h-3.5 text-success shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                <span className="text-xs text-success/70 font-mono">Post-course survey completed</span>
+              </div>
+              {bothSubmitted && course.confidence_form && (
+                <ReportCard
+                  questions={(course.confidence_form as ConfidenceForm).questions}
+                  onboarding={confidenceResponses.onboarding!}
+                  completion={confidenceResponses.completion!}
+                />
+              )}
+            </>
           ) : (
             <CompletionFormWrapper courseId={course.id} form={course.confidence_form} />
           )
         ) : null}
 
       </div>
-    </div>
+    </CoursePlayerShell>
   );
 }

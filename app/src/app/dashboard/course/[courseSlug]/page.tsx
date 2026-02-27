@@ -11,6 +11,8 @@ import {
 import { titleCase } from '@/lib/utils';
 import { TemplateRenderer } from '@/components/templates/template-renderer';
 import { OnboardingFormWrapper } from '@/components/dashboard/course-form-wrappers';
+import { CoursePlayerShell } from '@/components/course/course-player-shell';
+import { buildCourseSequence } from '@/lib/course-sequence';
 
 export default async function CourseOverviewPage({
   params,
@@ -71,8 +73,27 @@ export default async function CourseOverviewPage({
 
   const hasStarted = completedItems > 0;
 
+  // Build sequence for prev/next navigation
+  const steps = buildCourseSequence(courseSlug, course.modules, lessonsByModule);
+  const currentHref = `/dashboard/course/${courseSlug}`;
+  const currentIdx = steps.findIndex((s) => s.href === currentHref);
+  const prevStep = currentIdx > 0 ? steps[currentIdx - 1] : null;
+  const nextStep = currentIdx < steps.length - 1 ? steps[currentIdx + 1] : null;
+
+  // Next is locked if the course has a confidence form and onboarding hasn't been submitted
+  const nextLocked = course.confidence_form ? !onboardingSubmitted : false;
+
   return (
-    <div className="flex-1 overflow-auto">
+    <CoursePlayerShell
+      eyebrow={course.tag ? course.tag.toUpperCase() : 'COURSE'}
+      title={course.title}
+      prevHref={prevStep?.href ?? null}
+      prevLabel={prevStep?.label ?? null}
+      nextHref={nextStep?.href ?? null}
+      nextLabel={nextStep?.label ?? null}
+      nextLocked={nextLocked}
+      isAuthenticated={!!user}
+    >
       <div className="max-w-3xl mx-auto px-6 py-8 space-y-8">
 
         {/* ─── Header ─────────────────────────────────────────────── */}
@@ -274,7 +295,7 @@ export default async function CourseOverviewPage({
         </div>
 
       </div>
-    </div>
+    </CoursePlayerShell>
   );
 }
 

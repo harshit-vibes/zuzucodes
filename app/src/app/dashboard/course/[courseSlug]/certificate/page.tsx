@@ -6,11 +6,11 @@ import {
   getSectionCompletionStatus,
   getLessonsForCourse,
   getCourseConfidenceResponses,
-  type ConfidenceForm,
   type SectionStatus,
 } from '@/lib/data';
-import { ReportCard } from '@/components/dashboard/report-card';
 import { CourseCertificate } from '@/components/dashboard/course-certificate';
+import { CoursePlayerShell } from '@/components/course/course-player-shell';
+import { buildCourseSequence } from '@/lib/course-sequence';
 
 export default async function CertificatePage({
   params,
@@ -52,10 +52,6 @@ export default async function CertificatePage({
     redirect(`/dashboard/course/${courseSlug}/graduation`);
   }
 
-  const bothSubmitted =
-    confidenceResponses.onboarding !== null &&
-    confidenceResponses.completion !== null;
-
   const completionDate = new Date().toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -63,8 +59,23 @@ export default async function CertificatePage({
   });
   const studentName = user?.email ?? 'Student';
 
+  // Build sequence for prev/next navigation
+  const steps = buildCourseSequence(courseSlug, course.modules, lessonsByModule);
+  const currentHref = `/dashboard/course/${courseSlug}/certificate`;
+  const currentIdx = steps.findIndex((s) => s.href === currentHref);
+  const prevStep = currentIdx > 0 ? steps[currentIdx - 1] : null;
+
   return (
-    <div className="flex-1 overflow-auto">
+    <CoursePlayerShell
+      eyebrow="CERTIFICATE"
+      title={course.title}
+      prevHref={prevStep?.href ?? null}
+      prevLabel={prevStep?.label ?? null}
+      nextHref={null}
+      nextLabel={null}
+      nextLocked={false}
+      isAuthenticated={!!user}
+    >
       <div className="max-w-2xl mx-auto px-6 py-8 space-y-8">
 
         {/* Breadcrumb */}
@@ -102,15 +113,6 @@ export default async function CertificatePage({
           </div>
         ) : (
           <>
-            {/* Report card — only when both surveys are done */}
-            {bothSubmitted && course.confidence_form && (
-              <ReportCard
-                questions={(course.confidence_form as ConfidenceForm).questions}
-                onboarding={confidenceResponses.onboarding!}
-                completion={confidenceResponses.completion!}
-              />
-            )}
-
             {/* Certificate */}
             <CourseCertificate
               studentName={studentName}
@@ -121,6 +123,6 @@ export default async function CertificatePage({
         )}
 
       </div>
-    </div>
+    </CoursePlayerShell>
   );
 }
