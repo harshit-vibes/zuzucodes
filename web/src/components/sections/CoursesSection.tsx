@@ -77,8 +77,8 @@ function Accordion({ modules }: { modules: Module[] }) {
             <div className="flex items-center gap-3 sm:gap-4 min-w-0">
               <span className="number flex-shrink-0">Module {i + 1}</span>
               <div className="min-w-0">
-                <h4 className="text-title text-[var(--text-dark)] text-left truncate">{module.title}</h4>
-                <p className="text-small text-[var(--text-medium)] truncate">{module.subtitle}</p>
+                <h4 className="text-title text-[var(--text-dark)] text-left line-clamp-1">{module.title}</h4>
+                <p className="text-small text-[var(--text-medium)] line-clamp-1">{module.subtitle}</p>
               </div>
             </div>
             <span className="accordion-icon">
@@ -128,7 +128,7 @@ export function CoursesSection() {
 
   return (
     <section id="courses" className="section bg-warm-gray">
-      <div className="w-full max-w-[680px]">
+      <div className="w-full max-w-[900px]">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
