@@ -376,49 +376,6 @@ async function main() {
     WHERE id = ${lesson0Id}
   `;
 
-  const lesson0Section0 = assertValidContent('code-section', {
-    explanation: 'Every Python program you write is executed from top to bottom. Python reads your code line by line and runs it. The simplest thing you can do is display some output with print().',
-    code: 'print("Hello!")  # Python runs this and displays Hello!',
-    language: 'python',
-    takeaway: 'print() is how Python shows output to the console.',
-  });
-
-  await sql`
-    INSERT INTO lesson_sections (id, lesson_id, position, template, content)
-    VALUES (
-      ${'ls-intro-python-hello-world-00-0'},
-      ${lesson0Id},
-      ${0},
-      'code-section',
-      ${JSON.stringify(lesson0Section0)}
-    )
-    ON CONFLICT (lesson_id, position) DO UPDATE
-      SET template = EXCLUDED.template,
-          content  = EXCLUDED.content
-  `;
-
-  const lesson0Section1 = assertValidContent('code-section', {
-    explanation: 'Functions are the building blocks of Python programs. You define one with the def keyword, give it a name, and use return to send a value back to whoever called it.',
-    code: 'def greet():\n    return "Hello!"\n\nresult = greet()  # result is now "Hello!"',
-    language: 'python',
-    takeaway: 'def names a function; return sends a value back.',
-  });
-
-  await sql`
-    INSERT INTO lesson_sections (id, lesson_id, position, template, content)
-    VALUES (
-      ${'ls-intro-python-hello-world-00-1'},
-      ${lesson0Id},
-      ${1},
-      'code-section',
-      ${JSON.stringify(lesson0Section1)}
-    )
-    ON CONFLICT (lesson_id, position) DO UPDATE
-      SET template = EXCLUDED.template,
-          content  = EXCLUDED.content
-  `;
-
-  console.log('  seeded lesson_sections, intro_content, and outro_content for lesson 0');
 
   // ── Lesson 1: Your First Python Function ─────────────────────────────────
 
@@ -443,33 +400,6 @@ async function main() {
 
   await sql`UPDATE lessons SET outro_content = ${JSON.stringify(lesson1Outro)} WHERE id = ${lesson1Id}`;
 
-  const lesson1Section0 = assertValidContent('code-section', {
-    explanation: 'A function starts with the def keyword, followed by the function name and parentheses. The body is indented — Python uses indentation instead of braces. The pass keyword is a temporary placeholder that does nothing.',
-    code: 'def greet():\n    pass  # placeholder — does nothing yet',
-    language: 'python',
-    takeaway: 'def starts a function; the body must be indented.',
-  });
-
-  await sql`
-    INSERT INTO lesson_sections (id, lesson_id, position, template, content)
-    VALUES (${'ls-intro-python-hello-world-01-0'}, ${lesson1Id}, ${0}, 'code-section', ${JSON.stringify(lesson1Section0)})
-    ON CONFLICT (lesson_id, position) DO UPDATE SET template = EXCLUDED.template, content = EXCLUDED.content
-  `;
-
-  const lesson1Section1 = assertValidContent('code-section', {
-    explanation: 'The return keyword sends a value back to whoever called the function. String literals are text in quotes. Once you add return, calling greet() produces a value you can use.',
-    code: 'def greet():\n    return "Hello, World!"\n\nresult = greet()  # result is "Hello, World!"',
-    language: 'python',
-    takeaway: 'return sends a value out of the function to the caller.',
-  });
-
-  await sql`
-    INSERT INTO lesson_sections (id, lesson_id, position, template, content)
-    VALUES (${'ls-intro-python-hello-world-01-1'}, ${lesson1Id}, ${1}, 'code-section', ${JSON.stringify(lesson1Section1)})
-    ON CONFLICT (lesson_id, position) DO UPDATE SET template = EXCLUDED.template, content = EXCLUDED.content
-  `;
-
-  console.log('  seeded lesson_sections, intro_content, and outro_content for lesson 1');
 
   // ── Lesson 2: String Formatting with f-strings ────────────────────────────
 
@@ -494,33 +424,6 @@ async function main() {
 
   await sql`UPDATE lessons SET outro_content = ${JSON.stringify(lesson2Outro)} WHERE id = ${lesson2Id}`;
 
-  const lesson2Section0 = assertValidContent('code-section', {
-    explanation: 'When you hard-code a string, it only works for one specific value. String concatenation with + lets you combine strings and variables, but it gets unwieldy quickly and breaks if the variable is not a string.',
-    code: 'name = "Alice"\ngreeting = "Hello, " + name + "!"  # clunky\nprint(greeting)  # Hello, Alice!',
-    language: 'python',
-    takeaway: 'Concatenation works but is error-prone — there is a better way.',
-  });
-
-  await sql`
-    INSERT INTO lesson_sections (id, lesson_id, position, template, content)
-    VALUES (${'ls-intro-python-hello-world-02-0'}, ${lesson2Id}, ${0}, 'code-section', ${JSON.stringify(lesson2Section0)})
-    ON CONFLICT (lesson_id, position) DO UPDATE SET template = EXCLUDED.template, content = EXCLUDED.content
-  `;
-
-  const lesson2Section1 = assertValidContent('code-section', {
-    explanation: 'f-strings start with the letter f before the opening quote. Anything inside curly braces is treated as a Python expression — the variable\'s value is substituted in at runtime.',
-    code: 'name = "Alice"\ngreeting = f"Hello, {name}!"\nprint(greeting)  # Hello, Alice!',
-    language: 'python',
-    takeaway: 'f"...{variable}..." embeds any variable directly in a string.',
-  });
-
-  await sql`
-    INSERT INTO lesson_sections (id, lesson_id, position, template, content)
-    VALUES (${'ls-intro-python-hello-world-02-1'}, ${lesson2Id}, ${1}, 'code-section', ${JSON.stringify(lesson2Section1)})
-    ON CONFLICT (lesson_id, position) DO UPDATE SET template = EXCLUDED.template, content = EXCLUDED.content
-  `;
-
-  console.log('  seeded lesson_sections, intro_content, and outro_content for lesson 2');
 
   // ── Module 2 lesson sections + intro/outro ────────────────────────────────────
 
@@ -543,31 +446,6 @@ async function main() {
   });
   await sql`UPDATE lessons SET outro_content = ${JSON.stringify(cf0Outro)} WHERE id = ${cf0Id}`;
 
-  const cf0Sec0 = assertValidContent('code-section', {
-    explanation: 'An if statement runs its indented body only when the condition is True. The else block runs when all conditions above it are False. Together they guarantee exactly one branch runs.',
-    code: 'x = 5\nif x > 0:\n    print("positive")\nelse:\n    print("not positive")',
-    language: 'python',
-    takeaway: 'if/else guarantees exactly one branch runs.',
-  });
-  await sql`
-    INSERT INTO lesson_sections (id, lesson_id, position, template, content)
-    VALUES (${'ls-cf-00-0'}, ${cf0Id}, ${0}, 'code-section', ${JSON.stringify(cf0Sec0)})
-    ON CONFLICT (lesson_id, position) DO UPDATE SET template = EXCLUDED.template, content = EXCLUDED.content
-  `;
-
-  const cf0Sec1 = assertValidContent('code-section', {
-    explanation: 'When there are more than two cases, elif adds extra branches between if and else. Python checks each condition in order and runs the first matching branch — the rest are skipped.',
-    code: 'def classify_number(n):\n    if n > 0:\n        return "positive"\n    elif n < 0:\n        return "negative"\n    else:\n        return "zero"',
-    language: 'python',
-    takeaway: 'elif chains multiple conditions — only the first match runs.',
-  });
-  await sql`
-    INSERT INTO lesson_sections (id, lesson_id, position, template, content)
-    VALUES (${'ls-cf-00-1'}, ${cf0Id}, ${1}, 'code-section', ${JSON.stringify(cf0Sec1)})
-    ON CONFLICT (lesson_id, position) DO UPDATE SET template = EXCLUDED.template, content = EXCLUDED.content
-  `;
-
-  console.log('  seeded lesson_sections, intro_content, and outro_content for module 2 lesson 0');
 
   const cf1Id = 'lesson-intro-python-control-flow-01';
 
@@ -588,31 +466,6 @@ async function main() {
   });
   await sql`UPDATE lessons SET outro_content = ${JSON.stringify(cf1Outro)} WHERE id = ${cf1Id}`;
 
-  const cf1Sec0 = assertValidContent('code-section', {
-    explanation: 'A while loop checks its condition before each iteration. When the condition becomes False, the loop stops. You must update the variable inside the loop — if the condition never becomes False, the loop runs forever.',
-    code: 'count = 3\nwhile count >= 0:\n    print(count)  # prints 3, 2, 1, 0\n    count -= 1    # count -= 1 is shorthand for count = count - 1',
-    language: 'python',
-    takeaway: 'Always update the loop variable — otherwise it runs forever.',
-  });
-  await sql`
-    INSERT INTO lesson_sections (id, lesson_id, position, template, content)
-    VALUES (${'ls-cf-01-0'}, ${cf1Id}, ${0}, 'code-section', ${JSON.stringify(cf1Sec0)})
-    ON CONFLICT (lesson_id, position) DO UPDATE SET template = EXCLUDED.template, content = EXCLUDED.content
-  `;
-
-  const cf1Sec1 = assertValidContent('code-section', {
-    explanation: 'To return multiple values from a loop, collect them in a list. Start with an empty list before the loop, use append() inside to add each value, then return the list after the loop exits.',
-    code: 'def countdown(n):\n    result = []\n    while n >= 0:\n        result.append(n)\n        n -= 1\n    return result\n\ncountdown(3)  # [3, 2, 1, 0]',
-    language: 'python',
-    takeaway: 'result = [] → append inside loop → return after loop.',
-  });
-  await sql`
-    INSERT INTO lesson_sections (id, lesson_id, position, template, content)
-    VALUES (${'ls-cf-01-1'}, ${cf1Id}, ${1}, 'code-section', ${JSON.stringify(cf1Sec1)})
-    ON CONFLICT (lesson_id, position) DO UPDATE SET template = EXCLUDED.template, content = EXCLUDED.content
-  `;
-
-  console.log('  seeded lesson_sections, intro_content, and outro_content for module 2 lesson 1');
 
   const cf2Id = 'lesson-intro-python-control-flow-02';
 
@@ -633,31 +486,6 @@ async function main() {
   });
   await sql`UPDATE lessons SET outro_content = ${JSON.stringify(cf2Outro)} WHERE id = ${cf2Id}`;
 
-  const cf2Sec0 = assertValidContent('code-section', {
-    explanation: 'A for loop iterates over any sequence — list, string, range. Python automatically assigns each element to the loop variable. You never need to track an index or worry about going out of bounds.',
-    code: 'for item in [10, 20, 30]:\n    print(item)  # prints 10, then 20, then 30',
-    language: 'python',
-    takeaway: 'for gives you each item directly — no index management.',
-  });
-  await sql`
-    INSERT INTO lesson_sections (id, lesson_id, position, template, content)
-    VALUES (${'ls-cf-02-0'}, ${cf2Id}, ${0}, 'code-section', ${JSON.stringify(cf2Sec0)})
-    ON CONFLICT (lesson_id, position) DO UPDATE SET template = EXCLUDED.template, content = EXCLUDED.content
-  `;
-
-  const cf2Sec1 = assertValidContent('code-section', {
-    explanation: 'The accumulator pattern starts a variable at a neutral value (0 for addition) and updates it with each item in the loop. After the loop, the variable holds the final result.',
-    code: 'def sum_list(numbers):\n    total = 0\n    for n in numbers:\n        total += n  # total = total + n\n    return total\n\nsum_list([1, 2, 3])  # 6',
-    language: 'python',
-    takeaway: 'Start at 0, += each item, return after the loop.',
-  });
-  await sql`
-    INSERT INTO lesson_sections (id, lesson_id, position, template, content)
-    VALUES (${'ls-cf-02-1'}, ${cf2Id}, ${1}, 'code-section', ${JSON.stringify(cf2Sec1)})
-    ON CONFLICT (lesson_id, position) DO UPDATE SET template = EXCLUDED.template, content = EXCLUDED.content
-  `;
-
-  console.log('  seeded lesson_sections, intro_content, and outro_content for module 2 lesson 2');
 
   // ── Module 2 intro/outro ──────────────────────────────────────────────────────
 
