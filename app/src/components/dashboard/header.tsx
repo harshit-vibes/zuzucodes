@@ -7,8 +7,8 @@ import { UserButton } from '@/components/shared/user-button';
 export function DashboardHeader() {
   const pathname = usePathname();
 
-  // Lesson pages have their own self-contained header
-  if (pathname.includes('/lesson/')) return null;
+  // Course player pages have their own shell header
+  if (pathname.includes('/dashboard/course/')) return null;
 
   return (
     <header className="flex h-14 shrink-0 items-center justify-end border-b border-border/50 px-4">
