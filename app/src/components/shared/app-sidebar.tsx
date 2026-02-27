@@ -57,7 +57,15 @@ function parseDashboardPath(pathname: string) {
 
   const courseSlug = parts[courseIdx + 1] || null;
   const moduleSlug = parts[courseIdx + 2] || null;
-  const contentType = parts[courseIdx + 3] as "lesson" | "quiz" | null;
+  const segment3 = parts[courseIdx + 3] as string | undefined;
+
+  // /[mod]/outro — module outro page
+  if (segment3 === 'outro') {
+    return { courseSlug, moduleSlug, contentType: null as "lesson" | "quiz" | null, order: null };
+  }
+
+  const contentType = segment3 as "lesson" | "quiz" | null;
+  // /[mod]/lesson/[order], /[mod]/lesson/[order]/intro, /[mod]/lesson/[order]/outro
   const order = contentType === "lesson" ? Number(parts[courseIdx + 4]) || null : null;
 
   return { courseSlug, moduleSlug, contentType, order };
