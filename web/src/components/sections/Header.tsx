@@ -2,8 +2,7 @@
 
 import { motion, useScroll, useSpring, AnimatePresence } from 'motion/react';
 import { useState, useCallback } from 'react';
-
-const WHATSAPP_URL = 'https://wa.me/918011858376?text=enquiry%20for%20zuzu.codes';
+import { WHATSAPP_URL } from '@/lib/constants';
 
 const navLinks = [
   { label: 'Method', id: 'method' },

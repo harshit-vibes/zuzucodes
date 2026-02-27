@@ -40,13 +40,13 @@ export function TestimonialsSection() {
 
         {/* Cards grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {testimonials.map((t) => (
+          {testimonials.map((t, i) => (
             <motion.div
               key={t.name}
               initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-50px' }}
-              transition={{ duration: 0.6, delay: testimonials.indexOf(t) * 0.1 }}
+              transition={{ duration: 0.6, delay: i * 0.1 }}
               className="card-on-cream flex flex-col"
             >
               {/* Quote mark */}

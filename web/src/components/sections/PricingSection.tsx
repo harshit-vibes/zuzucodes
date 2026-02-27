@@ -1,8 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
-
-const WHATSAPP_URL = 'https://wa.me/918011858376?text=enquiry%20for%20zuzu.codes';
+import { WHATSAPP_URL } from '@/lib/constants';
 
 const tiers = [
   {

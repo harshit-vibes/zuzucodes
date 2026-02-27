@@ -3,8 +3,7 @@
 import { motion } from 'motion/react';
 import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
-
-const WHATSAPP_URL = 'https://wa.me/918011858376?text=enquiry%20for%20zuzu.codes';
+import { WHATSAPP_URL } from '@/lib/constants';
 
 const termsContent = `
 # Terms of Service
@@ -104,17 +103,18 @@ function Dialog({
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-[var(--cream)] rounded-xl shadow-2xl max-w-lg w-full max-h-[85vh] overflow-hidden border border-[var(--border)]">
+      <div role="dialog" aria-modal="true" aria-labelledby="dialog-title" className="relative bg-[var(--cream)] rounded-xl shadow-2xl max-w-lg w-full max-h-[85vh] overflow-hidden border border-[var(--border)]">
         <div
           className="flex items-center justify-between bg-[var(--cream)] border-b border-[var(--border)]"
           style={{ padding: '20px 28px' }}
         >
-          <h2 className="font-medium text-lg text-[var(--text-dark)]">{title}</h2>
+          <h2 id="dialog-title" className="font-medium text-lg text-[var(--text-dark)]">{title}</h2>
           <button
             onClick={onClose}
+            aria-label="Close dialog"
             className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--warm-gray)] transition-colors"
           >
-            <svg className="w-5 h-5 text-[var(--text-medium)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="w-5 h-5 text-[var(--text-medium)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>

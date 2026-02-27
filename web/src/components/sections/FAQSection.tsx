@@ -42,10 +42,10 @@ function FAQItem({ faq, index }: { faq: { question: string; answer: string }; in
       className="accordion-item"
       data-state={open ? 'open' : 'closed'}
     >
-      <button className="accordion-trigger" onClick={() => setOpen((v) => !v)}>
+      <button className="accordion-trigger" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
         <span className="text-title text-[var(--text-dark)] text-left pr-4">{faq.question}</span>
         <span className="accordion-icon flex-shrink-0">
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
             {open ? (
               <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
             ) : (
