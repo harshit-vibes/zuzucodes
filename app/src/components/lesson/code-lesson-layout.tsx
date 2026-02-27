@@ -77,16 +77,11 @@ export function CodeLessonLayout({
   const [testResults, setTestResults] = useState<TestCaseResult[] | null>(null);
   const [hasRun, setHasRun] = useState(false);
   const [metrics, setMetrics] = useState<ExecutionMetrics | null>(null);
-  const [view, setView] = useState<'intro' | 'content' | 'outro'>(
-    isCompleted || savedCode !== null ? 'content' : 'intro'
-  );
-
-  // Skip intro if user has already dismissed it this session
-  useEffect(() => {
-    if (view === 'intro' && sessionStorage.getItem(`intro:${lessonId}`)) {
-      setView('content');
-    }
-  }, []); // intentional: mount-only
+  const [view, setView] = useState<'intro' | 'content' | 'outro'>(() => {
+    if (isCompleted || savedCode !== null) return 'content';
+    if (typeof window !== 'undefined' && sessionStorage.getItem(`intro:${lessonId}`)) return 'content';
+    return 'intro';
+  });
 
   // Hydrate output panel with persisted test results on mount
   useEffect(() => {
