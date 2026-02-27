@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { LessonOverlay } from '@/components/lesson/lesson-overlay';
 import { Markdown } from '@/components/shared/markdown';
 import { ProblemPanel } from '@/components/lesson/problem-panel';
@@ -92,7 +91,6 @@ export function CodeLessonLayout({
     }
   }, []); // intentional: mount-only
 
-  const hasCode = !!(testCases || codeTemplate);
   const hasNext = position < lessonCount;
   const hasPrev = position > 1;
   const progress = (position / lessonCount) * 100;
