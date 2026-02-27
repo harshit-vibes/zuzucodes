@@ -81,6 +81,13 @@ export function CodeLessonLayout({
     isCompleted || savedCode !== null ? 'content' : 'intro'
   );
 
+  // Skip intro if user has already dismissed it this session
+  useEffect(() => {
+    if (view === 'intro' && sessionStorage.getItem(`intro:${lessonId}`)) {
+      setView('content');
+    }
+  }, []); // intentional: mount-only
+
   // Hydrate output panel with persisted test results on mount
   useEffect(() => {
     if (lastTestResults && lastTestResults.length > 0) {
@@ -335,7 +342,10 @@ export function CodeLessonLayout({
           nextHref={nextHref}
           hasPrev={hasPrev}
           hasNext={hasNext}
-          onEnterLesson={() => setView('content')}
+          onEnterLesson={() => {
+            sessionStorage.setItem(`intro:${lessonId}`, '1');
+            setView('content');
+          }}
         />
       ) : (
         <>

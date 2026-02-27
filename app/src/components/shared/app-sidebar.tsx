@@ -159,7 +159,7 @@ const ModuleSection = memo(function ModuleSection({
               ) : itemStatus === 'in-progress' ? (
                 <div className="h-3.5 w-3.5 rounded-full ring-1 ring-primary/50 bg-primary/10 shrink-0" />
               ) : (
-                <div className="h-3.5 w-3.5 rounded-full ring-1 ring-border/40 shrink-0" />
+                <div className="h-3.5 w-3.5 rounded-full ring-1 ring-border shrink-0" />
               )}
               <span className="truncate">{item.title}</span>
             </Link>
