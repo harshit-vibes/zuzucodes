@@ -6,14 +6,11 @@ import {
   getSectionCompletionStatus,
   getLessonsForCourse,
   getCourseConfidenceResponses,
-  type ConfidenceForm,
   type SectionStatus,
 } from '@/lib/data';
 import { titleCase } from '@/lib/utils';
 import { TemplateRenderer } from '@/components/templates/template-renderer';
-import { OnboardingFormWrapper, CompletionFormWrapper } from '@/components/dashboard/course-form-wrappers';
-import { ReportCard } from '@/components/dashboard/report-card';
-import { CourseCertificate } from '@/components/dashboard/course-certificate';
+import { OnboardingFormWrapper } from '@/components/dashboard/course-form-wrappers';
 
 export default async function CourseOverviewPage({
   params,
@@ -40,7 +37,6 @@ export default async function CourseOverviewPage({
   ]);
 
   const onboardingSubmitted = confidenceResponses.onboarding !== null;
-  const completionSubmitted = confidenceResponses.completion !== null;
 
   // Compute overall progress
   let totalItems = 0;
@@ -73,14 +69,7 @@ export default async function CourseOverviewPage({
     }
   }
 
-  const isCompleted = totalItems > 0 && completedItems === totalItems;
   const hasStarted = completedItems > 0;
-  const completionDate = new Date().toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-  const studentName = user?.email ?? 'Student';
 
   return (
     <div className="flex-1 overflow-auto">
@@ -113,88 +102,51 @@ export default async function CourseOverviewPage({
           </div>
         ) : null}
 
-        {/* ─── Survey links ─────────────────────────────────────── */}
+        {/* ─── Onboarding survey ──────────────────────────────── */}
         {user && course.confidence_form && (
-          <div className="flex gap-3">
-            <a
-              href={`/dashboard/course/${courseSlug}/onboarding`}
-              className="flex-1 text-center text-xs font-mono py-2 rounded-lg border border-border/40 text-muted-foreground/60 hover:text-foreground hover:bg-muted/40 transition-colors"
-            >
-              {onboardingSubmitted ? '✓ Pre-course survey' : 'Pre-course survey'}
-            </a>
-            <a
-              href={`/dashboard/course/${courseSlug}/completion`}
-              className="flex-1 text-center text-xs font-mono py-2 rounded-lg border border-border/40 text-muted-foreground/60 hover:text-foreground hover:bg-muted/40 transition-colors"
-            >
-              {completionSubmitted ? '✓ Post-course survey' : 'Post-course survey'}
-            </a>
-          </div>
+          onboardingSubmitted ? (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-success/5 border border-success/20">
+              <svg className="w-3.5 h-3.5 text-success shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+              <span className="text-xs text-success/70 font-mono">Pre-course survey completed</span>
+            </div>
+          ) : (
+            <OnboardingFormWrapper courseId={course.id} form={course.confidence_form} />
+          )
         )}
 
-        {/* ─── Progress + CTA / Onboarding form / Completion form ── */}
-        {user && course.confidence_form && (
-          <>
-            {!onboardingSubmitted && !hasStarted ? (
-              <OnboardingFormWrapper courseId={course.id} form={course.confidence_form} />
-            ) : isCompleted && !completionSubmitted ? (
-              <CompletionFormWrapper courseId={course.id} form={course.confidence_form} />
-            ) : isCompleted && completionSubmitted ? (
-              <div className="space-y-4">
-                <ReportCard
-                  questions={(course.confidence_form as ConfidenceForm).questions}
-                  onboarding={confidenceResponses.onboarding!}
-                  completion={confidenceResponses.completion!}
-                />
-                <CourseCertificate
-                  studentName={studentName}
-                  courseTitle={course.title}
-                  completionDate={completionDate}
-                />
-              </div>
-            ) : (
-              <div className="rounded-xl border border-border/50 bg-card p-5 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">
-                      {hasStarted ? 'In progress' : 'Not started'}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {completedItems} / {totalItems} items completed
-                    </p>
-                  </div>
-                  <span className="font-mono text-lg font-semibold text-primary tabular-nums">
-                    {progressPct}%
-                  </span>
-                </div>
-                <div className="h-1.5 bg-border/40 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-primary/70 rounded-full transition-all duration-700"
-                    style={{ width: `${progressPct}%` }}
-                  />
-                </div>
-                <Link
-                  href={resumeHref}
-                  className="flex items-center justify-center gap-2 w-full h-9 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
-                >
-                  {hasStarted ? 'Continue learning' : 'Start course'}
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </Link>
-              </div>
-            )}
-          </>
-        )}
-
-        {/* ─── Course outro (completed) ───────────────────────────── */}
-        {isCompleted && course.outro_content ? (
-          <div className="rounded-xl border border-success/20 bg-success/5 p-5">
-            <p className="text-[10px] font-mono uppercase tracking-widest text-success/50 mb-4">
-              Course complete
-            </p>
-            <TemplateRenderer name="course-outro" content={course.outro_content} />
+        {/* ─── Progress CTA ───────────────────────────────────── */}
+        <div className="rounded-xl border border-border/50 bg-card p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-foreground">
+                {hasStarted ? 'In progress' : 'Not started'}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {completedItems} / {totalItems} items completed
+              </p>
+            </div>
+            <span className="font-mono text-lg font-semibold text-primary tabular-nums">
+              {progressPct}%
+            </span>
           </div>
-        ) : null}
+          <div className="h-1.5 bg-border/40 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-primary/70 rounded-full transition-all duration-700"
+              style={{ width: `${progressPct}%` }}
+            />
+          </div>
+          <Link
+            href={resumeHref}
+            className="flex items-center justify-center gap-2 w-full h-9 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+          >
+            {hasStarted ? 'Continue learning' : 'Start course'}
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </Link>
+        </div>
 
         {/* ─── Outcomes ───────────────────────────────────────────── */}
         {course.outcomes && course.outcomes.length > 0 && (
