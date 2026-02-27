@@ -27,6 +27,13 @@
 - `www.zuzu.codes` can remain as an alias on the `zuzu` project (or be removed later)
 - No code changes beyond the two files below
 
+**Subscription + account modules audit (safe — no changes needed):**
+- `subscribe-modal.tsx` — uses relative API paths (`/api/paypal/...`); no hardcoded domains
+- `paypal.ts` — `createSubscription()` sends no `return_url`/`cancel_url`; PayPal SDK handles redirect in-page
+- `account-content.tsx` — `AccountSettingsCards`/`SecuritySettingsCards` call Neon Auth via `NEON_AUTH_BASE_URL` (unchanged); trusted origin already updated (Task 7 ✅)
+- `account-modal.tsx`, `account/page.tsx` — relative links only
+- Only PayPal webhook URL (Task 8) requires an update for the subscription flow to work post-split
+
 ---
 
 ## Task 1: Add redirects in `web/next.config.ts`
