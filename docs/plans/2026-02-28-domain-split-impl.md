@@ -268,27 +268,41 @@ Expected for second: `HTTP/2 200` or `HTTP/2 307` (auth redirect to /auth/sign-i
 
 ---
 
-## Task 7: Update Neon Auth allowed origins
+## Task 7: Update Neon Auth trusted domains via Neon API ✅ DONE
 
-**Purpose:** Neon Auth validates `Origin` on auth API calls. `app.zuzu.codes` must be an allowed origin or sign-in/sign-up will fail with a CORS or 403 error.
+**Purpose:** Neon Auth validates the origin on auth API calls. `app.zuzu.codes` must be in the trusted domains list or sign-in will fail with a CORS/403 error.
 
-**Step 1: Open Neon console**
+> **Note:** `neonctl` v2.21.0 has no native command for managing Neon Auth trusted domains. Use the Neon REST API directly with the OAuth token from neonctl credentials. This task has already been executed — `app.zuzu.codes` is live in the trusted domains list.
 
-Go to [console.neon.tech](https://console.neon.tech) → your project → **Auth** tab.
+**Neon project details:**
+- Org: `org-autumn-breeze-01504295` (Harshit)
+- Project ID: `late-sky-89059162` (zuzu-codes)
 
-**Step 2: Add the new origin**
+**Commands (for re-running or auditing):**
 
-Find "Allowed Origins" or "Trusted Origins". Add:
+```bash
+ACCESS_TOKEN=$(cat ~/.config/neonctl/credentials.json | python3 -c \
+  "import sys,json; print(json.load(sys.stdin)['access_token'])")
 
+# List current trusted domains
+curl -s "https://console.neon.tech/api/v2/projects/late-sky-89059162/auth/domains" \
+  -H "Authorization: Bearer $ACCESS_TOKEN"
+
+# Add a domain (auth_provider must be "stack")
+curl -s -X POST "https://console.neon.tech/api/v2/projects/late-sky-89059162/auth/domains" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"domain": "https://app.zuzu.codes", "auth_provider": "stack"}'
+# Expected: empty body, 201 Created
+
+# Delete a domain when decommissioning
+curl -s -X DELETE "https://console.neon.tech/api/v2/projects/late-sky-89059162/auth/domains/https%3A%2F%2Fwww.zuzu.codes" \
+  -H "Authorization: Bearer $ACCESS_TOKEN"
 ```
-https://app.zuzu.codes
-```
 
-Keep `https://www.zuzu.codes` and `https://zuzu.codes` during the transition period. Remove them once all traffic is confirmed on `app.zuzu.codes`.
+**Current state:** `app.zuzu.codes` is confirmed in the trusted domains list. No action needed.
 
-**Step 3: Verify auth on the new domain**
-
-Open an incognito window. Visit `https://app.zuzu.codes/auth/sign-in`. Enter your email. Confirm the OTP email arrives. Sign in successfully.
+**Post-deploy verification:** After Task 6, open incognito → `https://app.zuzu.codes/auth/sign-in` → enter email → confirm OTP arrives → sign in successfully.
 
 ---
 
