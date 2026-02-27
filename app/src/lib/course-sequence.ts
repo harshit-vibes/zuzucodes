@@ -32,7 +32,9 @@ export function buildCourseSequence(
       type: 'module-intro',
     })
 
-    const lessons = lessonsByModule[mod.id] ?? []
+    const lessons = [...(lessonsByModule[mod.id] ?? [])].sort(
+      (a, b) => a.lesson_index - b.lesson_index,
+    )
     for (const lesson of lessons) {
       const order = lesson.lesson_index + 1
       const lessonBase = `${base}/${mod.slug}/lesson/${order}`
