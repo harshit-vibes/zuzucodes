@@ -91,7 +91,6 @@ export default async function CourseOverviewPage({
       nextHref={nextStep?.href ?? null}
       nextLabel={nextStep?.label ?? null}
       nextLocked={nextLocked}
-      isAuthenticated={!!user}
     >
       <div className="max-w-3xl mx-auto px-6 py-8 space-y-8">
 

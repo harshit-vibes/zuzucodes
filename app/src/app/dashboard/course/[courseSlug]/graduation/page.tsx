@@ -71,7 +71,6 @@ export default async function GraduationPage({
       nextHref={nextStep?.href ?? null}
       nextLabel={nextStep?.label ?? null}
       nextLocked={!completionSubmitted}
-      isAuthenticated={!!user}
     >
       <div className="max-w-2xl mx-auto px-6 py-8 space-y-8">
 

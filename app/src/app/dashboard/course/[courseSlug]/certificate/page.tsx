@@ -74,7 +74,6 @@ export default async function CertificatePage({
       nextHref={null}
       nextLabel={null}
       nextLocked={false}
-      isAuthenticated={!!user}
     >
       <div className="max-w-2xl mx-auto px-6 py-8 space-y-8">
 

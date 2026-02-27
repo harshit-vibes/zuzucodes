@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { ThemeToggle } from '@/components/shared/theme-toggle';
-import { UserButton } from '@/components/shared/user-button';
 
 interface CoursePlayerShellProps {
   eyebrow: string;
@@ -14,7 +13,6 @@ interface CoursePlayerShellProps {
   nextLabel: string | null;
   nextLocked: boolean;
   scrollable?: boolean;
-  isAuthenticated?: boolean;
   children: React.ReactNode;
 }
 
@@ -27,7 +25,6 @@ export function CoursePlayerShell({
   nextLabel,
   nextLocked,
   scrollable = true,
-  isAuthenticated = false,
   children,
 }: CoursePlayerShellProps) {
   return (
@@ -46,7 +43,6 @@ export function CoursePlayerShell({
         <div className="w-px h-5 bg-border/50 shrink-0" />
         <div className="flex items-center gap-1.5 shrink-0">
           <ThemeToggle />
-          {isAuthenticated && <UserButton />}
         </div>
       </header>
 

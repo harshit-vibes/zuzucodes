@@ -70,7 +70,6 @@ export default async function LessonPage({ params }: LessonPageProps) {
       nextLabel={nextStep?.label ?? null}
       nextLocked={!isCompleted}
       scrollable={false}
-      isAuthenticated={!!user}
     >
       {!isPaid && <PaywallOverlay planId={PLAN_ID} />}
       <CodeLessonLayout

@@ -106,7 +106,6 @@ export default async function ModuleOverviewPage({
       nextHref={nextStep?.href ?? null}
       nextLabel={nextStep?.label ?? null}
       nextLocked={false}
-      isAuthenticated={!!user}
     >
       <div className="max-w-2xl mx-auto px-6 py-8 space-y-8">
 

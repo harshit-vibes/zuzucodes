@@ -69,7 +69,6 @@ export default async function QuizPage({ params }: QuizPageProps) {
       nextHref={nextStep?.href ?? null}
       nextLabel={nextStep?.label ?? null}
       nextLocked={!isCompleted}
-      isAuthenticated={!!user}
     >
       <div className="pb-10">
         <div className="container mx-auto px-6 py-10">

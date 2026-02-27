@@ -3,7 +3,6 @@ import { AppSidebar } from "@/components/shared/app-sidebar";
 import { getCoursesForSidebar, getSidebarProgress, getSectionCompletionStatus, getDashboardStats, getSubscriptionStatus, type SectionStatus } from "@/lib/data";
 import { auth } from "@/lib/auth/server";
 import { redirect } from "next/navigation";
-import { DashboardHeader } from "@/components/dashboard/header";
 import { DashboardMain } from "@/components/dashboard/main";
 import { RateLimitProvider } from "@/context/rate-limit-context";
 import { RateLimitFooter } from "@/components/dashboard/rate-limit-footer";
@@ -48,7 +47,6 @@ export default async function DashboardLayout({
           subscription={subscription}
         />
         <SidebarInset className="overflow-hidden flex flex-col">
-          <DashboardHeader />
           <DashboardMain>{children}</DashboardMain>
           <RateLimitFooter />
         </SidebarInset>
