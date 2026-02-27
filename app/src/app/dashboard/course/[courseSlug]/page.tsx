@@ -113,6 +113,24 @@ export default async function CourseOverviewPage({
           </div>
         ) : null}
 
+        {/* ─── Survey links ─────────────────────────────────────── */}
+        {user && course.confidence_form && (
+          <div className="flex gap-3">
+            <a
+              href={`/dashboard/course/${courseSlug}/onboarding`}
+              className="flex-1 text-center text-xs font-mono py-2 rounded-lg border border-border/40 text-muted-foreground/60 hover:text-foreground hover:bg-muted/40 transition-colors"
+            >
+              {onboardingSubmitted ? '✓ Pre-course survey' : 'Pre-course survey'}
+            </a>
+            <a
+              href={`/dashboard/course/${courseSlug}/completion`}
+              className="flex-1 text-center text-xs font-mono py-2 rounded-lg border border-border/40 text-muted-foreground/60 hover:text-foreground hover:bg-muted/40 transition-colors"
+            >
+              {completionSubmitted ? '✓ Post-course survey' : 'Post-course survey'}
+            </a>
+          </div>
+        )}
+
         {/* ─── Progress + CTA / Onboarding form / Completion form ── */}
         {user && course.confidence_form && (
           <>

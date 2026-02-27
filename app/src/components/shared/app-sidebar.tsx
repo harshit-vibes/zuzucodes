@@ -3,7 +3,6 @@
 import { memo, useMemo } from "react";
 import {
   BookOpen,
-  ChevronLeft,
   CircleDot,
   Diamond,
   Flame,
@@ -278,29 +277,10 @@ export function AppSidebar({
         ) : (
           /* ---- Course mode ---- */
           <>
-            {/* Back to Dashboard */}
-            <SidebarGroup className="pb-1">
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      asChild
-                      className="rounded-lg hover:bg-muted/60 text-muted-foreground"
-                    >
-                      <Link href="/dashboard" className="flex items-center gap-2 px-3 py-1.5">
-                        <ChevronLeft className="h-3.5 w-3.5" />
-                        <span className="text-xs">Dashboard</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-
             {/* Course title + progress */}
             <div className="px-3 pb-3 border-b border-border/50 mb-2">
               <Link
-                href="/dashboard"
+                href={`/dashboard/course/${activeCourse.slug}`}
                 className="block group"
               >
                 <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2">
@@ -313,6 +293,22 @@ export function AppSidebar({
                   <span className="text-[10px] text-muted-foreground tabular-nums">
                     {activeProgress.progress}%
                   </span>
+                </div>
+              )}
+              {activeCourse.confidence_form && (
+                <div className="flex gap-2 mt-2">
+                  <Link
+                    href={`/dashboard/course/${activeCourse.slug}/onboarding`}
+                    className="flex-1 text-center text-[10px] font-mono px-2 py-1 rounded border border-border/40 text-muted-foreground/60 hover:text-foreground hover:bg-muted/40 transition-colors"
+                  >
+                    pre-survey
+                  </Link>
+                  <Link
+                    href={`/dashboard/course/${activeCourse.slug}/completion`}
+                    className="flex-1 text-center text-[10px] font-mono px-2 py-1 rounded border border-border/40 text-muted-foreground/60 hover:text-foreground hover:bg-muted/40 transition-colors"
+                  >
+                    post-survey
+                  </Link>
                 </div>
               )}
             </div>
