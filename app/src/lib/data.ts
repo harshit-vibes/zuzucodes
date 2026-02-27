@@ -81,41 +81,6 @@ export interface UserCode {
 
 export type SectionStatus = 'not-started' | 'in-progress' | 'completed';
 
-// ── Template system ──────────────────────────────────────────────────────────
-
-export interface DbLessonSection {
-  id: string;
-  lessonId: string;
-  position: number;
-  template: string;        // TemplateName — kept as string here to avoid server bundle coupling
-  content: unknown;        // Validated JSONB; cast to TemplateContent<T> at render time
-}
-
-/**
- * Fetch all sections for a lesson, ordered by position.
- * Wrapped with React.cache() for per-request deduplication.
- */
-export const getLessonSections = cache(async (lessonId: string): Promise<DbLessonSection[]> => {
-  try {
-    const result = await sql`
-      SELECT id, lesson_id, position, template, content
-      FROM lesson_sections
-      WHERE lesson_id = ${lessonId}
-      ORDER BY position ASC
-    `;
-    return (result as any[]).map((row) => ({
-      id: row.id,
-      lessonId: row.lesson_id,
-      position: row.position,
-      template: row.template,
-      content: row.content,
-    }));
-  } catch (error) {
-    console.error('getLessonSections error:', error);
-    return [];
-  }
-});
-
 /**
  * Derive content items from module fields (lesson_count + quiz_form).
  */

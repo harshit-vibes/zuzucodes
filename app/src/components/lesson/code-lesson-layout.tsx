@@ -3,9 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { LessonSections } from '@/components/lesson/lesson-sections';
 import { LessonOverlay } from '@/components/lesson/lesson-overlay';
-import type { DbLessonSection } from '@/lib/data';
+import { Markdown } from '@/components/shared/markdown';
 import { ProblemPanel } from '@/components/lesson/problem-panel';
 import { CodeEditor } from '@/components/lesson/code-editor';
 import { OutputPanel, ExecutionPhase } from '@/components/lesson/output-panel';
@@ -20,7 +19,7 @@ import type { ExecutionMetrics } from '@/components/lesson/output-panel';
 interface CodeLessonLayoutProps {
   lessonTitle: string;
   introContent: unknown | null;
-  sections: DbLessonSection[];
+  content: string;
   outroContent: unknown | null;
   codeTemplate: string | null;
   testCases: TestCase[] | null;
@@ -45,7 +44,7 @@ interface CodeLessonLayoutProps {
 export function CodeLessonLayout({
   lessonTitle,
   introContent,
-  sections,
+  content,
   outroContent,
   codeTemplate,
   testCases,
@@ -239,13 +238,8 @@ export function CodeLessonLayout({
 
   // ─── Prose Pane ─────────────────────────────────────────────────────────────
   const ProsePane = (
-    <div className="h-full relative overflow-hidden flex flex-col">
-      <div className="shrink-0 px-8 pt-8 pb-4 border-b border-border/30">
-        <h1 className="text-2xl md:text-[1.75rem] font-semibold tracking-tight leading-tight text-foreground">
-          {lessonTitle}
-        </h1>
-      </div>
-      <LessonSections sections={sections} />
+    <div className="h-full overflow-y-auto px-8 py-6">
+      <Markdown content={content} />
     </div>
   );
 
