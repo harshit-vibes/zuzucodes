@@ -1,7 +1,9 @@
-import { getLesson, getModule, getLessonCount, getUserCode, getCourseWithModules, getCourseConfidenceResponses } from '@/lib/data';
+import { getLesson, getModule, getLessonCount, getUserCode, getCourseWithModules, getCourseConfidenceResponses, getSubscriptionStatus } from '@/lib/data';
 import { auth } from '@/lib/auth/server';
 import { notFound, redirect } from 'next/navigation';
 import { CodeLessonLayout } from '@/components/lesson/code-lesson-layout';
+import { PaywallOverlay } from '@/components/shared/paywall-overlay';
+import { PLAN_ID } from '@/lib/paypal';
 
 interface LessonPageProps {
   params: Promise<{ courseSlug: string; moduleSlug: string; order: string }>;
@@ -41,8 +43,13 @@ export default async function LessonPage({ params }: LessonPageProps) {
   const userCode = user ? await getUserCode(user.id, lessonData.id) : null;
   const isCompleted = !!userCode?.passedAt;
 
+  const subscription = user ? await getSubscriptionStatus(user.id) : null;
+  const isPaid = subscription?.status === 'ACTIVE';
+
   return (
-    <CodeLessonLayout
+    <div className="relative h-full">
+      {!isPaid && <PaywallOverlay planId={PLAN_ID} />}
+      <CodeLessonLayout
       lessonTitle={lessonData.title}
       introContent={lessonData.introContent}
       content={lessonData.content}
@@ -65,5 +72,6 @@ export default async function LessonPage({ params }: LessonPageProps) {
       isAuthenticated={!!user}
       isCompleted={isCompleted}
     />
+    </div>
   );
 }
