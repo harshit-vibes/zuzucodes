@@ -2,12 +2,14 @@
 
 import { memo, useMemo } from "react";
 import {
+  Award,
   BookOpen,
   CircleDot,
   Diamond,
   Flame,
   GraduationCap,
   Home,
+  Sparkles,
   Target,
   Timer,
 } from "lucide-react";
@@ -295,22 +297,22 @@ export function AppSidebar({
                   </span>
                 </div>
               )}
-              {activeCourse.confidence_form && (
-                <div className="flex gap-2 mt-2">
-                  <Link
-                    href={`/dashboard/course/${activeCourse.slug}/onboarding`}
-                    className="flex-1 text-center text-[10px] font-mono px-2 py-1 rounded border border-border/40 text-muted-foreground/60 hover:text-foreground hover:bg-muted/40 transition-colors"
-                  >
-                    pre-survey
-                  </Link>
-                  <Link
-                    href={`/dashboard/course/${activeCourse.slug}/completion`}
-                    className="flex-1 text-center text-[10px] font-mono px-2 py-1 rounded border border-border/40 text-muted-foreground/60 hover:text-foreground hover:bg-muted/40 transition-colors"
-                  >
-                    post-survey
-                  </Link>
-                </div>
-              )}
+            </div>
+
+            {/* Course-level nav: Welcome */}
+            <div className="px-1 mb-1">
+              <Link
+                href={`/dashboard/course/${activeCourse.slug}`}
+                className={cn(
+                  "flex items-center gap-2 px-2 py-1.5 rounded-md text-[11px] transition-colors",
+                  !moduleSlug
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
+                )}
+              >
+                <Sparkles className="h-3.5 w-3.5 shrink-0" />
+                <span>Welcome</span>
+              </Link>
             </div>
 
             {/* Module accordion */}
@@ -332,6 +334,34 @@ export function AppSidebar({
                 </div>
               </SidebarGroupContent>
             </SidebarGroup>
+
+            {/* Course-level nav: Graduation + Certificate */}
+            <div className="px-1 mt-1 space-y-0.5">
+              <Link
+                href={`/dashboard/course/${activeCourse.slug}/graduation`}
+                className={cn(
+                  "flex items-center gap-2 px-2 py-1.5 rounded-md text-[11px] transition-colors",
+                  moduleSlug === 'graduation'
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
+                )}
+              >
+                <GraduationCap className="h-3.5 w-3.5 shrink-0" />
+                <span>Graduation</span>
+              </Link>
+              <Link
+                href={`/dashboard/course/${activeCourse.slug}/certificate`}
+                className={cn(
+                  "flex items-center gap-2 px-2 py-1.5 rounded-md text-[11px] transition-colors",
+                  moduleSlug === 'certificate'
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
+                )}
+              >
+                <Award className="h-3.5 w-3.5 shrink-0" />
+                <span>Certificate</span>
+              </Link>
+            </div>
           </>
         )}
 
