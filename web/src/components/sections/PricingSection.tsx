@@ -46,7 +46,7 @@ const tiers = [
 export function PricingSection() {
   return (
     <section id="pricing" className="section bg-cream">
-      <div className="w-full max-w-[960px]">
+      <div className="w-full max-w-[1040px]">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
