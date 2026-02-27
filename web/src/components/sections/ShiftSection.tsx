@@ -6,7 +6,13 @@ const WHATSAPP_URL = 'https://wa.me/918011858376?text=enquiry%20for%20zuzu.codes
 
 export function ShiftSection() {
   return (
-    <section id="shift" className="section bg-cream">
+    <section id="shift" className="section bg-cream" style={{ position: 'relative' }}>
+      {/* Corner decorations */}
+      <div className="corner-line tl" aria-hidden="true" />
+      <div className="corner-line tr" aria-hidden="true" />
+      <div className="corner-line bl" aria-hidden="true" />
+      <div className="corner-line br" aria-hidden="true" />
+
       <div className="w-full max-w-[680px]">
         {/* Tag */}
         <motion.div
@@ -68,14 +74,20 @@ export function ShiftSection() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.5 }}
-          className="mt-14"
+          className="mt-14 flex flex-col sm:flex-row gap-4"
         >
           <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="btn-primary">
-            Contact Us
+            Get Started
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
             </svg>
           </a>
+          <button
+            onClick={() => document.getElementById('courses')?.scrollIntoView({ behavior: 'smooth' })}
+            className="btn-secondary"
+          >
+            View Courses
+          </button>
         </motion.div>
       </div>
     </section>
