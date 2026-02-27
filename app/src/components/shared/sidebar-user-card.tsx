@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Settings } from 'lucide-react';
 import { ThemeToggle } from './theme-toggle';
 import { AccountModal } from './account-modal';
@@ -63,13 +64,13 @@ export function SidebarUserCard({ user, subscription }: SidebarUserCardProps) {
           )}
         </div>
 
-        {/* Name + email + badge */}
-        <div className="flex-1 min-w-0">
+        {/* Name + badge — links to full account page */}
+        <Link href="/account" className="flex-1 min-w-0 hover:opacity-80 transition-opacity">
           <p className="text-xs font-medium text-foreground truncate leading-none mb-0.5">
             {displayName}
           </p>
           <StatusDot status={subscription?.status} />
-        </div>
+        </Link>
 
         {/* Actions */}
         <div className="flex items-center gap-1 shrink-0">
