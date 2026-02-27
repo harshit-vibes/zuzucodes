@@ -2,40 +2,43 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Split the monorepo from a single domain (`zuzu.codes` for both apps) to `zuzu.codes` (`web/` landing) and `app.zuzu.codes` (`app/` platform).
+**Goal:** Split from a single domain to `zuzu.codes` (`web/` landing) and `app.zuzu.codes` (`app/` platform).
 
-**Architecture:** `web/` stays on `zuzu.codes` and adds Next.js redirects for any legacy app-route URLs. `app/` moves to a new Vercel project at `app.zuzu.codes` with updated env vars. Neon Auth and PayPal webhook registrations are updated to reflect the new subdomain.
+**Architecture:** `web/` stays on `zuzu.codes` and adds Next.js redirects for legacy app-route URLs. `app/` (currently on `www.zuzu.codes` as Vercel project `zuzu`) gets `app.zuzu.codes` added as a custom domain via CLI, with updated env vars. Neon Auth and PayPal webhook registrations are updated to reflect the new subdomain.
 
-**Tech Stack:** Next.js 15 (both apps), Vercel (separate projects), Neon Auth, PayPal Developer portal
+**Tech Stack:** Next.js 15 (both apps), Vercel CLI v50, Neon Auth, PayPal Developer portal
 
 ---
 
 ## Context
 
-Current state:
-- `web/` and `app/` are both under `zuzu.codes`
-- `web/` has no links to `/dashboard` or `/auth` — only external WhatsApp links
-- `app/` uses `NEXT_PUBLIC_APP_URL` and `NEXT_PUBLIC_ROOT_DOMAIN` for self-referencing URLs
-- Neon Auth handles auth for `app/` only
-- PayPal webhook points at the current `app/` deployment URL
+**Vercel project mapping (discovered):**
+- `app/` → Vercel project `zuzu` (currently on `www.zuzu.codes`) — already linked via `app/.vercel/project.json`
+- `web/` → Vercel project `web` (on `zuzu.codes`) — not yet linked locally
 
-After split:
-- `zuzu.codes` → `web/` landing page (eventually Framer)
-- `app.zuzu.codes` → `app/` platform
-- Legacy bookmarks to `zuzu.codes/dashboard` → 301 redirect to `app.zuzu.codes/dashboard`
+**What changes:**
+- `app/` gets `app.zuzu.codes` added as a domain; env vars updated
+- `web/` gets redirects in `next.config.ts` for legacy app-route bookmarks
+- Neon Auth gets `app.zuzu.codes` added as an allowed origin
+- PayPal webhook URL updated to `app.zuzu.codes`
+
+**What does NOT change:**
+- `web/` landing stays on `zuzu.codes` — no domain change for `web/`
+- `www.zuzu.codes` can remain as an alias on the `zuzu` project (or be removed later)
+- No code changes beyond the two files below
 
 ---
 
 ## Task 1: Add redirects in `web/next.config.ts`
 
-**Purpose:** Anyone who has bookmarked `zuzu.codes/dashboard` or `/auth` gets redirected to the correct subdomain after the split. This also handles SEO — Google will update its index via 301.
+**Purpose:** Anyone who has bookmarked `zuzu.codes/dashboard` or `/auth` gets 308-redirected to the correct subdomain. Google will update its index accordingly.
 
 **Files:**
 - Modify: `web/next.config.ts`
 
 **Step 1: Replace the empty config**
 
-Open `web/next.config.ts`. It currently contains an empty config object. Replace with:
+`web/next.config.ts` currently has an empty config object. Replace the entire file with:
 
 ```typescript
 import type { NextConfig } from "next";
@@ -70,33 +73,20 @@ const nextConfig: NextConfig = {
 export default nextConfig;
 ```
 
-> **Note on `permanent: true`:** This issues a 308 (permanent redirect) in Next.js 15, which browsers cache. In development, use `permanent: false` if you need to test the redirect repeatedly — or clear browser cache. For production, permanent is correct.
+> `permanent: true` issues a 308 in Next.js 15, which browsers cache. Use `permanent: false` during local dev testing if you need to re-test the redirect without clearing cache.
 
-**Step 2: Verify TypeScript**
+**Step 2: Type-check**
 
 ```bash
-cd web && npx tsc --noEmit
+cd /path/to/zuzucodes/web && npx tsc --noEmit
 ```
 
-Expected: no errors.
+Expected: zero errors.
 
-**Step 3: Smoke test locally**
-
-```bash
-# Terminal 1: web on port 3000
-cd web && npm run dev
-
-# Terminal 2: app on port 3001 (just to have something to redirect to)
-cd app && npm run dev -- -p 3001
-```
-
-Visit `http://localhost:3000/dashboard` → should redirect to `http://localhost:3001/dashboard`.
-
-**Step 4: Commit**
+**Step 3: Commit**
 
 ```bash
-cd web
-git add next.config.ts
+git add web/next.config.ts
 git commit -m "feat: redirect app routes to app.zuzu.codes"
 ```
 
@@ -104,14 +94,14 @@ git commit -m "feat: redirect app routes to app.zuzu.codes"
 
 ## Task 2: Fix hardcoded fallback URL in `app/src/app/layout.tsx`
 
-**Purpose:** `metadataBase` falls back to `https://zuzu.codes` if `NEXT_PUBLIC_APP_URL` is not set. After the split, this fallback should be `https://app.zuzu.codes`. This affects OG image URLs and canonical metadata.
+**Purpose:** `metadataBase` falls back to `https://zuzu.codes` if the env var is missing. The fallback should be `https://app.zuzu.codes` to keep OG and canonical metadata correct even without the env var.
 
 **Files:**
-- Modify: `app/src/app/layout.tsx` (line ~46)
+- Modify: `app/src/app/layout.tsx` (~line 46)
 
-**Step 1: Update the fallback**
+**Step 1: Update the one fallback string**
 
-Find this line in `app/src/app/layout.tsx`:
+Find:
 
 ```typescript
 metadataBase: new URL(
@@ -119,7 +109,7 @@ metadataBase: new URL(
 ),
 ```
 
-Change the fallback:
+Replace with:
 
 ```typescript
 metadataBase: new URL(
@@ -127,170 +117,238 @@ metadataBase: new URL(
 ),
 ```
 
-**Step 2: Verify TypeScript**
+**Step 2: Type-check**
 
 ```bash
-cd app && npx tsc --noEmit
+cd /path/to/zuzucodes/app && npx tsc --noEmit
 ```
 
-Expected: no errors.
+Expected: zero errors.
 
-**Step 3: Commit**
+**Step 3: Commit + push both tasks**
 
 ```bash
-cd app
-git add src/app/layout.tsx
+git add app/src/app/layout.tsx
 git commit -m "fix: update metadataBase fallback to app.zuzu.codes"
-```
-
----
-
-## Task 3: Push both changes
-
-```bash
 git push
 ```
 
-Verify both commits are on remote before proceeding to Vercel setup.
-
 ---
 
-## Task 4: Vercel — configure `app/` project for `app.zuzu.codes`
+## Task 3: Link `web/` to its Vercel project
 
-**Purpose:** Point the `app/` Next.js project to `app.zuzu.codes` in Vercel, with the correct environment variables.
+**Purpose:** `web/` has no `.vercel/project.json` yet. Link it to the `web` Vercel project so CLI commands work.
 
-This is a manual step in the Vercel dashboard. Follow these exactly:
-
-**Step 1: Open the `app/` Vercel project**
-
-Go to [vercel.com](https://vercel.com) → your team → find the project that deploys `app/`.
-
-**Step 2: Add the `app.zuzu.codes` domain**
-
-Settings → Domains → Add → enter `app.zuzu.codes`.
-
-Follow the DNS instructions (usually a CNAME from `app` → `cname.vercel-dns.com`). Apply in your DNS provider.
-
-**Step 3: Update environment variables**
-
-Settings → Environment Variables. Update or add (for **Production** environment):
-
-| Variable | New value |
-|----------|-----------|
-| `NEXT_PUBLIC_APP_URL` | `https://app.zuzu.codes` |
-| `NEXT_PUBLIC_ROOT_DOMAIN` | `zuzu.codes` |
-
-> `NEXT_PUBLIC_ROOT_DOMAIN` is used in `access-denied/page.tsx` to link back to the landing page — it's already correct conceptually, just needs the value without `https://`.
-
-**Step 4: Redeploy**
-
-Deployments → find the latest → Redeploy (without cache) to pick up new env vars.
-
-**Step 5: Verify deployment**
-
-Visit `https://app.zuzu.codes/dashboard` — should load the platform (redirects to login if not authenticated). No 404, no SSL error.
-
----
-
-## Task 5: Vercel — remove `app/` routes from `web/` project (if applicable)
-
-**Purpose:** Ensure `zuzu.codes` does NOT serve the Next.js app routes after the split. If `zuzu.codes` was previously routing `/dashboard` to the `app/` Vercel project via path rewrites or fallback config, remove those.
-
-**Step 1: Check `web/` Vercel project for rewrites**
-
-In Vercel dashboard → `web/` project → Settings → check for any path rewrites pointing to the old `app/` project.
-
-Also check if a `vercel.json` exists in `web/`:
+**Step 1: Run `vercel link` in `web/`**
 
 ```bash
-ls web/vercel.json
+cd /path/to/zuzucodes/web
+vercel link
 ```
 
-If it exists, read it and remove any rewrite rules targeting `/dashboard`, `/auth`, or `/account`.
+When prompted:
+- **Set up and deploy?** → No (just linking, not deploying yet)
+- **Which scope?** → `harshitvibes`
+- **Link to existing project?** → Yes
+- **Project name?** → `web`
+
+**Step 2: Verify the link**
+
+```bash
+cat web/.vercel/project.json
+```
+
+Expected: contains `"projectName": "web"`.
+
+---
+
+## Task 4: Add `app.zuzu.codes` domain to the `zuzu` Vercel project
+
+**Purpose:** `app/` is currently on `www.zuzu.codes`. Add `app.zuzu.codes` as an additional custom domain.
+
+**Step 1: Add the domain via CLI**
+
+```bash
+cd /path/to/zuzucodes/app
+vercel domains add app.zuzu.codes
+```
+
+Expected output: instructions to add a DNS record. It will say something like:
+
+```
+> Add the following record to your DNS provider:
+  Type: CNAME
+  Name: app
+  Value: cname.vercel-dns.com
+```
+
+**Step 2: Add the DNS record**
+
+Go to your DNS provider (the one managing `zuzu.codes` — check where the nameservers point; from `vercel domains ls` output, `zuzu.codes` uses Vercel nameservers).
+
+If Vercel manages the DNS, the CLI may add the record automatically. If not, add manually:
+
+| Type | Name | Value |
+|------|------|-------|
+| CNAME | app | cname.vercel-dns.com |
+
+**Step 3: Verify the domain is recognised**
+
+```bash
+vercel domains inspect app.zuzu.codes
+```
+
+Wait until it shows `Valid Configuration`. DNS propagation can take a few minutes.
+
+---
+
+## Task 5: Update env vars on the `zuzu` Vercel project
+
+**Purpose:** `NEXT_PUBLIC_APP_URL` must change from `https://www.zuzu.codes` to `https://app.zuzu.codes`. `NEXT_PUBLIC_ROOT_DOMAIN` must be `zuzu.codes` (without `www` or `app` prefix).
+
+**Step 1: Remove old values**
+
+```bash
+cd /path/to/zuzucodes/app
+vercel env rm NEXT_PUBLIC_APP_URL production --yes
+vercel env rm NEXT_PUBLIC_ROOT_DOMAIN production --yes
+```
+
+**Step 2: Add new values**
+
+```bash
+echo "https://app.zuzu.codes" | vercel env add NEXT_PUBLIC_APP_URL production
+echo "zuzu.codes" | vercel env add NEXT_PUBLIC_ROOT_DOMAIN production
+```
+
+**Step 3: Confirm**
+
+```bash
+vercel env ls production
+```
+
+Expected: `NEXT_PUBLIC_APP_URL` and `NEXT_PUBLIC_ROOT_DOMAIN` show updated values.
+
+---
+
+## Task 6: Redeploy `app/` and `web/` to production
+
+**Purpose:** Pick up the updated env vars (app) and the new redirects (web).
+
+**Step 1: Redeploy `app/`**
+
+```bash
+cd /path/to/zuzucodes/app
+vercel --prod
+```
+
+Wait for `✓ Production: https://app.zuzu.codes` in the output.
 
 **Step 2: Redeploy `web/`**
 
-After any changes, redeploy `web/` on Vercel.
+```bash
+cd /path/to/zuzucodes/web
+vercel --prod
+```
 
-**Step 3: Verify redirect chain**
+Wait for `✓ Production: https://zuzu.codes` in the output.
 
-Visit `https://zuzu.codes/dashboard` in an **incognito window** (to avoid cached redirects).
+**Step 3: Quick sanity check**
 
-Expected: 308 redirect → `https://app.zuzu.codes/dashboard` → login page.
+```bash
+# Should 308-redirect to https://app.zuzu.codes/dashboard
+curl -I https://zuzu.codes/dashboard
+
+# Should return 200 (login page or dashboard)
+curl -I https://app.zuzu.codes/dashboard
+```
+
+Expected for first: `HTTP/2 308` with `location: https://app.zuzu.codes/dashboard`.
+Expected for second: `HTTP/2 200` or `HTTP/2 307` (auth redirect to /auth/sign-in).
 
 ---
 
-## Task 6: Update Neon Auth allowed origins
+## Task 7: Update Neon Auth allowed origins
 
-**Purpose:** Neon Auth validates the `Origin` header on auth requests. After the split, `app.zuzu.codes` must be an allowed origin or auth will fail.
+**Purpose:** Neon Auth validates `Origin` on auth API calls. `app.zuzu.codes` must be an allowed origin or sign-in/sign-up will fail with a CORS or 403 error.
 
-**Step 1: Open Neon Auth dashboard**
+**Step 1: Open Neon console**
 
-Go to [console.neon.tech](https://console.neon.tech) → your project → Auth.
+Go to [console.neon.tech](https://console.neon.tech) → your project → **Auth** tab.
 
-**Step 2: Add `app.zuzu.codes` to allowed origins**
+**Step 2: Add the new origin**
 
-Look for "Allowed Origins" or "Redirect URIs" configuration. Add:
+Find "Allowed Origins" or "Trusted Origins". Add:
 
 ```
 https://app.zuzu.codes
 ```
 
-Keep `https://zuzu.codes` as well if it was there (for the transition period).
+Keep `https://www.zuzu.codes` and `https://zuzu.codes` during the transition period. Remove them once all traffic is confirmed on `app.zuzu.codes`.
 
-**Step 3: Verify auth works on the new subdomain**
+**Step 3: Verify auth on the new domain**
 
-Visit `https://app.zuzu.codes/auth/sign-in`. Enter an email, submit. Confirm the OTP email arrives and you can sign in successfully.
+Open an incognito window. Visit `https://app.zuzu.codes/auth/sign-in`. Enter your email. Confirm the OTP email arrives. Sign in successfully.
 
 ---
 
-## Task 7: Update PayPal webhook URL
+## Task 8: Update PayPal webhook URL
 
-**Purpose:** PayPal sends subscription events (BILLING.SUBSCRIPTION.ACTIVATED, etc.) to a registered webhook URL. It's currently pointing at the old domain. After the split, it must point at `app.zuzu.codes`.
+**Purpose:** PayPal sends `BILLING.SUBSCRIPTION.*` events to a registered webhook URL. It must be updated from the old domain to `app.zuzu.codes`.
 
-**Step 1: Open PayPal Developer dashboard**
+**Step 1: Use the PayPal MCP to find the current webhook**
 
-Go to [developer.paypal.com](https://developer.paypal.com) → Apps & Credentials → your app (Live) → Webhooks.
+```
+use PayPal MCP: list webhooks (live environment)
+```
+
+Note the current webhook URL and its `id`.
 
 **Step 2: Update the webhook URL**
 
-Find the webhook with URL `https://zuzu.codes/api/paypal/webhook` (or similar).
-
-Edit it → change URL to:
-
 ```
-https://app.zuzu.codes/api/paypal/webhook
+use PayPal MCP: update webhook <id>
+  url: https://app.zuzu.codes/api/paypal/webhook
 ```
 
-Save.
+Or use [developer.paypal.com](https://developer.paypal.com) → Apps & Credentials → your Live app → Webhooks → Edit.
 
-**Step 3: Note the new Webhook ID**
+**Step 3: Check if Webhook ID changed**
 
-PayPal may assign a new `WEBHOOK_ID` when you edit the webhook. If it does:
+If PayPal assigns a new webhook `id`, update the env var:
 
-Update `PAYPAL_WEBHOOK_ID` (or `PAYPAL_WEBHOOK_ID_LIVE`) in the `app/` Vercel project environment variables. Redeploy.
+```bash
+cd /path/to/zuzucodes/app
+vercel env rm PAYPAL_WEBHOOK_ID_LIVE production --yes
+echo "<new-id>" | vercel env add PAYPAL_WEBHOOK_ID_LIVE production
+vercel --prod
+```
 
 **Step 4: Send a test event**
 
-In the PayPal webhook UI, click "Send Test" → select `BILLING.SUBSCRIPTION.ACTIVATED`. Confirm you see a 200 response from `app.zuzu.codes/api/paypal/webhook`.
+In the PayPal webhook UI, click "Send Test" → `BILLING.SUBSCRIPTION.ACTIVATED`. Confirm you get a `200` response.
 
 ---
 
-## Task 8: Final smoke test
+## Task 9: Final smoke test
 
-**Purpose:** Verify the full user journey works end-to-end on the new subdomain.
+**Purpose:** Verify the full user journey works end-to-end on the new subdomain, in production, in incognito.
 
-**Checklist:**
+**Run these checks in order (incognito window):**
 
-| Flow | Expected |
-|------|----------|
-| `https://zuzu.codes` | Landing page loads |
-| `https://zuzu.codes/dashboard` | 308 → `https://app.zuzu.codes/dashboard` → login |
+| URL | Expected |
+|-----|----------|
+| `https://zuzu.codes` | Landing page loads normally |
+| `https://zuzu.codes/dashboard` | 308 → `https://app.zuzu.codes/dashboard` |
 | `https://zuzu.codes/auth/sign-in` | 308 → `https://app.zuzu.codes/auth/sign-in` |
-| `https://app.zuzu.codes` | Redirects to `/dashboard` or landing (correct app behavior) |
-| `https://app.zuzu.codes/auth/sign-in` | Sign-in page loads, OTP works |
+| `https://app.zuzu.codes/dashboard` | Redirects to sign-in (if not authenticated) |
+| `https://app.zuzu.codes/auth/sign-in` | OTP sign-in works end-to-end |
 | `https://app.zuzu.codes/dashboard` | Dashboard loads after sign-in |
-| OG meta on app pages | `metadataBase` is `https://app.zuzu.codes` |
-| PayPal subscription flow | Webhook receives events at `app.zuzu.codes` |
+| View source / OG tags on app page | `metadataBase` resolves to `https://app.zuzu.codes` |
 
-Run in incognito to avoid stale browser caches.
+**Verify redirect header:**
+
+```bash
+curl -sI https://zuzu.codes/dashboard | grep -i location
+# Expected: location: https://app.zuzu.codes/dashboard
+```
