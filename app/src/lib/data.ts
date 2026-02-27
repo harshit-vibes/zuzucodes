@@ -12,13 +12,14 @@ import type { TestCase } from '@/lib/judge0';
 // TYPES
 // ========================================
 
-export interface CourseForm {
+export interface ConfidenceQuestion {
+  id: string;
+  statement: string;
+}
+
+export interface ConfidenceForm {
   title: string;
-  questions: {
-    id: string;
-    statement: string;
-    options: { id: string; text: string }[];
-  }[];
+  questions: ConfidenceQuestion[];
 }
 
 export interface Course {
@@ -32,8 +33,7 @@ export interface Course {
   order: number;
   intro_content: unknown | null;
   outro_content: unknown | null;
-  onboarding_form: CourseForm | null;
-  completion_form: CourseForm | null;
+  confidence_form: ConfidenceForm | null;
 }
 
 export interface QuizQuestion {
@@ -141,7 +141,7 @@ export async function getCourses(): Promise<Course[]> {
   try {
     const result = await sql`
       SELECT id, title, slug, description, thumbnail_url, outcomes, tag, "order",
-             intro_content, outro_content, onboarding_form, completion_form, created_at
+             intro_content, outro_content, confidence_form, created_at
       FROM courses
       ORDER BY created_at ASC
     `;
@@ -160,7 +160,7 @@ export const getCourseWithModules = cache(async (courseSlug: string): Promise<Co
   try {
     const courses = await sql`
       SELECT id, title, slug, description, thumbnail_url, outcomes, tag, "order",
-             intro_content, outro_content, onboarding_form, completion_form, created_at
+             intro_content, outro_content, confidence_form, created_at
       FROM courses
       WHERE slug = ${courseSlug}
     `;
@@ -872,6 +872,29 @@ export async function submitCourseFormResponse(
 }
 
 /**
+ * Fetch both onboarding and completion confidence responses for a user+course.
+ * Returns null for each form_type if not yet submitted.
+ */
+export async function getCourseConfidenceResponses(
+  userId: string,
+  courseId: string,
+): Promise<{ onboarding: Record<string, number> | null; completion: Record<string, number> | null }> {
+  try {
+    const rows = await sql`
+      SELECT form_type, responses
+      FROM user_course_form_responses
+      WHERE user_id = ${userId} AND course_id = ${courseId}
+    `;
+    const onboarding = (rows.find((r: any) => r.form_type === 'onboarding')?.responses ?? null) as Record<string, number> | null;
+    const completion = (rows.find((r: any) => r.form_type === 'completion')?.responses ?? null) as Record<string, number> | null;
+    return { onboarding, completion };
+  } catch (error) {
+    console.error('getCourseConfidenceResponses error:', error);
+    return { onboarding: null, completion: null };
+  }
+}
+
+/**
  * Check if all lessons in a module are completed
  */
 export async function areAllLessonsCompleted(userId: string, moduleId: string): Promise<boolean> {
@@ -944,7 +967,7 @@ export const getCoursesForSidebar = cache(async (): Promise<CourseWithModules[]>
   try {
     const courses = await sql`
       SELECT id, title, slug, description, thumbnail_url, outcomes, tag, "order",
-             intro_content, outro_content, onboarding_form, completion_form, created_at
+             intro_content, outro_content, confidence_form, created_at
       FROM courses
       ORDER BY created_at ASC
     `;
