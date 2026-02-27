@@ -41,8 +41,8 @@ export function MethodSection() {
 
             {/* Why it works */}
             <div className="space-y-3">
-              {whyItWorks.map((item, i) => (
-                <div key={i} className="flex items-center gap-3 text-small text-[var(--text-medium)]">
+              {whyItWorks.map((item) => (
+                <div key={item} className="flex items-center gap-3 text-small text-[var(--text-medium)]">
                   <span className="w-1.5 h-1.5 rounded-full bg-[var(--gold)] flex-shrink-0" />
                   {item}
                 </div>
