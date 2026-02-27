@@ -95,7 +95,6 @@ export function CodeLessonLayout({
 
   const hasNext = position < lessonCount;
   const hasPrev = position > 1;
-  const progress = (position / lessonCount) * 100;
 
   const nextHref = hasNext
     ? `/dashboard/course/${courseId}/${moduleId}/lesson/${position + 1}`
@@ -306,12 +305,6 @@ export function CodeLessonLayout({
             completed
           </span>
         )}
-      </div>
-      <div className="flex items-center gap-2.5 shrink-0">
-        <div className="w-16 h-0.5 bg-border/40 rounded-full overflow-hidden">
-          <div className="h-full bg-primary/70 rounded-full transition-all duration-700" style={{ width: `${progress}%` }} />
-        </div>
-        <span className="font-mono text-[11px] text-muted-foreground/50 tabular-nums">{position}/{lessonCount}</span>
       </div>
       <div className="w-px h-5 bg-border/50 shrink-0" />
       <div className="flex items-center gap-1.5 shrink-0">
