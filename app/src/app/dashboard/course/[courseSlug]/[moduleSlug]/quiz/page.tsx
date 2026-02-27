@@ -21,22 +21,25 @@ export default async function QuizPage({ params }: QuizPageProps) {
     notFound();
   }
 
-  if (course.confidence_form && user?.id) {
-    const { onboarding } = await getCourseConfidenceResponses(user.id, course.id);
-    if (onboarding === null) redirect(`/dashboard/course/${courseSlug}`);
-  }
-
   const quizForm = mod.quiz_form;
 
-  // Parallelize independent completion checks
   let isCompleted = false;
   let allLessonsCompleted = false;
 
   if (user) {
-    [isCompleted, allLessonsCompleted] = await Promise.all([
+    const [quizCompleted, lessonsCompleted, confidenceResponses] = await Promise.all([
       isQuizCompleted(user.id, mod.id),
       areAllLessonsCompleted(user.id, mod.id),
+      course.confidence_form
+        ? getCourseConfidenceResponses(user.id, course.id)
+        : Promise.resolve({ onboarding: null as Record<string, number> | null, completion: null as Record<string, number> | null }),
     ]);
+    isCompleted = quizCompleted;
+    allLessonsCompleted = lessonsCompleted;
+
+    if (course.confidence_form && confidenceResponses.onboarding === null) {
+      redirect(`/dashboard/course/${courseSlug}`);
+    }
   }
 
   const isQuizLocked = !allLessonsCompleted && !isCompleted;
