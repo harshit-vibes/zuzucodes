@@ -10,6 +10,8 @@ import {
   type SectionStatus,
 } from '@/lib/data';
 import { TemplateRenderer } from '@/components/templates/template-renderer';
+import { CoursePlayerShell } from '@/components/course/course-player-shell';
+import { buildCourseSequence } from '@/lib/course-sequence';
 
 export default async function ModuleOverviewPage({
   params,
@@ -31,9 +33,9 @@ export default async function ModuleOverviewPage({
   const modIndex = course.modules.findIndex((m) => m.id === mod.id);
   if (modIndex === -1 || mod.course_id !== course.id) notFound();
 
-  // Lessons require mod.id (DB UUID), fetched after module resolves
-  const [lessonsMap, completionStatus, confidenceResponses] = await Promise.all([
-    getLessonsForCourse([mod.id]),
+  // Fetch lessons for ALL modules (needed for course sequence)
+  const [allLessonsMap, completionStatus, confidenceResponses] = await Promise.all([
+    getLessonsForCourse(course.modules.map((m) => m.id)),
     user?.id
       ? getSectionCompletionStatus(user.id, [mod])
       : Promise.resolve({} as Record<string, SectionStatus>),
@@ -46,7 +48,7 @@ export default async function ModuleOverviewPage({
     redirect(`/dashboard/course/${courseSlug}`);
   }
 
-  const lessons = lessonsMap[mod.id] ?? [];
+  const lessons = allLessonsMap[mod.id] ?? [];
 
   const lessonsDone = lessons.filter(
     (l) => completionStatus[`${mod.id}:lesson-${l.lesson_index}`] === 'completed'
@@ -87,8 +89,25 @@ export default async function ModuleOverviewPage({
     : 'Continue';
   const ctaHref = isCompleted ? completedHref : resumeHref;
 
+  // Build sequence for prev/next navigation
+  const eyebrow = `Module ${String(modIndex + 1).padStart(2, '0')}`;
+  const steps = buildCourseSequence(courseSlug, course.modules, allLessonsMap);
+  const currentHref = `/dashboard/course/${courseSlug}/${moduleSlug}`;
+  const currentIdx = steps.findIndex((s) => s.href === currentHref);
+  const prevStep = currentIdx > 0 ? steps[currentIdx - 1] : null;
+  const nextStep = currentIdx < steps.length - 1 ? steps[currentIdx + 1] : null;
+
   return (
-    <div className="flex-1 overflow-auto">
+    <CoursePlayerShell
+      eyebrow={eyebrow}
+      title={mod.title}
+      prevHref={prevStep?.href ?? null}
+      prevLabel={prevStep?.label ?? null}
+      nextHref={nextStep?.href ?? null}
+      nextLabel={nextStep?.label ?? null}
+      nextLocked={false}
+      isAuthenticated={!!user}
+    >
       <div className="max-w-2xl mx-auto px-6 py-8 space-y-8">
 
         {/* Breadcrumb */}
@@ -125,16 +144,6 @@ export default async function ModuleOverviewPage({
               In this module
             </p>
             <TemplateRenderer name="module-intro" content={mod.intro_content} />
-          </div>
-        ) : null}
-
-        {/* Outro content (completed) */}
-        {isCompleted && mod.outro_content ? (
-          <div className="rounded-xl border border-success/20 bg-success/5 p-6">
-            <p className="text-[10px] font-mono uppercase tracking-widest text-success/50 mb-4">
-              Module complete
-            </p>
-            <TemplateRenderer name="module-outro" content={mod.outro_content} />
           </div>
         ) : null}
 
@@ -267,6 +276,6 @@ export default async function ModuleOverviewPage({
         </div>
 
       </div>
-    </div>
+    </CoursePlayerShell>
   );
 }
