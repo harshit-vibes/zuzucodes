@@ -17,24 +17,18 @@ interface SubscribeModalProps {
   planId: string;
 }
 
-export function SubscribeModal({ open, onOpenChange, planId }: SubscribeModalProps) {
+function SubscribeModalContent({ planId }: Pick<SubscribeModalProps, 'planId'>) {
   const [clientToken, setClientToken] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const createdSubscriptionId = useRef<string | null>(null);
 
-  useEffect(() => {
-    if (!open) {
-      setClientToken(null);
-      setError(null);
-      setLoading(false);
-      return;
-    }
+  // Unused at runtime but satisfies the linter that planId is referenced
+  void planId;
 
+  useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    setError(null);
 
     fetch('/api/paypal/client-token')
       .then((res) => res.json())
@@ -56,71 +50,76 @@ export function SubscribeModal({ open, onOpenChange, planId }: SubscribeModalPro
     return () => {
       cancelled = true;
     };
-  }, [open]);
-
-  // Unused at runtime but satisfies the linter that planId is referenced
-  void planId;
+  }, []);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Subscribe to zuzu.codes</DialogTitle>
-          <DialogDescription>
-            Get full access to all lessons, quizzes, and code challenges.
-          </DialogDescription>
-        </DialogHeader>
+    <DialogContent className="sm:max-w-md">
+      <DialogHeader>
+        <DialogTitle>Subscribe to zuzu.codes</DialogTitle>
+        <DialogDescription>
+          Get full access to all lessons, quizzes, and code challenges.
+        </DialogDescription>
+      </DialogHeader>
 
-        <div className="mt-4 min-h-[80px] flex items-center justify-center">
-          {loading && (
-            <div className="flex items-center gap-2 text-muted-foreground text-sm">
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-              Loading payment options…
-            </div>
-          )}
+      <div className="mt-4 min-h-[80px] flex items-center justify-center">
+        {loading && (
+          <div className="flex items-center gap-2 text-muted-foreground text-sm">
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            Loading payment options…
+          </div>
+        )}
 
-          {error && (
-            <p className="text-sm text-destructive">{error}</p>
-          )}
+        {error && (
+          <p className="text-sm text-destructive">{error}</p>
+        )}
 
-          {!loading && !error && clientToken && (
-            <PayPalProvider
-              clientToken={clientToken}
-              components={['paypal-payments']}
-              pageType="checkout"
-            >
-              <PayPalSubscriptionButton
-                createSubscription={async () => {
-                  const res = await fetch('/api/paypal/subscription/create', {
+        {!loading && !error && clientToken && (
+          <PayPalProvider
+            clientToken={clientToken}
+            components={['paypal-payments']}
+            pageType="checkout"
+          >
+            <PayPalSubscriptionButton
+              createSubscription={async () => {
+                const res = await fetch('/api/paypal/subscription/create', {
+                  method: 'POST',
+                });
+                const data = (await res.json()) as { subscriptionId?: string; error?: string };
+                if (!data.subscriptionId) {
+                  throw new Error(data.error ?? 'Failed to create subscription');
+                }
+                createdSubscriptionId.current = data.subscriptionId;
+                return { subscriptionId: data.subscriptionId };
+              }}
+              onApprove={async (data) => {
+                // billingToken carries the subscription ID in the PayPal subscription flow
+                const subscriptionId =
+                  data.billingToken ?? createdSubscriptionId.current ?? undefined;
+                if (subscriptionId) {
+                  await fetch('/api/paypal/subscription/activate', {
                     method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ subscriptionId }),
                   });
-                  const data = (await res.json()) as { subscriptionId?: string; error?: string };
-                  if (!data.subscriptionId) {
-                    throw new Error(data.error ?? 'Failed to create subscription');
-                  }
-                  createdSubscriptionId.current = data.subscriptionId;
-                  return { subscriptionId: data.subscriptionId };
-                }}
-                onApprove={async (data) => {
-                  // billingToken carries the subscription ID in the PayPal subscription flow
-                  const subscriptionId =
-                    data.billingToken ?? createdSubscriptionId.current ?? undefined;
-                  if (subscriptionId) {
-                    await fetch('/api/paypal/subscription/activate', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ subscriptionId }),
-                    });
-                  }
-                  router.push('/dashboard');
-                  router.refresh();
-                }}
-                presentationMode="auto"
-              />
-            </PayPalProvider>
-          )}
-        </div>
-      </DialogContent>
+                }
+                router.push('/dashboard');
+                router.refresh();
+              }}
+              presentationMode="auto"
+            />
+          </PayPalProvider>
+        )}
+      </div>
+    </DialogContent>
+  );
+}
+
+export function SubscribeModal({ open, onOpenChange, planId }: SubscribeModalProps) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {open && (
+        <SubscribeModalContent planId={planId} />
+      )}
     </Dialog>
   );
 }
