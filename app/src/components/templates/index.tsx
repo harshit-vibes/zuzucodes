@@ -6,9 +6,6 @@ import type { TemplateContent } from '@/lib/templates/types';
 
 import { LessonIntroTemplate } from './lesson-intro';
 import { LessonOutroTemplate } from './lesson-outro';
-import { CodeSectionTemplate } from './code-section';
-import { ProseSectionTemplate } from './prose-section';
-import { ChallengeSectionTemplate } from './challenge-section';
 import { ModuleIntroTemplate } from './module-intro';
 import { ModuleOutroTemplate } from './module-outro';
 import { CourseIntroTemplate } from './course-intro';
@@ -22,15 +19,12 @@ type TemplateComponentMap = { [K in TemplateName]: ComponentType<{ content: Temp
  * Adding a template = add to schemas.ts + add a component file + add entry here.
  */
 export const templateComponents: TemplateComponentMap = {
-  'lesson-intro':       LessonIntroTemplate,
-  'lesson-outro':       LessonOutroTemplate,
-  'code-section':       CodeSectionTemplate,
-  'prose-section':      ProseSectionTemplate,
-  'challenge-section':  ChallengeSectionTemplate, // sentinel — LessonSections handles challenge specially
-  'module-intro':       ModuleIntroTemplate,
-  'module-outro':       ModuleOutroTemplate,
-  'course-intro':       CourseIntroTemplate,
-  'course-outro':       CourseOutroTemplate,
+  'lesson-intro':  LessonIntroTemplate,
+  'lesson-outro':  LessonOutroTemplate,
+  'module-intro':  ModuleIntroTemplate,
+  'module-outro':  ModuleOutroTemplate,
+  'course-intro':  CourseIntroTemplate,
+  'course-outro':  CourseOutroTemplate,
 };
 
 /** Render a section's content using its registered component. */

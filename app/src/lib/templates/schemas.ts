@@ -30,40 +30,6 @@ export const schemas = {
       .describe('One sentence previewing what comes next.'),
   }),
 
-  // ── Lesson sections ───────────────────────────────────────────────────────
-  'code-section': z.object({
-    explanation: z
-      .string()
-      .min(1)
-      .describe('Prose explanation of the concept, shown before the code. 2–4 sentences.'),
-    code: z
-      .string()
-      .min(1)
-      .describe('Python code example. Should be complete and runnable.'),
-    language: z
-      .string()
-      .default('python')
-      .describe('Language identifier for syntax highlighting. Default: python.'),
-    takeaway: z
-      .string()
-      .optional()
-      .describe('One-sentence summary of what the learner should remember.'),
-  }),
-
-  'prose-section': z.object({
-    markdown: z
-      .string()
-      .min(1)
-      .describe('Markdown content for a text-only section.'),
-  }),
-
-  'challenge-section': z.object({
-    // challenge-section has no JSONB content — it renders from the lesson's
-    // existing problem_summary, problem_constraints, problem_hints fields.
-    // This schema is a sentinel so the template registry stays complete.
-    _type: z.literal('challenge').default('challenge'),
-  }),
-
   // ── Module level ──────────────────────────────────────────────────────────
   'module-intro': z.object({
     title: z.string().min(1).describe('Module title.'),
