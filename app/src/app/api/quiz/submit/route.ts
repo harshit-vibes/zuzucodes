@@ -53,12 +53,17 @@ export async function POST(req: Request) {
     const score = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
     const passed = score >= quizForm.passingScore;
 
-    // Persist attempt (always insert a new row — supports multiple attempts)
+    // Persist attempt — upsert so there is only one row per user+module
     if (userId) {
       try {
         await sql`
           INSERT INTO user_quiz_attempts (user_id, module_id, score_percent, passed, answers, attempted_at)
           VALUES (${userId}, ${moduleId}, ${score}, ${passed}, ${JSON.stringify(answers)}::JSONB, NOW())
+          ON CONFLICT (user_id, module_id) DO UPDATE SET
+            score_percent = EXCLUDED.score_percent,
+            passed        = EXCLUDED.passed,
+            answers       = EXCLUDED.answers,
+            attempted_at  = EXCLUDED.attempted_at
         `;
       } catch (attemptError) {
         console.error('Error saving quiz attempt:', attemptError);
