@@ -237,7 +237,7 @@ export function AppSidebar({
   return (
     <Sidebar collapsible="none" className="border-r border-border/50">
       {/* Header with Logo */}
-      <SidebarHeader className="border-b border-border/50 px-3 py-3">
+      <SidebarHeader className="border-b border-border/50 px-3 h-14 flex items-center">
         <Link href="/dashboard" className="flex items-center gap-2.5 group">
           <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center ring-1 ring-primary/10 group-hover:ring-primary/30 transition-all">
             <BrandLogo
@@ -390,7 +390,7 @@ export function AppSidebar({
       </SidebarContent>
 
       {/* Footer */}
-      <SidebarFooter className="border-t border-border/40 h-11 flex items-center justify-center px-4">
+      <SidebarFooter className="border-t border-border/40 h-12 flex items-center justify-center px-4">
         <p className="text-[10px] text-muted-foreground text-center">
           &copy; 2026 zuzu.codes
         </p>
