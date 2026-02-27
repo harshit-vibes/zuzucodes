@@ -151,15 +151,15 @@ const ModuleSection = memo(function ModuleSection({
               )}
             >
               {isActive ? (
-                <CircleDot className="h-3.5 w-3.5 text-primary shrink-0" />
+                <CircleDot className={cn("h-3.5 w-3.5 shrink-0", isCompleted ? "text-success" : "text-primary")} />
               ) : item.type === "quiz" ? (
                 <Diamond className={cn("h-3.5 w-3.5 shrink-0", isCompleted ? "text-success" : "text-muted-foreground/40")} />
               ) : isCompleted ? (
-                <div className="h-3 w-3 rounded-full bg-success/70 shrink-0" />
+                <div className="h-3.5 w-3.5 rounded-full bg-success/70 shrink-0" />
               ) : itemStatus === 'in-progress' ? (
-                <div className="h-3 w-3 rounded-full ring-1 ring-primary/50 bg-primary/10 shrink-0" />
+                <div className="h-3.5 w-3.5 rounded-full ring-1 ring-primary/50 bg-primary/10 shrink-0" />
               ) : (
-                <div className="h-3 w-3 rounded-full ring-1 ring-border/40 shrink-0" />
+                <div className="h-3.5 w-3.5 rounded-full ring-1 ring-border/40 shrink-0" />
               )}
               <span className="truncate">{item.title}</span>
             </Link>
