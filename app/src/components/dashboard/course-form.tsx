@@ -1,40 +1,25 @@
 'use client';
 
 import { useState } from 'react';
-import type { CourseForm } from '@/lib/data';
+import type { ConfidenceForm } from '@/lib/data';
 
-interface CourseFormPlayerProps {
+interface LikertFormPlayerProps {
   courseId: string;
   formType: 'onboarding' | 'completion';
-  form: CourseForm;
+  form: ConfidenceForm;
   onComplete: () => void;
 }
 
-export function CourseFormPlayer({
+export function LikertFormPlayer({
   courseId,
   formType,
   form,
   onComplete,
-}: CourseFormPlayerProps) {
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+}: LikertFormPlayerProps) {
+  const [answers, setAnswers] = useState<Record<string, number>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [currentQuestion, setCurrentQuestion] = useState(0);
 
-  const question = form.questions[currentQuestion];
-  const totalQuestions = form.questions.length;
-  const allAnswered = Object.keys(answers).length === totalQuestions;
-
-  const handleSelect = (optionId: string) => {
-    setAnswers(prev => ({ ...prev, [question.id]: optionId }));
-  };
-
-  const handleNext = () => {
-    if (currentQuestion < totalQuestions - 1) setCurrentQuestion(q => q + 1);
-  };
-
-  const handlePrev = () => {
-    if (currentQuestion > 0) setCurrentQuestion(q => q - 1);
-  };
+  const allAnswered = Object.keys(answers).length === form.questions.length;
 
   const handleSubmit = async () => {
     if (!allAnswered) return;
@@ -47,8 +32,7 @@ export function CourseFormPlayer({
       });
       onComplete();
     } catch {
-      // fail silently — still call onComplete so UX doesn't block
-      onComplete();
+      onComplete(); // fail open — don't block UX
     } finally {
       setIsSubmitting(false);
     }
@@ -59,80 +43,55 @@ export function CourseFormPlayer({
       {/* Header */}
       <div>
         <p className="text-xs font-mono text-muted-foreground/40 uppercase tracking-widest mb-1">
-          {formType === 'onboarding' ? 'Before you begin' : 'Course complete'}
+          {formType === 'onboarding' ? 'Before you begin' : "Now that you're done"}
         </p>
-        <h2 className="text-lg font-semibold text-foreground">{form.title}</h2>
+        <h2 className="text-base font-semibold text-foreground">{form.title}</h2>
       </div>
 
-      {/* Progress */}
-      <div className="flex items-center gap-3">
-        <div className="flex-1 h-1 bg-border/40 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-primary/70 rounded-full transition-all duration-500"
-            style={{ width: `${((currentQuestion + 1) / totalQuestions) * 100}%` }}
-          />
-        </div>
-        <span className="font-mono text-[11px] text-muted-foreground/50 tabular-nums shrink-0">
-          {currentQuestion + 1}/{totalQuestions}
-        </span>
-      </div>
-
-      {/* Question */}
-      <div>
-        <p className="text-sm font-medium text-foreground mb-4 leading-relaxed">
-          {question.statement}
-        </p>
-        <div className="space-y-2">
-          {question.options.map(option => {
-            const isSelected = answers[question.id] === option.id;
-            return (
-              <button
-                key={option.id}
-                onClick={() => handleSelect(option.id)}
-                className={`w-full text-left px-4 py-3 rounded-lg border-2 text-sm transition-all ${
-                  isSelected
-                    ? 'border-primary bg-primary/5 text-foreground'
-                    : 'border-border/50 hover:border-primary/40 hover:bg-muted/30 text-foreground/80'
-                }`}
-              >
-                <span className={`font-mono text-xs mr-3 ${isSelected ? 'text-primary' : 'text-muted-foreground/50'}`}>
-                  {option.id.toUpperCase()}
+      {/* All questions */}
+      <div className="space-y-6">
+        {form.questions.map((q, i) => {
+          const selected = answers[q.id];
+          return (
+            <div key={q.id}>
+              <p className="text-sm text-foreground mb-3 leading-relaxed">
+                <span className="font-mono text-[10px] text-muted-foreground/40 mr-2">
+                  {String(i + 1).padStart(2, '0')}
                 </span>
-                {option.text}
-              </button>
-            );
-          })}
-        </div>
+                {q.statement}
+              </p>
+              <div className="flex items-center gap-2">
+                {[1, 2, 3, 4, 5].map(val => (
+                  <button
+                    key={val}
+                    onClick={() => setAnswers(prev => ({ ...prev, [q.id]: val }))}
+                    className={`flex-1 h-9 rounded-lg border-2 text-xs font-mono transition-all ${
+                      selected === val
+                        ? 'border-primary bg-primary text-primary-foreground'
+                        : 'border-border/50 text-muted-foreground hover:border-primary/40 hover:bg-muted/30'
+                    }`}
+                  >
+                    {val}
+                  </button>
+                ))}
+              </div>
+              <div className="flex justify-between mt-1">
+                <span className="text-[10px] text-muted-foreground/40 font-mono">Not confident</span>
+                <span className="text-[10px] text-muted-foreground/40 font-mono">Very confident</span>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      {/* Navigation */}
-      <div className="flex items-center justify-between pt-2">
-        <button
-          onClick={handlePrev}
-          disabled={currentQuestion === 0}
-          className="px-3 h-8 rounded border border-border text-xs font-mono text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-        >
-          ← prev
-        </button>
-
-        {currentQuestion < totalQuestions - 1 ? (
-          <button
-            onClick={handleNext}
-            disabled={!answers[question.id]}
-            className="px-3 h-8 rounded bg-primary/10 text-primary text-xs font-mono hover:bg-primary/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-          >
-            next →
-          </button>
-        ) : (
-          <button
-            onClick={handleSubmit}
-            disabled={!allAnswered || isSubmitting}
-            className="px-4 h-8 rounded bg-primary text-primary-foreground text-xs font-mono hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? 'Saving···' : 'Submit →'}
-          </button>
-        )}
-      </div>
+      {/* Submit */}
+      <button
+        onClick={handleSubmit}
+        disabled={!allAnswered || isSubmitting}
+        className="w-full h-9 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        {isSubmitting ? 'Saving···' : 'Submit →'}
+      </button>
     </div>
   );
 }
