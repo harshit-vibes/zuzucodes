@@ -1,20 +1,15 @@
 'use client';
 
-import { motion, useScroll, useSpring } from 'motion/react';
-import { useEffect, useState, useCallback } from 'react';
+import { motion, useScroll, useSpring, AnimatePresence } from 'motion/react';
+import { useState, useCallback } from 'react';
 
-interface Section {
-  id: string;
-  title: string;
-}
+const WHATSAPP_URL = 'https://wa.me/918011858376?text=enquiry%20for%20zuzu.codes';
 
-const sections: Section[] = [
-  { id: 'shift', title: 'The Shift' },
-  { id: 'method', title: 'The Method' },
-  { id: 'audience', title: 'Who It\'s For' },
-  { id: 'courses', title: 'The Courses' },
-  { id: 'pricing', title: 'Pricing' },
-  { id: 'footer', title: 'About' },
+const navLinks = [
+  { label: 'Method', id: 'method' },
+  { label: 'Courses', id: 'courses' },
+  { label: 'Pricing', id: 'pricing' },
+  { label: 'FAQ', id: 'faq' },
 ];
 
 interface HeaderProps {
@@ -22,7 +17,7 @@ interface HeaderProps {
 }
 
 export function Header({ containerRef }: HeaderProps) {
-  const [activeSection, setActiveSection] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -35,41 +30,17 @@ export function Header({ containerRef }: HeaderProps) {
     restDelta: 0.001,
   });
 
-  // Track active section based on scroll position
-  useEffect(() => {
-    const handleScroll = () => {
-      const sectionElements = sections.map((s) =>
-        document.getElementById(s.id)
-      );
-
-      const scrollPosition = window.scrollY + window.innerHeight / 3;
-
-      for (let i = sectionElements.length - 1; i >= 0; i--) {
-        const section = sectionElements[i];
-        if (section && section.offsetTop <= scrollPosition) {
-          setActiveSection(i);
-          break;
-        }
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll(); // Initial check
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const scrollToSection = useCallback((index: number) => {
-    const section = document.getElementById(sections[index].id);
-    if (section) {
-      section.scrollIntoView({ behavior: 'smooth' });
-    }
+  const scrollTo = useCallback((id: string) => {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+    setMenuOpen(false);
   }, []);
 
   return (
     <header className="header">
       {/* Progress bar */}
       <motion.div
-        className="absolute top-0 left-0 right-0 h-[2px] bg-[var(--accent)] origin-left"
+        className="absolute top-0 left-0 right-0 h-[2px] bg-[var(--gold)] origin-left opacity-80"
         style={{ scaleX }}
       />
 
@@ -79,61 +50,102 @@ export function Header({ containerRef }: HeaderProps) {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="flex items-center gap-2"
         >
-          <span className="text-lg font-medium text-[var(--text-primary)]">
-            zuzu<span className="text-[var(--accent)]">.</span>codes
-          </span>
+          <button
+            onClick={() => scrollTo('shift')}
+            className="text-lg font-medium text-[var(--text-dark)] bg-transparent border-none cursor-pointer p-0"
+          >
+            zuzu<span className="text-[var(--gold)]">.</span>codes
+          </button>
         </motion.div>
 
-        {/* Center: Section title + dots */}
-        <motion.div
+        {/* Desktop nav links */}
+        <motion.nav
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-          className="hidden md:flex items-center gap-6"
+          className="hidden md:flex items-center gap-8"
+          aria-label="Main navigation"
         >
-          {/* Current section title */}
-          <motion.span
-            key={activeSection}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="text-sm text-[var(--text-secondary)] min-w-[100px] text-center"
-          >
-            {sections[activeSection].title}
-          </motion.span>
+          {navLinks.map((link) => (
+            <button
+              key={link.id}
+              onClick={() => scrollTo(link.id)}
+              className="nav-link"
+            >
+              {link.label}
+            </button>
+          ))}
+        </motion.nav>
 
-          {/* Section dots */}
-          <div className="section-dots">
-            {sections.map((section, i) => (
-              <button
-                key={section.id}
-                onClick={() => scrollToSection(i)}
-                className={`section-dot ${i === activeSection ? 'active' : ''}`}
-                aria-label={`Go to ${section.title}`}
-                title={section.title}
-              />
-            ))}
-          </div>
-        </motion.div>
-
-        {/* CTA Button */}
+        {/* Right: CTA + hamburger */}
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          className="flex items-center gap-4"
         >
           <a
-            href="https://wa.me/918011858376?text=enquiry%20for%20zuzu.codes"
+            href={WHATSAPP_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="btn-primary text-sm py-2.5 px-5"
+            className="btn-primary text-sm py-2.5 px-5 hidden sm:inline-flex"
           >
-            Contact Us
+            Get Started
           </a>
+
+          {/* Hamburger (mobile only) */}
+          <button
+            className="md:hidden flex flex-col justify-center items-center w-8 h-8 gap-1.5 bg-transparent border-none cursor-pointer p-0"
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+          >
+            <motion.span
+              animate={menuOpen ? { rotate: 45, y: 6 } : { rotate: 0, y: 0 }}
+              className="block w-5 h-[1.5px] bg-[var(--text-dark)] origin-center"
+            />
+            <motion.span
+              animate={menuOpen ? { opacity: 0 } : { opacity: 1 }}
+              className="block w-5 h-[1.5px] bg-[var(--text-dark)]"
+            />
+            <motion.span
+              animate={menuOpen ? { rotate: -45, y: -6 } : { rotate: 0, y: 0 }}
+              className="block w-5 h-[1.5px] bg-[var(--text-dark)] origin-center"
+            />
+          </button>
         </motion.div>
       </div>
+
+      {/* Mobile menu */}
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="mobile-menu md:hidden"
+          >
+            {navLinks.map((link) => (
+              <button
+                key={link.id}
+                onClick={() => scrollTo(link.id)}
+                className="nav-link text-base py-2"
+              >
+                {link.label}
+              </button>
+            ))}
+            <a
+              href={WHATSAPP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-primary text-sm py-2.5 px-5 mt-2 self-start"
+            >
+              Get Started
+            </a>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   );
 }
