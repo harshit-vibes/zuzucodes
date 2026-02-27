@@ -1,9 +1,11 @@
-import { getLesson, getModule, getLessonCount, getUserCode, getCourseWithModules, getCourseConfidenceResponses, getSubscriptionStatus } from '@/lib/data';
+import { getLesson, getModule, getUserCode, getCourseWithModules, getLessonsForCourse, getCourseConfidenceResponses, getSubscriptionStatus } from '@/lib/data';
 import { auth } from '@/lib/auth/server';
 import { notFound, redirect } from 'next/navigation';
 import { CodeLessonLayout } from '@/components/lesson/code-lesson-layout';
 import { PaywallOverlay } from '@/components/shared/paywall-overlay';
 import { PLAN_ID } from '@/lib/paypal';
+import { CoursePlayerShell } from '@/components/course/course-player-shell';
+import { buildCourseSequence } from '@/lib/course-sequence';
 
 interface LessonPageProps {
   params: Promise<{ courseSlug: string; moduleSlug: string; order: string }>;
@@ -24,9 +26,11 @@ export default async function LessonPage({ params }: LessonPageProps) {
   ]);
   if (!module || !course) notFound();
 
-  const [lessonData, lessonCount, confidenceResponses] = await Promise.all([
+  const moduleIds = course.modules.map((m) => m.id);
+
+  const [lessonData, allLessonsMap, confidenceResponses] = await Promise.all([
     getLesson(module.id, position),
-    getLessonCount(module.id),
+    getLessonsForCourse(moduleIds),
     user?.id
       ? getCourseConfidenceResponses(user.id, course.id)
       : Promise.resolve({ onboarding: null, completion: null }),
@@ -46,32 +50,48 @@ export default async function LessonPage({ params }: LessonPageProps) {
   const subscription = user ? await getSubscriptionStatus(user.id) : null;
   const isPaid = subscription?.status === 'ACTIVE';
 
+  const modIndex = course.modules.findIndex((m) => m.id === module.id);
+  const eyebrow = `Module ${String(modIndex + 1).padStart(2, '0')} · Lesson ${position}`;
+  const outroHref = `/dashboard/course/${courseSlug}/${moduleSlug}/lesson/${position}/outro`;
+
+  const steps = buildCourseSequence(courseSlug, course.modules, allLessonsMap);
+  const currentHref = `/dashboard/course/${courseSlug}/${moduleSlug}/lesson/${position}`;
+  const currentIdx = steps.findIndex((s) => s.href === currentHref);
+  const prevStep = currentIdx > 0 ? steps[currentIdx - 1] : null;
+  const nextStep = currentIdx < steps.length - 1 ? steps[currentIdx + 1] : null;
+
   return (
-    <div className="relative h-full">
+    <CoursePlayerShell
+      eyebrow={eyebrow}
+      title={lessonData.title}
+      prevHref={prevStep?.href ?? null}
+      prevLabel={prevStep?.label ?? null}
+      nextHref={nextStep?.href ?? null}
+      nextLabel={nextStep?.label ?? null}
+      nextLocked={!isCompleted}
+      scrollable={false}
+      isAuthenticated={!!user}
+    >
       {!isPaid && <PaywallOverlay planId={PLAN_ID} />}
       <CodeLessonLayout
-      lessonTitle={lessonData.title}
-      introContent={lessonData.introContent}
-      content={lessonData.content}
-      outroContent={lessonData.outroContent}
-      codeTemplate={lessonData.codeTemplate}
-      testCases={lessonData.testCases}
-      entryPoint={lessonData.entryPoint}
-      solutionCode={lessonData.solutionCode}
-      savedCode={userCode?.code ?? null}
-      lastTestResults={userCode?.lastTestResults ?? null}
-      problemSummary={lessonData.problemSummary}
-      problemConstraints={lessonData.problemConstraints}
-      problemHints={lessonData.problemHints}
-      lessonId={lessonData.id}
-      courseId={courseSlug}
-      moduleId={moduleSlug}
-      moduleTitle={module.title}
-      position={position}
-      lessonCount={lessonCount}
-      isAuthenticated={!!user}
-      isCompleted={isCompleted}
-    />
-    </div>
+        lessonTitle={lessonData.title}
+        content={lessonData.content}
+        outroHref={outroHref}
+        codeTemplate={lessonData.codeTemplate}
+        testCases={lessonData.testCases}
+        entryPoint={lessonData.entryPoint}
+        solutionCode={lessonData.solutionCode}
+        savedCode={userCode?.code ?? null}
+        lastTestResults={userCode?.lastTestResults ?? null}
+        problemSummary={lessonData.problemSummary}
+        problemConstraints={lessonData.problemConstraints}
+        problemHints={lessonData.problemHints}
+        lessonId={lessonData.id}
+        courseId={courseSlug}
+        moduleId={moduleSlug}
+        isAuthenticated={!!user}
+        isCompleted={isCompleted}
+      />
+    </CoursePlayerShell>
   );
 }
