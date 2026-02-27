@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import confetti from 'canvas-confetti';
+import { useRouter } from 'next/navigation';
 
 interface QuizOption {
   id: string;
@@ -31,6 +33,8 @@ export function QuizPlayer({
   courseId,
   isAlreadyPassed = false,
 }: QuizPlayerProps) {
+  const router = useRouter();
+
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<SelectedAnswers>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -112,6 +116,24 @@ export function QuizPlayer({
 
       const data = await res.json();
       setResult(data);
+
+      if (data.passed) {
+        router.refresh();
+        confetti({
+          particleCount: 80,
+          spread: 70,
+          origin: { x: 0.5, y: 1 },
+          colors: ['#ffffff', '#a3a3a3', '#22c55e', '#3b82f6'],
+          disableForReducedMotion: true,
+        });
+        // Module completion burst — only on first-time pass
+        if (!isAlreadyPassed) {
+          setTimeout(() => {
+            confetti({ particleCount: 60, spread: 100, origin: { x: 0.2, y: 0.8 }, disableForReducedMotion: true });
+            confetti({ particleCount: 60, spread: 100, origin: { x: 0.8, y: 0.8 }, disableForReducedMotion: true });
+          }, 300);
+        }
+      }
 
       // Clear saved state on successful submit
       localStorage.removeItem(storageKey);
