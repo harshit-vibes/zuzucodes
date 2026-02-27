@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { LessonSections } from '@/components/lesson/lesson-sections';
 import { LessonOverlay } from '@/components/lesson/lesson-overlay';
@@ -65,6 +66,7 @@ export function CodeLessonLayout({
   problemConstraints,
   problemHints,
 }: CodeLessonLayoutProps) {
+  const router = useRouter();
   const { increment: incrementRateLimit } = useRateLimitActions();
   const [code, setCode] = useState(savedCode ?? codeTemplate ?? '');
   const [output, setOutput] = useState('');
@@ -211,6 +213,7 @@ export function CodeLessonLayout({
           }
 
           if (testResult.allPassed) {
+            router.refresh();
             confetti({
               particleCount: 80,
               spread: 70,
@@ -304,15 +307,13 @@ export function CodeLessonLayout({
         </span>
         <span className="text-border/40 hidden sm:block shrink-0 text-xs">/</span>
         <span className="text-sm font-medium text-foreground truncate">{lessonTitle}</span>
+        {isCompleted && (
+          <span className="hidden sm:block font-mono text-[10px] px-1.5 py-0.5 rounded bg-success/10 text-success/70 ring-1 ring-success/20 shrink-0">
+            completed
+          </span>
+        )}
       </div>
       <div className="flex items-center gap-2.5 shrink-0">
-        {isCompleted && (
-          <div className="flex items-center justify-center w-4 h-4 rounded-full bg-success/15 ring-1 ring-success/40" title="Lesson complete">
-            <svg className="w-2.5 h-2.5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-        )}
         <div className="w-16 h-0.5 bg-border/40 rounded-full overflow-hidden">
           <div className="h-full bg-primary/70 rounded-full transition-all duration-700" style={{ width: `${progress}%` }} />
         </div>
@@ -324,21 +325,6 @@ export function CodeLessonLayout({
         {isAuthenticated && <UserButton />}
       </div>
     </header>
-  );
-
-  // ─── Footer ─────────────────────────────────────────────────────────────────
-  const Footer = (
-    <footer className="shrink-0 h-11 bg-muted/50 dark:bg-zinc-900 border-t border-border dark:border-zinc-800 flex items-center justify-end px-4">
-      <button
-        onClick={() => setView('outro')}
-        className="flex items-center gap-1.5 px-3 h-7 rounded text-xs font-mono text-muted-foreground hover:text-foreground hover:bg-muted dark:hover:bg-zinc-800 transition-colors"
-      >
-        wrap up
-        <svg aria-hidden="true" className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
-      </button>
-    </footer>
   );
 
   // ─── Layout ─────────────────────────────────────────────────────────────────
@@ -372,7 +358,6 @@ export function CodeLessonLayout({
             <div className="w-[48%] border-r border-border/50 overflow-hidden flex flex-col">{ProsePane}</div>
             <div className="flex-1 flex flex-col overflow-hidden bg-background dark:bg-zinc-950">{CodePane}</div>
           </div>
-          {Footer}
         </>
       )}
     </div>
