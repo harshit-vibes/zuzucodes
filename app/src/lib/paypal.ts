@@ -50,6 +50,22 @@ export async function getClientToken(): Promise<string> {
   return data.client_token as string;
 }
 
+export async function createSubscription(planId: string): Promise<{ id: string }> {
+  const token = await getAccessToken();
+  const res = await fetch(`${BASE_URL}/v1/billing/subscriptions`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      Prefer: 'return=representation',
+    },
+    body: JSON.stringify({ plan_id: planId }),
+    cache: 'no-store',
+  });
+  return res.json() as Promise<{ id: string }>;
+}
+
 export async function getSubscription(subscriptionId: string) {
   const token = await getAccessToken();
   const res = await fetch(
