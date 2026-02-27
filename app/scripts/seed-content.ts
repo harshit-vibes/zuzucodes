@@ -733,7 +733,19 @@ async function main() {
 
   await sql`UPDATE courses SET outro_content = ${JSON.stringify(courseOutro)} WHERE id = ${courseId}`;
 
-  console.log('  seeded intro_content and outro_content for course');
+  const courseConfidenceForm = {
+    title: 'Rate your Python confidence',
+    questions: [
+      { id: 'q1', statement: 'How confident are you writing Python functions?' },
+      { id: 'q2', statement: 'How confident are you working with loops and conditionals?' },
+      { id: 'q3', statement: 'How confident are you reading and debugging Python errors?' },
+      { id: 'q4', statement: 'How confident are you using Python data structures (lists, dicts)?' },
+    ],
+  };
+
+  await sql`UPDATE courses SET confidence_form = ${JSON.stringify(courseConfidenceForm)} WHERE id = ${courseId}`;
+
+  console.log('  seeded intro_content, outro_content, and confidence_form for course');
 
   console.log('\nRunning validation...');
   try {

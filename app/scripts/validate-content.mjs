@@ -96,6 +96,19 @@ try {
     }
   }
 
+  // ── Courses ───────────────────────────────────────────────────────────────────
+  const courses = await sql`
+    SELECT id, title, confidence_form FROM courses
+  `;
+
+  for (const course of courses) {
+    if (!course.confidence_form) {
+      fail(`Course "${course.title}" missing confidence_form`);
+    } else if (!Array.isArray(course.confidence_form.questions) || course.confidence_form.questions.length < 1) {
+      fail(`Course "${course.title}" confidence_form has no questions`);
+    }
+  }
+
   // ── Referential integrity ─────────────────────────────────────────────────────
   const orphanTc = await sql`
     SELECT COUNT(DISTINCT tc.lesson_id)::INTEGER AS cnt
