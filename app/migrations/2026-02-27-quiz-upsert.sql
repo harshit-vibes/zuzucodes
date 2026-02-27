@@ -11,6 +11,6 @@ WHERE a.user_id = b.user_id
 
 -- Add unique constraint enabling ON CONFLICT upsert
 ALTER TABLE user_quiz_attempts
-  ADD CONSTRAINT uqa_user_module_unique UNIQUE (user_id, module_id);
+  ADD CONSTRAINT IF NOT EXISTS uqa_user_module_unique UNIQUE (user_id, module_id);
 
 COMMIT;
