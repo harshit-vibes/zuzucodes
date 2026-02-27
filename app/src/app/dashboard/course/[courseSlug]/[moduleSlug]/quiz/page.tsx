@@ -2,7 +2,6 @@ import { getModule, isQuizCompleted, areAllLessonsCompleted, type QuizQuestion }
 import { auth } from '@/lib/auth/server';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { Breadcrumb } from '@/components/shared/breadcrumb';
 import { QuizPlayer } from './quiz-player';
 
 interface QuizPageProps {
@@ -43,25 +42,11 @@ export default async function QuizPage({ params }: QuizPageProps) {
 
   return (
     <div className="min-h-screen pb-10">
-      {/* Header */}
-      <div className="border-b border-border/50">
-        <div className="container mx-auto px-6 py-6">
-          <Breadcrumb
-            items={[
-              { label: 'Dashboard', href: '/dashboard' },
-              { label: mod.title },
-              { label: 'Quiz' },
-            ]}
-          />
-        </div>
-      </div>
-
       <div className="container mx-auto px-6 py-10">
         {/* Quiz header */}
         <header className="max-w-2xl mx-auto text-center mb-10">
-          {/* Module badge */}
-          <div className="inline-flex items-center gap-2 mb-4">
-            <span className="label-mono text-primary bg-primary/10 px-2.5 py-1 rounded-md">
+          <div className="inline-flex items-center gap-2 mb-3">
+            <span className="label-mono text-muted-foreground/60 bg-muted px-2.5 py-1 rounded-md">
               {mod.title}
             </span>
             {isCompleted && (
@@ -70,27 +55,12 @@ export default async function QuizPage({ params }: QuizPageProps) {
               </span>
             )}
           </div>
-
-          <h1 className="font-display text-2xl md:text-3xl font-semibold mb-3">
+          <h1 className="font-display text-xl font-semibold mb-1">
             {quizForm.title}
           </h1>
-
-          {/* Quiz meta */}
-          <div className="inline-flex items-center gap-4 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1.5">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              {quizForm.questions.length} questions
-            </span>
-            <span className="w-1 h-1 rounded-full bg-muted-foreground/50" />
-            <span className="flex items-center gap-1.5">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              {quizForm.passingScore}% to pass
-            </span>
-          </div>
+          <p className="text-xs text-muted-foreground/60 font-mono">
+            {quizForm.questions.length} questions · {quizForm.passingScore}% to pass
+          </p>
         </header>
 
         {/* Quiz locked state */}
