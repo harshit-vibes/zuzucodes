@@ -408,16 +408,15 @@ body::before {
 .nav-link {
   font-size: 14px;
   font-weight: 500;
+  font-family: 'DM Sans', system-ui, sans-serif;
   color: var(--text-medium);
   text-decoration: none;
   cursor: pointer;
   padding: 6px 2px;
-  border-bottom: 1px solid transparent;
-  transition: all var(--duration-normal) var(--ease-out);
   background: none;
   border: none;
   border-bottom: 1px solid transparent;
-  font-family: 'DM Sans', system-ui, sans-serif;
+  transition: all var(--duration-normal) var(--ease-out);
 }
 
 .nav-link:hover,
