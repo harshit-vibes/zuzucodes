@@ -2,15 +2,15 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CourseFormPlayer } from './course-form';
-import type { CourseForm } from '@/lib/data';
+import { LikertFormPlayer } from './course-form';
+import type { ConfidenceForm } from '@/lib/data';
 
 export function OnboardingFormWrapper({
   courseId,
   form,
 }: {
   courseId: string;
-  form: CourseForm;
+  form: ConfidenceForm;
 }) {
   const router = useRouter();
   const [done, setDone] = useState(false);
@@ -30,7 +30,7 @@ export function OnboardingFormWrapper({
   }
 
   return (
-    <CourseFormPlayer
+    <LikertFormPlayer
       courseId={courseId}
       formType="onboarding"
       form={form}
@@ -44,7 +44,7 @@ export function CompletionFormWrapper({
   form,
 }: {
   courseId: string;
-  form: CourseForm;
+  form: ConfidenceForm;
 }) {
   const [done, setDone] = useState(false);
 
@@ -52,13 +52,13 @@ export function CompletionFormWrapper({
     return (
       <div className="rounded-xl border border-border/50 bg-card p-5 text-center">
         <p className="text-sm font-medium text-foreground mb-1">Course complete!</p>
-        <p className="text-xs text-muted-foreground">Thanks for your feedback.</p>
+        <p className="text-xs text-muted-foreground">Your confidence data has been saved.</p>
       </div>
     );
   }
 
   return (
-    <CourseFormPlayer
+    <LikertFormPlayer
       courseId={courseId}
       formType="completion"
       form={form}
