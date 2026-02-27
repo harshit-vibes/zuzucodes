@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import { auth } from '@/lib/auth/server';
 import {
@@ -6,6 +6,7 @@ import {
   getModule,
   getLessonsForCourse,
   getSectionCompletionStatus,
+  getCourseConfidenceResponses,
   type SectionStatus,
 } from '@/lib/data';
 import { TemplateRenderer } from '@/components/templates/template-renderer';
@@ -31,12 +32,21 @@ export default async function ModuleOverviewPage({
   if (modIndex === -1 || mod.course_id !== course.id) notFound();
 
   // Lessons require mod.id (DB UUID), fetched after module resolves
-  const lessonsMap = await getLessonsForCourse([mod.id]);
-  const lessons = lessonsMap[mod.id] ?? [];
+  const [lessonsMap, completionStatus, confidenceResponses] = await Promise.all([
+    getLessonsForCourse([mod.id]),
+    user?.id
+      ? getSectionCompletionStatus(user.id, [mod])
+      : Promise.resolve({} as Record<string, SectionStatus>),
+    user?.id
+      ? getCourseConfidenceResponses(user.id, course.id)
+      : Promise.resolve({ onboarding: null, completion: null }),
+  ]);
 
-  const completionStatus = user?.id
-    ? await getSectionCompletionStatus(user.id, [mod])
-    : ({} as Record<string, SectionStatus>);
+  if (course.confidence_form && user?.id && confidenceResponses.onboarding === null) {
+    redirect(`/dashboard/course/${courseSlug}`);
+  }
+
+  const lessons = lessonsMap[mod.id] ?? [];
 
   const lessonsDone = lessons.filter(
     (l) => completionStatus[`${mod.id}:lesson-${l.lesson_index}`] === 'completed'
