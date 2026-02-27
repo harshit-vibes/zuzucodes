@@ -16,7 +16,7 @@ export default async function DashboardLayout({
   const { session, user } = await auth();
 
   if (!user) {
-    redirect("/");
+    redirect("/auth/sign-in");
   }
 
   const courses = await getCoursesForSidebar();
