@@ -1,5 +1,7 @@
 // app/src/lib/course-sequence.ts
 
+import type { Module } from '@/lib/data'
+
 export type CourseStep = {
   href: string
   label: string
@@ -17,7 +19,7 @@ export type CourseStep = {
 
 export function buildCourseSequence(
   courseSlug: string,
-  modules: Array<{ id: string; slug: string; title: string; quiz_form: unknown }>,
+  modules: Pick<Module, 'id' | 'slug' | 'title' | 'quiz_form'>[],
   lessonsByModule: Record<string, Array<{ lesson_index: number; title: string }>>,
 ): CourseStep[] {
   const steps: CourseStep[] = []
@@ -32,6 +34,7 @@ export function buildCourseSequence(
       type: 'module-intro',
     })
 
+    // Sort defensively — callers may not guarantee order
     const lessons = [...(lessonsByModule[mod.id] ?? [])].sort(
       (a, b) => a.lesson_index - b.lesson_index,
     )
