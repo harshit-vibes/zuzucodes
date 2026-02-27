@@ -1,6 +1,6 @@
-import { getModule, isQuizCompleted, areAllLessonsCompleted, type QuizQuestion } from '@/lib/data';
+import { getModule, isQuizCompleted, areAllLessonsCompleted, getCourseWithModules, getCourseConfidenceResponses, type QuizQuestion } from '@/lib/data';
 import { auth } from '@/lib/auth/server';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import { QuizPlayer } from './quiz-player';
 
@@ -12,10 +12,18 @@ export default async function QuizPage({ params }: QuizPageProps) {
   const { courseSlug, moduleSlug } = await params;
   const { user } = await auth();
 
-  const mod = await getModule(moduleSlug);
+  const [mod, course] = await Promise.all([
+    getModule(moduleSlug),
+    getCourseWithModules(courseSlug),
+  ]);
 
-  if (!mod || !mod.quiz_form) {
+  if (!mod || !mod.quiz_form || !course) {
     notFound();
+  }
+
+  if (course.confidence_form && user?.id) {
+    const { onboarding } = await getCourseConfidenceResponses(user.id, course.id);
+    if (onboarding === null) redirect(`/dashboard/course/${courseSlug}`);
   }
 
   const quizForm = mod.quiz_form;
