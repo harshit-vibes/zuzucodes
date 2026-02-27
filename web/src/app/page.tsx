@@ -1,41 +1,25 @@
-'use client';
-
-import { useRef } from 'react';
-import { Header } from '@/components/sections/Header';
-import { ShiftSection } from '@/components/sections/ShiftSection';
-import { BenefitsSection } from '@/components/sections/BenefitsSection';
-import { MethodSection } from '@/components/sections/MethodSection';
-import { AudienceSection } from '@/components/sections/AudienceSection';
-import { StatsSection } from '@/components/sections/StatsSection';
-import { CoursesSection } from '@/components/sections/CoursesSection';
-import { PricingSection } from '@/components/sections/PricingSection';
-import { InstructorSection } from '@/components/sections/InstructorSection';
-import { TestimonialsSection } from '@/components/sections/TestimonialsSection';
-import { FAQSection } from '@/components/sections/FAQSection';
-import { CTASection } from '@/components/sections/CTASection';
+import { Header } from "@/components/landing/header";
+import { HeroSection } from "@/components/landing/hero-section";
+import { ShiftSection } from "@/components/landing/shift-section";
+import { MethodSection } from "@/components/landing/method-section";
+import { AudienceSection } from "@/components/landing/audience-section";
+import { CoursesSection } from "@/components/landing/courses-section";
+import { PricingSection } from "@/components/landing/pricing-section";
+import { Footer } from "@/components/landing/footer";
 
 export default function Home() {
-  const containerRef = useRef<HTMLDivElement>(null);
-
   return (
     <>
-      {/* Fixed Header */}
-      <Header containerRef={containerRef} />
-
-      {/* Main content — 11 scroll-snap sections + CTA/footer */}
-      <main ref={containerRef} className="bg-[var(--cream)]">
+      <Header />
+      <main>
+        <HeroSection />
         <ShiftSection />
-        <BenefitsSection />
         <MethodSection />
         <AudienceSection />
-        <StatsSection />
         <CoursesSection />
         <PricingSection />
-        <InstructorSection />
-        <TestimonialsSection />
-        <FAQSection />
-        <CTASection />
       </main>
+      <Footer />
     </>
   );
 }

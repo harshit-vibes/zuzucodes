@@ -1,5 +1,24 @@
 import type { Metadata } from "next";
+import { DM_Sans, JetBrains_Mono, Playfair_Display } from "next/font/google";
 import "./globals.css";
+
+const dmSans = DM_Sans({
+  variable: "--font-sans",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-mono",
+  subsets: ["latin"],
+  weight: ["400", "500"],
+});
+
+const playfair = Playfair_Display({
+  variable: "--font-display",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
 
 const siteUrl = "https://zuzu.codes";
 const siteName = "zuzu.codes";
@@ -26,16 +45,10 @@ export const metadata: Metadata = {
   authors: [{ name: "Kuma Learn" }],
   creator: "Kuma Learn",
   publisher: "Kuma Learn",
-
-  // Favicon and icons
   icons: {
-    icon: [
-      { url: "/icon.svg", type: "image/svg+xml" },
-    ],
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
     apple: "/apple-icon.png",
   },
-
-  // Open Graph
   openGraph: {
     type: "website",
     locale: "en_US",
@@ -43,25 +56,14 @@ export const metadata: Metadata = {
     siteName: siteName,
     title: "zuzu.codes - AI-Native Upskilling",
     description: siteDescription,
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1080,
-        height: 1080,
-        alt: "zuzu.codes - AI-Native Upskilling",
-      },
-    ],
+    images: [{ url: "/og-image.png", width: 1080, height: 1080, alt: "zuzu.codes" }],
   },
-
-  // Twitter Card
   twitter: {
     card: "summary_large_image",
     title: "zuzu.codes - AI-Native Upskilling",
     description: siteDescription,
     images: ["/og-image.png"],
   },
-
-  // Robots
   robots: {
     index: true,
     follow: true,
@@ -73,39 +75,7 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
-
-  // Verification (add your IDs when available)
-  // verification: {
-  //   google: "your-google-verification-code",
-  // },
-
-  // Other
   category: "Education",
-};
-
-// JSON-LD Structured Data
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@type": "EducationalOrganization",
-  name: siteName,
-  url: siteUrl,
-  logo: `${siteUrl}/logo.png`,
-  description: siteDescription,
-  founder: {
-    "@type": "Organization",
-    name: "Kuma Learn",
-  },
-  contactPoint: {
-    "@type": "ContactPoint",
-    contactType: "customer service",
-    url: "https://wa.me/918011858376?text=enquiry%20for%20zuzu.codes",
-  },
-  sameAs: [],
-  offers: {
-    "@type": "Offer",
-    category: "AI Automation Courses",
-    description: "Cohort-based AI automation upskilling courses",
-  },
 };
 
 export default function RootLayout({
@@ -115,13 +85,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <head>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
-      </head>
-      <body className="antialiased">
+      <body
+        className={`${dmSans.variable} ${jetbrainsMono.variable} ${playfair.variable} font-sans antialiased`}
+      >
         {children}
       </body>
     </html>
