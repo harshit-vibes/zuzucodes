@@ -33,7 +33,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import type { CourseWithModules, SidebarCourseProgress, DashboardStats, SectionStatus, SubscriptionRow } from "@/lib/data";
-import { SidebarUserCard } from '@/components/shared/sidebar-user-card';
+import { SidebarUserCard } from "@/components/shared/sidebar-user-card";
 
 // ============================================
 // Types
