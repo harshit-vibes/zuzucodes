@@ -136,13 +136,11 @@ export const getCourseWithModules = cache(async (courseSlug: string): Promise<Co
     const modules = await sql`
       SELECT m.id, m.course_id, m.slug, m.title, m.description, m."order",
              m.quiz_form, m.intro_content, m.outro_content,
-             COALESCE(lc.lesson_count, 0) AS lesson_count
+             COALESCE(COUNT(l.id)::INTEGER, 0) AS lesson_count
       FROM modules m
-      LEFT JOIN (
-        SELECT module_id, COUNT(*)::INTEGER AS lesson_count
-        FROM lessons GROUP BY module_id
-      ) lc ON lc.module_id = m.id
+      LEFT JOIN lessons l ON l.module_id = m.id
       WHERE m.course_id = ${course.id}
+      GROUP BY m.id
       ORDER BY m."order" ASC
     `;
 
@@ -168,13 +166,11 @@ export const getModule = cache(async (moduleSlug: string): Promise<Module | null
     const result = await sql`
       SELECT m.id, m.course_id, m.slug, m.title, m.description, m."order",
              m.quiz_form, m.intro_content, m.outro_content,
-             COALESCE(lc.lesson_count, 0) AS lesson_count
+             COALESCE(COUNT(l.id)::INTEGER, 0) AS lesson_count
       FROM modules m
-      LEFT JOIN (
-        SELECT module_id, COUNT(*)::INTEGER AS lesson_count
-        FROM lessons GROUP BY module_id
-      ) lc ON lc.module_id = m.id
+      LEFT JOIN lessons l ON l.module_id = m.id
       WHERE m.slug = ${moduleSlug}
+      GROUP BY m.id
     `;
 
     return result.length > 0 ? (result[0] as Module) : null;
@@ -943,13 +939,11 @@ export const getCoursesForSidebar = cache(async (): Promise<CourseWithModules[]>
     const allModules = await sql`
       SELECT m.id, m.course_id, m.slug, m.title, m.description, m."order",
              m.quiz_form, m.intro_content, m.outro_content,
-             COALESCE(lc.lesson_count, 0) AS lesson_count
+             COALESCE(COUNT(l.id)::INTEGER, 0) AS lesson_count
       FROM modules m
-      LEFT JOIN (
-        SELECT module_id, COUNT(*)::INTEGER AS lesson_count
-        FROM lessons GROUP BY module_id
-      ) lc ON lc.module_id = m.id
+      LEFT JOIN lessons l ON l.module_id = m.id
       WHERE m.course_id = ANY(${courseIds})
+      GROUP BY m.id
       ORDER BY m."order" ASC
     `;
 
