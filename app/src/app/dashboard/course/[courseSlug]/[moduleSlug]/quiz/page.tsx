@@ -76,20 +76,10 @@ export default async function QuizPage({ params }: QuizPageProps) {
       nextLocked={!isCompleted}
       isAuthenticated={!!user}
     >
-      <div className="min-h-screen pb-10">
+      <div className="pb-10">
         <div className="container mx-auto px-6 py-10">
           {/* Quiz header */}
           <header className="max-w-2xl mx-auto text-center mb-10">
-            <div className="inline-flex items-center gap-2 mb-3">
-              <span className="label-mono text-muted-foreground/60 bg-muted px-2.5 py-1 rounded-md">
-                {mod.title}
-              </span>
-              {isCompleted && (
-                <span className="label-mono text-success bg-success/10 px-2.5 py-1 rounded-md">
-                  Passed
-                </span>
-              )}
-            </div>
             <h1 className="font-display text-xl font-semibold mb-1">
               {quizForm.title}
             </h1>

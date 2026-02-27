@@ -8,7 +8,6 @@ import {
   getCourseConfidenceResponses,
   type SectionStatus,
 } from '@/lib/data';
-import { titleCase } from '@/lib/utils';
 import { TemplateRenderer } from '@/components/templates/template-renderer';
 import { OnboardingFormWrapper } from '@/components/dashboard/course-form-wrappers';
 import { CoursePlayerShell } from '@/components/course/course-player-shell';
@@ -98,11 +97,6 @@ export default async function CourseOverviewPage({
 
         {/* ─── Header ─────────────────────────────────────────────── */}
         <div>
-          {course.tag && (
-            <span className="inline-block mb-3 px-2.5 py-0.5 rounded text-[11px] font-mono uppercase tracking-wider bg-primary/10 text-primary">
-              {titleCase(course.tag)}
-            </span>
-          )}
           <h1 className="text-2xl font-semibold tracking-tight text-foreground mb-2">
             {course.title}
           </h1>

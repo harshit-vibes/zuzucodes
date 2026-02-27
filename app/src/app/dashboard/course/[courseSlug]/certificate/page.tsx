@@ -78,27 +78,9 @@ export default async function CertificatePage({
     >
       <div className="max-w-2xl mx-auto px-6 py-8 space-y-8">
 
-        {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-xs text-muted-foreground/50">
-          <Link
-            href={`/dashboard/course/${courseSlug}`}
-            className="hover:text-muted-foreground transition-colors"
-          >
-            {course.title}
-          </Link>
-          <span>/</span>
-          <span className="text-foreground/70">Certificate</span>
-        </nav>
-
-        {/* Header */}
-        <div>
-          <p className="text-xs font-mono text-muted-foreground/40 uppercase tracking-widest mb-1">
-            Certificate
-          </p>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            {course.title}
-          </h1>
-        </div>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+          {course.title}
+        </h1>
 
         {!isCompleted ? (
           <div className="rounded-xl border border-border/50 bg-card p-8 text-center">
