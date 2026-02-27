@@ -875,10 +875,10 @@ export async function submitCourseFormResponse(
  * Fetch both onboarding and completion confidence responses for a user+course.
  * Returns null for each form_type if not yet submitted.
  */
-export async function getCourseConfidenceResponses(
+export const getCourseConfidenceResponses = cache(async (
   userId: string,
   courseId: string,
-): Promise<{ onboarding: Record<string, number> | null; completion: Record<string, number> | null }> {
+): Promise<{ onboarding: Record<string, number> | null; completion: Record<string, number> | null }> => {
   try {
     const rows = await sql`
       SELECT form_type, responses
@@ -892,7 +892,7 @@ export async function getCourseConfidenceResponses(
     console.error('getCourseConfidenceResponses error:', error);
     return { onboarding: null, completion: null };
   }
-}
+});
 
 /**
  * Check if all lessons in a module are completed

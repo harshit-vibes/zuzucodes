@@ -16,7 +16,6 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useRateLimitActions } from '@/context/rate-limit-context';
 import type { TestCase, TestCaseResult, Judge0RunResult, Judge0TestsResult } from '@/lib/judge0';
 import type { ExecutionMetrics } from '@/components/lesson/output-panel';
-import confetti from 'canvas-confetti';
 
 interface CodeLessonLayoutProps {
   lessonTitle: string;
@@ -214,6 +213,7 @@ export function CodeLessonLayout({
 
           if (testResult.allPassed) {
             router.refresh();
+            const confetti = (await import('canvas-confetti')).default;
             confetti({
               particleCount: 80,
               spread: 70,

@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import confetti from 'canvas-confetti';
 import { useRouter } from 'next/navigation';
 
 interface QuizOption {
@@ -87,15 +86,11 @@ export function QuizPlayer({
   };
 
   const handleNext = () => {
-    if (currentQuestion < totalQuestions - 1) {
-      setCurrentQuestion(currentQuestion + 1);
-    }
+    setCurrentQuestion(prev => Math.min(prev + 1, totalQuestions - 1));
   };
 
   const handlePrev = () => {
-    if (currentQuestion > 0) {
-      setCurrentQuestion(currentQuestion - 1);
-    }
+    setCurrentQuestion(prev => Math.max(prev - 1, 0));
   };
 
   const handleSubmit = async () => {
@@ -119,6 +114,7 @@ export function QuizPlayer({
 
       if (data.passed) {
         router.refresh();
+        const confetti = (await import('canvas-confetti')).default;
         confetti({
           particleCount: 80,
           spread: 70,

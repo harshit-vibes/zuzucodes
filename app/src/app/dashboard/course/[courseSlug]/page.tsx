@@ -21,9 +21,10 @@ export default async function CourseOverviewPage({
   params: Promise<{ courseSlug: string }>;
 }) {
   const { courseSlug } = await params;
-  const { user } = await auth();
-
-  const course = await getCourseWithModules(courseSlug);
+  const [{ user }, course] = await Promise.all([
+    auth(),
+    getCourseWithModules(courseSlug),
+  ]);
   if (!course) notFound();
 
   const moduleIds = course.modules.map(m => m.id);
