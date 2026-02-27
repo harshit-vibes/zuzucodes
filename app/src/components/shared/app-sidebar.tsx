@@ -32,7 +32,8 @@ import {
 } from "@/components/ui/sidebar";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
-import type { CourseWithModules, SidebarCourseProgress, DashboardStats, SectionStatus } from "@/lib/data";
+import type { CourseWithModules, SidebarCourseProgress, DashboardStats, SectionStatus, SubscriptionRow } from "@/lib/data";
+import { SidebarUserCard } from '@/components/shared/sidebar-user-card';
 
 // ============================================
 // Types
@@ -43,6 +44,8 @@ interface AppSidebarProps {
   courseProgress?: Record<string, SidebarCourseProgress>;
   contentCompletion?: Record<string, SectionStatus>;
   stats?: DashboardStats;
+  user: { name: string | null; email: string | null; image: string | null };
+  subscription: SubscriptionRow | null;
 }
 
 // ============================================
@@ -216,6 +219,8 @@ export function AppSidebar({
   courseProgress,
   contentCompletion = {},
   stats,
+  user,
+  subscription,
 }: AppSidebarProps) {
   const pathname = usePathname();
   const { courseSlug, moduleSlug, contentType, order } = useMemo(
@@ -390,10 +395,8 @@ export function AppSidebar({
       </SidebarContent>
 
       {/* Footer */}
-      <SidebarFooter className="border-t border-border/40 h-12 flex items-center justify-center px-4">
-        <p className="text-[10px] text-muted-foreground text-center">
-          &copy; 2026 zuzu.codes
-        </p>
+      <SidebarFooter className="border-t border-border/40 px-2 py-2">
+        <SidebarUserCard user={user} subscription={subscription} />
       </SidebarFooter>
 
       <SidebarRail />

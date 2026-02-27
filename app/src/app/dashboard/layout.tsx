@@ -44,6 +44,8 @@ export default async function DashboardLayout({
           courseProgress={courseProgress}
           contentCompletion={contentCompletion}
           stats={stats}
+          user={{ name: user.name ?? null, email: user.email ?? null, image: user.image ?? null }}
+          subscription={subscription}
         />
         <SidebarInset className="overflow-hidden flex flex-col">
           <DashboardHeader />
