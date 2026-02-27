@@ -155,6 +155,61 @@ JUDGE0_API_HOST           # e.g. judge0-ce.p.rapidapi.com
 
 ---
 
+## PayPal Integration
+
+SDK: `@paypal/react-paypal-js` v9 (sdk-v6 import path). Uses `PayPalProvider` (not `PayPalScriptProvider`).
+Env vars: `PAYPAL_CLIENT_ID`, `PAYPAL_SECRET`, `PAYPAL_MODE` (sandbox/live), `PAYPAL_BASE_URL`.
+Sandbox dashboard: https://sandbox.paypal.com
+
+**PayPal MCP Server** (use during development to create products/plans/test subscriptions):
+- Local: `npx @paypal/mcp --tools=all` with `PAYPAL_ACCESS_TOKEN` + `PAYPAL_ENVIRONMENT=SANDBOX`
+- Remote sandbox: `https://mcp.sandbox.paypal.com` (SSE: `/sse`, HTTP: `/http`)
+- MCP quickstart: https://docs.paypal.ai/developer/tools/ai/mcp-quickstart
+- Prompt best practices: https://docs.paypal.ai/developer/tools/ai/prompt-best-practices
+
+**Reference docs:**
+- SDK JS overview: https://developer.paypal.com/md/sdk/js/
+- Performance: https://developer.paypal.com/md/sdk/js/performance/
+- Best practices: https://developer.paypal.com/md/sdk/js/best-practices/
+
+---
+
 ## Landing Page (`web/`)
 
 Separate Next.js app. Static JSON data in `web/src/data/` with optional Supabase fallback. GSAP + Motion for animations.
+
+---
+
+## Roadmap TODOs
+
+### 1. Course Player Micro-Enhancements (`/dashboard/course/[courseSlug]/...`)
+- Progress indicators: per-lesson, per-module, per-course (% complete, visual bars)
+- Navigation improvements: prev/next between lessons, breadcrumbs, keyboard shortcuts
+- Footer: lesson footer with next-up preview, time estimate, completion CTA
+- Course onboarding flow (first-visit guided intro) and offboarding (completion celebration)
+- Module quiz polish: result screen, retry flow, score history
+- Review mode UX: clear "reviewing completed lesson" state in the player
+
+### 2. Dashboard Enhancements (`/dashboard`)
+- Multi-course grid: add more courses, course card design improvements
+- Track view: group courses by track/learning path (e.g. Python Fundamentals track)
+- Continued learning section improvements: smarter resume logic
+- Course discovery: search, filter by tag/track
+
+### 3. Auth Gating + Demo Showcase
+- Lock lesson player, quiz, and code execution for unauthenticated users
+- Demo/preview mode: unauthenticated users can view lesson intro + read-only content
+- Auth prompts at key moments (first run attempt, first quiz question)
+- Guest → authenticated transition: preserve progress made as guest
+
+### 4. Landing Page → Dashboard Journey
+- Landing page enhancements: hero, social proof, course previews, track overview
+- Smooth hand-off: landing page CTAs go to specific onboarding flows
+- Onboarding survey / goal-setting step post sign-up
+- Email welcome flow integration
+
+### 5. Analytics + Tooling
+- PostHog integration: event tracking (lesson started/completed, quiz attempted, code run, auth events)
+- Customer support: Intercom or equivalent in-app chat widget
+- Sales/conversion: identify high-intent users, trigger upgrade flows when relevant
+- Error monitoring: Sentry or equivalent for runtime errors in prod
