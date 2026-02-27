@@ -239,10 +239,10 @@ export function CodeLessonLayout({
             disabled={executionPhase === 'running'}
             className="flex items-center gap-1 px-2.5 h-6 rounded border border-border dark:border-zinc-600 text-[11px] font-mono text-muted-foreground hover:text-foreground hover:bg-muted dark:hover:bg-zinc-700 disabled:opacity-50 transition-colors"
           >
-            <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24">
               <path d="M8 5v14l11-7z" />
             </svg>
-            {executionPhase === 'running' ? 'running···' : 'run'}
+            {executionPhase === 'running' ? 'running…' : 'run'}
           </button>
         </div>
       </div>
@@ -265,8 +265,8 @@ export function CodeLessonLayout({
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
       <div className="md:hidden shrink-0 flex border-b border-border bg-muted/50 dark:bg-zinc-900">
-        <button onClick={() => setActiveTab('lesson')} className={`flex-1 py-2.5 text-xs font-mono tracking-wide transition-colors ${activeTab === 'lesson' ? 'text-primary border-b border-primary' : 'text-muted-foreground hover:text-foreground'}`}>lesson</button>
-        <button onClick={() => setActiveTab('code')} className={`flex-1 py-2.5 text-xs font-mono tracking-wide transition-colors ${activeTab === 'code' ? 'text-primary border-b border-primary' : 'text-muted-foreground hover:text-foreground'}`}>code</button>
+        <button aria-label="Lesson content" onClick={() => setActiveTab('lesson')} className={`flex-1 py-2.5 text-xs font-mono tracking-wide transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary ${activeTab === 'lesson' ? 'text-primary border-b border-primary' : 'text-muted-foreground hover:text-foreground'}`}>lesson</button>
+        <button aria-label="Code editor" onClick={() => setActiveTab('code')} className={`flex-1 py-2.5 text-xs font-mono tracking-wide transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary ${activeTab === 'code' ? 'text-primary border-b border-primary' : 'text-muted-foreground hover:text-foreground'}`}>code</button>
       </div>
       <div className="md:hidden flex-1 overflow-hidden flex flex-col">
         {activeTab === 'lesson' ? ProsePane : CodePane}

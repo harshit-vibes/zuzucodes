@@ -127,7 +127,8 @@ function TestResultRow({ result }: { result: TestCaseResult }) {
     <div className="border-b border-border/20 last:border-b-0">
       <button
         onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center gap-2 px-3 py-2 hover:bg-muted/20 transition-colors text-left"
+        aria-expanded={open}
+        className="w-full flex items-center gap-2 px-3 py-2 hover:bg-muted/20 transition-colors text-left focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-primary"
       >
         {result.pass ? (
           <svg className="w-3 h-3 text-green-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -204,8 +205,9 @@ export function OutputPanel({ phase, output, error, hasTestCases, hasRun, testRe
         {showTestsTab && (
           <div className="flex items-center gap-0.5">
             <button
+              aria-label="Console output"
               onClick={() => setActiveTab('console')}
-              className={`px-2 h-5 text-[10px] font-mono rounded transition-colors ${
+              className={`px-2 h-5 text-[10px] font-mono rounded transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary ${
                 effectiveTab === 'console'
                   ? 'text-foreground bg-muted dark:bg-zinc-800'
                   : 'text-muted-foreground/50 hover:text-muted-foreground'
@@ -214,8 +216,9 @@ export function OutputPanel({ phase, output, error, hasTestCases, hasRun, testRe
               console
             </button>
             <button
+              aria-label="Test results"
               onClick={() => setActiveTab('tests')}
-              className={`px-2 h-5 text-[10px] font-mono rounded transition-colors ${
+              className={`px-2 h-5 text-[10px] font-mono rounded transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary ${
                 effectiveTab === 'tests'
                   ? 'text-foreground bg-muted dark:bg-zinc-800'
                   : 'text-muted-foreground/50 hover:text-muted-foreground'

@@ -17,7 +17,7 @@ export function PaywallOverlay({ planId }: PaywallOverlayProps) {
       <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm">
         <div className="text-center space-y-4 max-w-sm px-6">
           <div className="flex justify-center">
-            <Lock className="h-10 w-10 text-muted-foreground" />
+            <Lock aria-hidden="true" className="h-10 w-10 text-muted-foreground" />
           </div>
           <h3 className="text-xl font-semibold">Subscribe to unlock</h3>
           <p className="text-muted-foreground text-sm">
