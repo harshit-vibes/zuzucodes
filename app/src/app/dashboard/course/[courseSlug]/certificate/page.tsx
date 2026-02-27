@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import { auth } from '@/lib/auth/server';
 import {
@@ -47,6 +47,10 @@ export default async function CertificatePage({
     if (mod.quiz_form && completionStatus[`${mod.id}:quiz`] === 'completed') completedItems++;
   }
   const isCompleted = totalItems > 0 && completedItems === totalItems;
+
+  if (isCompleted && course.confidence_form && confidenceResponses.completion === null) {
+    redirect(`/dashboard/course/${courseSlug}/graduation`);
+  }
 
   const bothSubmitted =
     confidenceResponses.onboarding !== null &&
