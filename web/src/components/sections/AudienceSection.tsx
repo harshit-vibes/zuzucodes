@@ -11,8 +11,8 @@ const audiences = [
 
 export function AudienceSection() {
   return (
-    <section id="audience" className="section bg-cream">
-      <div className="w-full max-w-[640px]">
+    <section id="audience" className="section bg-warm-gray">
+      <div className="w-full max-w-[800px]">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
