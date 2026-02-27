@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { renderTemplate } from '@/components/templates';
+import { LessonOutroTemplate } from '@/components/templates/lesson-outro';
+import type { TemplateContent } from '@/lib/templates/types';
 
 interface LessonOverlayProps {
   view: 'intro' | 'outro';
@@ -30,45 +32,44 @@ export function LessonOverlay({
   hasNext,
   onEnterLesson,
 }: LessonOverlayProps) {
-  const content = view === 'intro' ? introContent : outroContent;
-  const templateName = view === 'intro' ? 'lesson-intro' : 'lesson-outro';
-
   return (
     <div className="flex-1 min-h-0 flex flex-col bg-background overflow-y-auto">
-      {/* Top navigation bar */}
-      <div className="flex items-center justify-between px-8 pt-8 pb-4 shrink-0">
-        <div className="w-20">
-          {view === 'intro' && hasPrev ? (
-            <Link
-              href={prevHref}
-              className="flex items-center gap-1.5 text-xs font-mono text-muted-foreground/50 hover:text-foreground transition-colors"
-            >
-              <svg aria-hidden="true" className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              prev
-            </Link>
-          ) : null}
-        </div>
+      {/* Top navigation bar — intro only */}
+      {view === 'intro' && (
+        <div className="flex items-center justify-between px-8 pt-8 pb-4 shrink-0">
+          <div className="w-20">
+            {hasPrev ? (
+              <Link
+                href={prevHref}
+                className="flex items-center gap-1.5 text-xs font-mono text-muted-foreground/50 hover:text-foreground transition-colors"
+              >
+                <svg aria-hidden="true" className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                prev
+              </Link>
+            ) : null}
+          </div>
 
-        <span className="font-mono text-[11px] text-muted-foreground/40 tabular-nums">
-          {position} / {lessonCount}
-        </span>
+          <span className="font-mono text-[11px] text-muted-foreground/40 tabular-nums">
+            {position} / {lessonCount}
+          </span>
 
-        <div className="w-20 flex justify-end">
-          {(view === 'outro' || (view === 'intro' && hasNext)) ? (
-            <Link
-              href={nextHref}
-              className="flex items-center gap-1.5 text-xs font-mono text-muted-foreground/50 hover:text-foreground transition-colors"
-            >
-              next
-              <svg aria-hidden="true" className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </Link>
-          ) : null}
+          <div className="w-20 flex justify-end">
+            {hasNext ? (
+              <Link
+                href={nextHref}
+                className="flex items-center gap-1.5 text-xs font-mono text-muted-foreground/50 hover:text-foreground transition-colors"
+              >
+                next
+                <svg aria-hidden="true" className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </Link>
+            ) : null}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Centered content */}
       <div className="flex-1 flex items-center justify-center px-8 py-8">
@@ -84,13 +85,18 @@ export function LessonOverlay({
           </div>
 
           {/* Template content */}
-          {content != null
-            ? renderTemplate(templateName, content)
-            : (
-              <p className="text-sm text-muted-foreground/60">
-                {view === 'intro' ? 'Ready to begin.' : 'Lesson complete.'}
-              </p>
-            )}
+          {view === 'outro' && outroContent != null ? (
+            <LessonOutroTemplate
+              content={outroContent as TemplateContent<'lesson-outro'>}
+              nextHref={hasNext ? nextHref : undefined}
+            />
+          ) : view === 'intro' && introContent != null ? (
+            renderTemplate('lesson-intro', introContent)
+          ) : (
+            <p className="text-sm text-muted-foreground/60">
+              {view === 'intro' ? 'Ready to begin.' : 'Lesson complete.'}
+            </p>
+          )}
 
           {/* Action button */}
           {view === 'intro' ? (
