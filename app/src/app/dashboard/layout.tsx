@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { DashboardMain } from "@/components/dashboard/main";
 import { RateLimitProvider } from "@/context/rate-limit-context";
-import { RateLimitIndicator } from "@/components/lesson/rate-limit-indicator";
+import { RateLimitFooter } from "@/components/dashboard/rate-limit-footer";
 import { SubscriptionProvider } from "@/context/subscription-context";
 
 export default async function DashboardLayout({
@@ -48,9 +48,7 @@ export default async function DashboardLayout({
         <SidebarInset className="overflow-hidden flex flex-col">
           <DashboardHeader />
           <DashboardMain>{children}</DashboardMain>
-          <footer className="shrink-0 h-7 flex items-center justify-end px-4 border-t border-border/30 bg-background/50">
-            <RateLimitIndicator />
-          </footer>
+          <RateLimitFooter />
         </SidebarInset>
       </SidebarProvider>
     </RateLimitProvider>
