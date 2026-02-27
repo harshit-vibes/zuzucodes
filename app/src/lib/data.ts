@@ -972,3 +972,28 @@ export const getCoursesForSidebar = cache(async (): Promise<CourseWithModules[]>
     return [];
   }
 });
+
+// ========================================
+// SUBSCRIPTIONS
+// ========================================
+
+export type SubscriptionRow = {
+  subscription_id: string;
+  plan_id: string;
+  status: string;
+  trial_end_at: string | null;
+  next_billing_at: string | null;
+};
+
+export const getSubscriptionStatus = cache(
+  async (userId: string): Promise<SubscriptionRow | null> => {
+    const result = await sql`
+      SELECT subscription_id, plan_id, status, trial_end_at, next_billing_at
+      FROM user_subscriptions
+      WHERE user_id = ${userId}
+      ORDER BY created_at DESC
+      LIMIT 1
+    `;
+    return (result[0] as SubscriptionRow) ?? null;
+  }
+);
