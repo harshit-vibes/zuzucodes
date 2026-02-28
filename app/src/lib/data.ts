@@ -1086,11 +1086,11 @@ export type NextAction =
   | { type: 'all_done' }
   | null;
 
-export async function getNextAction(
+export const getNextAction = cache(async (
   userId: string,
   courses: Course[],
   courseProgress: Record<string, CourseProgress>,
-): Promise<NextAction> {
+): Promise<NextAction> => {
   if (courses.length === 0) return null;
 
   const sorted = [...courses].sort((a, b) => a.order - b.order);
@@ -1177,4 +1177,4 @@ export async function getNextAction(
   }
 
   return { type: 'all_done' };
-}
+});
