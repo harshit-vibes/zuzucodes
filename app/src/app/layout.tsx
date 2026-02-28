@@ -3,6 +3,7 @@ import { DM_Sans, JetBrains_Mono, Playfair_Display } from "next/font/google";
 import { NeonAuthUIProvider } from '@neondatabase/auth/react/ui';
 import { authClient } from '@/lib/auth/client';
 import { ThemeProvider } from "@/components/shared/theme-provider";
+import { PostHogProvider } from '@/components/shared/posthog-provider';
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -94,16 +95,18 @@ export default function RootLayout({
       <body
         className={`${dmSans.variable} ${jetbrainsMono.variable} ${playfair.variable} font-sans antialiased`}
       >
-        <NeonAuthUIProvider authClient={authClient} redirectTo="/dashboard" emailOTP social={{ providers: ['google'] }}>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="light"
-            enableSystem={false}
-            disableTransitionOnChange
-          >
-            {children}
-          </ThemeProvider>
-        </NeonAuthUIProvider>
+        <PostHogProvider>
+          <NeonAuthUIProvider authClient={authClient} redirectTo="/dashboard" emailOTP social={{ providers: ['google'] }}>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="light"
+              enableSystem={false}
+              disableTransitionOnChange
+            >
+              {children}
+            </ThemeProvider>
+          </NeonAuthUIProvider>
+        </PostHogProvider>
       </body>
     </html>
   );
