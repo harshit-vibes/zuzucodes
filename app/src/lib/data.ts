@@ -72,6 +72,7 @@ export interface ContentItem {
 
 export type CourseWithModules = Course & {
   modules: (Module & { contentItems: ContentItem[] })[];
+  capstone?: { id: string; title: string } | null;
 };
 
 export interface UserCode {
@@ -81,6 +82,24 @@ export interface UserCode {
 }
 
 export type SectionStatus = 'not-started' | 'in-progress' | 'completed';
+
+export interface Capstone {
+  id: string
+  courseId: string
+  title: string
+  description: string | null
+  starterCode: string | null
+  requiredPackages: string[]
+  hints: string[]
+}
+
+export interface CapstoneSubmission {
+  userId: string
+  capstoneId: string
+  code: string
+  output: string | null
+  submittedAt: string
+}
 
 /**
  * Derive content items from module fields (lesson_count + quiz_form).
@@ -923,6 +942,101 @@ export async function getBatchModuleCompletionStatus(
 }
 
 /**
+ * Get capstone project for a course.
+ * Wrapped with React.cache() for per-request deduplication.
+ */
+export const getCapstone = cache(async function getCapstone(
+  courseId: string,
+): Promise<Capstone | null> {
+  const rows = await sql`
+    SELECT id, course_id, title, description, starter_code, required_packages, hints
+    FROM capstones
+    WHERE course_id = ${courseId}
+    LIMIT 1
+  `
+  if (!rows[0]) return null
+  const r = rows[0] as any
+  return {
+    id: r.id,
+    courseId: r.course_id,
+    title: r.title,
+    description: r.description,
+    starterCode: r.starter_code,
+    requiredPackages: r.required_packages ?? [],
+    hints: r.hints ?? [],
+  }
+})
+
+/**
+ * Get a user's capstone submission.
+ * Wrapped with React.cache() for per-request deduplication.
+ */
+export const getUserCapstoneSubmission = cache(async function getUserCapstoneSubmission(
+  userId: string,
+  capstoneId: string,
+): Promise<CapstoneSubmission | null> {
+  const rows = await sql`
+    SELECT user_id, capstone_id, code, output, submitted_at
+    FROM user_capstone_submissions
+    WHERE user_id = ${userId} AND capstone_id = ${capstoneId}
+    LIMIT 1
+  `
+  if (!rows[0]) return null
+  const r = rows[0] as any
+  return {
+    userId: r.user_id,
+    capstoneId: r.capstone_id,
+    code: r.code,
+    output: r.output,
+    submittedAt: r.submitted_at,
+  }
+})
+
+/**
+ * Check whether all modules in a course are fully complete (all lessons + quiz).
+ */
+export async function areAllModulesComplete(
+  userId: string,
+  moduleIds: string[],
+): Promise<boolean> {
+  if (moduleIds.length === 0) return true
+  const statuses = await getBatchModuleCompletionStatus(userId, moduleIds)
+  return moduleIds.every(
+    (id) => statuses[id]?.allLessonsCompleted && statuses[id]?.quizCompleted,
+  )
+}
+
+/**
+ * Get capstone submission statuses for a set of courses.
+ * Returns a Record keyed as "capstone:{courseId}" with SectionStatus values.
+ */
+export async function getCapstoneSubmissionStatuses(
+  userId: string,
+  courses: Array<{ id: string; capstone?: { id: string; title: string } | null }>,
+): Promise<Record<string, SectionStatus>> {
+  const capstoneIds = courses
+    .map((c) => c.capstone?.id)
+    .filter((id): id is string => !!id)
+
+  if (capstoneIds.length === 0) return {}
+
+  const rows = await sql`
+    SELECT capstone_id FROM user_capstone_submissions
+    WHERE user_id = ${userId} AND capstone_id = ANY(${capstoneIds}::text[])
+  `
+  const submittedSet = new Set((rows as any[]).map((r) => r.capstone_id))
+
+  return Object.fromEntries(
+    courses
+      .filter((c) => c.capstone)
+      .map((c) => [
+        `capstone:${c.id}`,
+        submittedSet.has(c.capstone!.id) ? ('completed' as SectionStatus) : ('not-started' as SectionStatus),
+      ])
+  )
+}
+
+/**
  * Get all courses with modules for sidebar navigation.
  * Wrapped with React.cache() for per-request deduplication.
  */
@@ -938,16 +1052,22 @@ export const getCoursesForSidebar = cache(async (): Promise<CourseWithModules[]>
     if (courses.length === 0) return [];
 
     const courseIds = courses.map((c) => (c as any).id);
-    const allModules = await sql`
-      SELECT m.id, m.course_id, m.slug, m.title, m.description, m."order",
-             m.quiz_form, m.intro_content, m.outro_content,
-             COALESCE(COUNT(l.id)::INTEGER, 0) AS lesson_count
-      FROM modules m
-      LEFT JOIN lessons l ON l.module_id = m.id
-      WHERE m.course_id = ANY(${courseIds})
-      GROUP BY m.id
-      ORDER BY m."order" ASC
-    `;
+    const [allModules, capstones] = await Promise.all([
+      sql`
+        SELECT m.id, m.course_id, m.slug, m.title, m.description, m."order",
+               m.quiz_form, m.intro_content, m.outro_content,
+               COALESCE(COUNT(l.id)::INTEGER, 0) AS lesson_count
+        FROM modules m
+        LEFT JOIN lessons l ON l.module_id = m.id
+        WHERE m.course_id = ANY(${courseIds})
+        GROUP BY m.id
+        ORDER BY m."order" ASC
+      `,
+      sql`
+        SELECT id, course_id, title FROM capstones
+        WHERE course_id = ANY(${courseIds}::text[])
+      `,
+    ]);
 
     const modulesByCourse = new Map<string, Module[]>();
     for (const mod of allModules) {
@@ -956,12 +1076,19 @@ export const getCoursesForSidebar = cache(async (): Promise<CourseWithModules[]>
       modulesByCourse.get(courseId)!.push(mod as Module);
     }
 
+    const capstonesByCourse: Record<string, { id: string; title: string }> = {}
+    for (const c of capstones) {
+      const cap = c as any
+      capstonesByCourse[cap.course_id] = { id: cap.id, title: cap.title }
+    }
+
     return courses.map((course) => ({
       ...course,
       modules: (modulesByCourse.get((course as any).id) || []).map((m) => ({
         ...m,
         contentItems: deriveContentItems(m),
       })),
+      capstone: capstonesByCourse[(course as any).id] ?? null,
     } as CourseWithModules));
   } catch (error) {
     console.error('getCoursesForSidebar error:', error);
