@@ -3,9 +3,9 @@
 import { Check, Lock } from "lucide-react";
 
 const pythonFoundations = {
-  title: "Python Foundations",
+  title: "Coding Foundations",
   subtitle:
-    "From zero to confidently writing Python that solves real problems.",
+    "From zero to confidently writing code that solves real problems.",
   modules: [
     {
       title: "Module 1: Getting Started",
@@ -39,17 +39,17 @@ const pythonFoundations = {
     },
   ],
   outcomes: [
-    "Write Python programs from scratch with confidence",
+    "Write programs from scratch with confidence",
     "Mental models for breaking any problem into code",
-    "The foundation to learn any framework or library next",
+    "The foundation to learn any framework, language, or AI tool next",
   ],
 };
 
 const comingTracks = [
-  "Python for Law",
-  "Python for Medicine",
-  "Python for Finance",
-  "Python for Marketing",
+  "Coding for Law",
+  "Coding for Medicine",
+  "Coding for Finance",
+  "Coding for Marketing",
 ];
 
 export function CoursesSection() {
@@ -61,20 +61,21 @@ export function CoursesSection() {
         <div className="mx-auto max-w-6xl">
           <div className="mb-16 text-center">
             <h2 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl">
-              The Python Learning Track
+              Your Coding Foundation
             </h2>
             <p className="mt-4 text-lg text-muted-foreground sm:text-xl">
-              One focused track. Twelve lessons. Real Python, from the very first line.
+              One focused track. Twelve lessons. Real code, from the very first line.
             </p>
           </div>
 
-          {/* Python Foundations Course */}
+          {/* Coding Foundations Course */}
           <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-lg">
             <div className="border-b border-border bg-gradient-to-br from-primary/5 to-transparent p-8">
               <div className="mb-2 text-sm font-medium text-primary">Track 1</div>
               <h3 className="font-display text-2xl font-semibold sm:text-3xl">
                 {pythonFoundations.title}
               </h3>
+              <span className="text-xs text-muted-foreground">Taught in Python</span>
               <p className="mt-3 text-lg italic text-muted-foreground">
                 {pythonFoundations.subtitle}
               </p>
@@ -121,7 +122,7 @@ export function CoursesSection() {
               <div>
                 <h3 className="font-display text-xl font-semibold">More tracks arriving soon</h3>
                 <p className="mt-2 text-muted-foreground">
-                  Applied Python for every profession — bringing real coding skills to the domains that need them most.
+                  Applied coding for every profession — bringing real programming skills to the domains that need them most.
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   {comingTracks.map((track) => (
