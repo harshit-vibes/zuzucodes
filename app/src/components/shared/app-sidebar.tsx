@@ -6,13 +6,10 @@ import {
   BookOpen,
   CircleDot,
   Diamond,
-  Flame,
   GraduationCap,
   Home,
   Map,
   Sparkles,
-  Target,
-  Timer,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -33,7 +30,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
-import type { CourseWithModules, SidebarCourseProgress, DashboardStats, SectionStatus, SubscriptionRow } from "@/lib/data";
+import type { CourseWithModules, SidebarCourseProgress, SectionStatus, SubscriptionRow } from "@/lib/data";
 import { SidebarUserCard } from "@/components/shared/sidebar-user-card";
 
 // ============================================
@@ -44,7 +41,6 @@ interface AppSidebarProps {
   courses: CourseWithModules[];
   courseProgress?: Record<string, SidebarCourseProgress>;
   contentCompletion?: Record<string, SectionStatus>;
-  stats?: DashboardStats;
   user: { name: string | null; email: string | null; image: string | null };
   subscription: SubscriptionRow | null;
 }
@@ -187,31 +183,6 @@ const ModuleSection = memo(function ModuleSection({
 });
 
 // ============================================
-// Sidebar stats (compact 2x2 grid)
-// ============================================
-
-function SidebarStats({ stats }: { stats: DashboardStats }) {
-  const items = [
-    { icon: Flame, value: `${stats.streak}d`, label: "Streak", color: stats.streak > 0 ? "text-warning" : "text-muted-foreground" },
-    { icon: Timer, value: `${stats.coursesInProgress}`, label: "In progress", color: "text-primary" },
-    { icon: Target, value: stats.quizAverage !== null ? `${stats.quizAverage}%` : "\u2014", label: "Quiz avg", color: stats.quizAverage && stats.quizAverage >= 80 ? "text-success" : "text-muted-foreground" },
-    { icon: GraduationCap, value: `${stats.coursesTotal}`, label: "Courses", color: "text-primary" },
-  ];
-
-  return (
-    <div className="grid grid-cols-2 gap-2 px-3">
-      {items.map((item) => (
-        <div key={item.label} className="rounded-lg border bg-card/50 p-2.5">
-          <item.icon className={cn("h-3.5 w-3.5 mb-1.5", item.color)} />
-          <div className="text-lg font-bold leading-none">{item.value}</div>
-          <p className="text-[10px] text-muted-foreground mt-1">{item.label}</p>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ============================================
 // Main sidebar component
 // ============================================
 
@@ -219,7 +190,6 @@ export function AppSidebar({
   courses,
   courseProgress,
   contentCompletion = {},
-  stats,
   user,
   subscription,
 }: AppSidebarProps) {
@@ -264,6 +234,7 @@ export function AppSidebar({
         {isDashboard ? (
           /* ---- Dashboard mode ---- */
           <>
+            {/* Primary nav */}
             <SidebarGroup className="pb-1">
               <SidebarGroupContent>
                 <SidebarMenu>
@@ -280,6 +251,17 @@ export function AppSidebar({
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+
+            {/* Separator */}
+            <div className="mx-3 my-1 border-t border-border/40" />
+
+            {/* Utility pages */}
+            <SidebarGroup className="pt-1 pb-1">
+              <SidebarGroupContent>
+                <SidebarMenu>
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       asChild
@@ -295,15 +277,6 @@ export function AppSidebar({
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
-
-            {/* Stats */}
-            {stats && (
-              <SidebarGroup className="py-2">
-                <SidebarGroupContent>
-                  <SidebarStats stats={stats} />
-                </SidebarGroupContent>
-              </SidebarGroup>
-            )}
           </>
         ) : (
           /* ---- Course mode ---- */
