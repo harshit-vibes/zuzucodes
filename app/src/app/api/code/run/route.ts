@@ -16,7 +16,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const result = await runCode(code, stdin);
+    const result = await runCode(code, stdin, session.user.id);
     return NextResponse.json(result);
   } catch (err: unknown) {
     const message = (err as Error).message ?? 'Execution failed';

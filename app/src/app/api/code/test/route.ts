@@ -22,7 +22,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const result = await runTests(code, testCases, entryPoint);
+    const result = await runTests(code, testCases, entryPoint, session.user.id);
     return NextResponse.json(result);
   } catch (err: unknown) {
     const message = (err as Error).message ?? 'Test execution failed';
