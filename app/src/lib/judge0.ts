@@ -1,6 +1,5 @@
-const BASE_URL = process.env.JUDGE0_BASE_URL!;
-const AUTH_TOKEN = process.env.JUDGE0_AUTH_TOKEN!;
-const AUTH_HEADER = 'X-Auth-Token';
+const BASE_URL = process.env.EXECUTOR_URL!;
+const API_KEY = process.env.EXECUTOR_API_KEY!;
 
 const PYTHON_LANGUAGE_ID = 71;
 const POLL_INTERVAL_MS = 500;
@@ -40,43 +39,43 @@ export interface Judge0TestsResult {
 
 // ─── Internal helpers ────────────────────────────────────────────────────────
 
-async function submitCode(sourceCode: string, stdin?: string): Promise<string> {
+async function submitCode(sourceCode: string, stdin?: string, userId?: string): Promise<string> {
   const body: Record<string, unknown> = {
     source_code: sourceCode,
     language_id: PYTHON_LANGUAGE_ID,
   };
   if (stdin !== undefined) body.stdin = stdin;
 
-  const res = await fetch(`${BASE_URL}/submissions?base64_encoded=false`, {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'X-Api-Key': API_KEY,
+  };
+  if (userId) headers['X-User-Id'] = userId;
+
+  const res = await fetch(`${BASE_URL}/submissions`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      [AUTH_HEADER]: AUTH_TOKEN,
-    },
+    headers,
     body: JSON.stringify(body),
   });
 
-  if (!res.ok) throw new Error(`Judge0 submit error: ${res.status}`);
+  if (!res.ok) throw new Error(`Executor submit error: ${res.status}`);
 
   const data = await res.json() as { token: string };
   return data.token;
 }
 
 async function pollResult(token: string): Promise<Record<string, unknown>> {
-  const fields = 'stdout,stderr,status,time,memory';
-
   for (let i = 0; i < MAX_POLLS; i++) {
-    const res = await fetch(
-      `${BASE_URL}/submissions/${token}?base64_encoded=false&fields=${fields}`,
-      { headers: { [AUTH_HEADER]: AUTH_TOKEN } },
-    );
+    const res = await fetch(`${BASE_URL}/submissions/${token}`, {
+      headers: { 'X-Api-Key': API_KEY },
+    });
 
-    if (!res.ok) throw new Error(`Judge0 poll error: ${res.status}`);
+    if (!res.ok) throw new Error(`Executor poll error: ${res.status}`);
 
     const data = await res.json() as Record<string, unknown>;
     const status = data.status as { id: number; description: string };
 
-    // status.id >= 3 means done (3=Accepted, 4=WA, 5=TLE, 6=CE, 7-14=errors)
+    // status.id >= 3 means done (3=Accepted, 5=TLE, 11=Runtime Error, 13=Internal Error)
     if (status.id >= 3) return data;
 
     await new Promise<void>(resolve => setTimeout(resolve, POLL_INTERVAL_MS));
@@ -91,8 +90,8 @@ async function pollResult(token: string): Promise<Record<string, unknown>> {
  * Run user code freely (no test runner).
  * Used by the "Run" button — shows raw stdout.
  */
-export async function runCode(sourceCode: string, stdin?: string): Promise<Judge0RunResult> {
-  const token = await submitCode(sourceCode, stdin);
+export async function runCode(sourceCode: string, stdin?: string, userId?: string): Promise<Judge0RunResult> {
+  const token = await submitCode(sourceCode, stdin, userId);
   const data = await pollResult(token);
 
   const status = data.status as { id: number; description: string };
@@ -108,13 +107,14 @@ export async function runCode(sourceCode: string, stdin?: string): Promise<Judge
 }
 
 /**
- * Run user code against test cases — one Judge0 submission per test case, all in parallel.
+ * Run user code against test cases — one submission per test case, all in parallel.
  * Pass/fail: stdout.trim() === JSON.stringify(tc.expected)
  */
 export async function runTests(
   userCode: string,
   testCases: TestCase[],
   entryPoint: string,
+  userId?: string,
 ): Promise<Judge0TestsResult> {
   if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(entryPoint)) {
     throw new Error(`Invalid entryPoint: ${entryPoint}`);
@@ -135,7 +135,7 @@ export async function runTests(
         `_result = ${entryPoint}(*_args)`,
         `print(_json.dumps(_result, separators=(',', ':')))`,
       ].join('\n');
-      return submitCode(program);
+      return submitCode(program, undefined, userId);
     }),
   );
 
