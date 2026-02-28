@@ -16,22 +16,22 @@ const milestones = [
   {
     icon: Code2,
     step: "Step 1",
-    title: "Hello, World",
-    description: "Write your first line of Python",
+    title: "Write your first program",
+    description: "Understand how code actually works",
     active: false,
   },
   {
     icon: CheckCircle2,
     step: "Step 2",
-    title: "Build functions",
-    description: "Solve real problems with code",
+    title: "Solve real problems",
+    description: "Build logic, not just syntax",
     active: true,
   },
   {
     icon: Zap,
     step: "Step 3",
-    title: "Automate tasks",
-    description: "Replace hours of manual work",
+    title: "Ship something real",
+    description: "Go from learner to builder",
     active: false,
   },
 ];
@@ -73,22 +73,22 @@ export function HeroSection() {
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
                 </span>
-                Young Learners Track — now open
+                Now open — Coding for the AI era
               </span>
             </div>
 
             <h1 className="font-display text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl xl:text-7xl">
-              <span className="text-reveal inline-block">Python for the</span>{" "}
+              <span className="text-reveal inline-block">The AI era rewards</span>{" "}
               <span className="relative inline-block text-reveal text-reveal-delay-1">
-                <span className="relative z-10 text-gradient">next generation</span>
+                <span className="relative z-10 text-gradient">people who can build.</span>
                 <span className="absolute -bottom-2 left-0 right-0 h-3 bg-gradient-to-r from-primary/20 to-accent/20 -skew-x-3 rounded-sm" />
               </span>
               <br />
-              <span className="text-reveal text-reveal-delay-2 inline-block">of builders.</span>
+              <span className="text-reveal text-reveal-delay-2 inline-block">Here&apos;s where you start.</span>
             </h1>
 
             <p className="mt-6 max-w-lg text-lg leading-relaxed text-muted-foreground sm:text-xl fade-in-up stagger-2">
-              Structured, hands-on Python learning for students and early-career learners.
+              Structured coding for students and early-career learners — starting from zero.
               Build real skills. Build real things.
             </p>
 
@@ -188,8 +188,8 @@ export function HeroSection() {
                     </svg>
                   </div>
                   <div>
-                    <p className="text-xs font-medium">AI-ready</p>
-                    <p className="text-xs text-muted-foreground">Skills</p>
+                    <p className="text-xs font-medium">Built for the</p>
+                    <p className="text-xs text-muted-foreground">AI era</p>
                   </div>
                 </div>
               </div>
