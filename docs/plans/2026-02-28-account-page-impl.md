@@ -1,64 +1,247 @@
-# Account Page Implementation Plan
+# Account Page Redesign — Implementation Plan
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Replace the fragmented `/account/[path]` route and scattered `UserButton`/`SettingsDialog` with a unified `/account` page, an `AccountModal`, and a `SidebarUserCard` in the sidebar footer — all sharing one `AccountContent` component.
+**Goal:** Rebuild `/account` with a centered standalone layout and 3-tab UI (Profile / Security / Sessions), shared between the page and the existing `AccountModal`, with session-limit enforcement (max 2 active sessions).
 
-**Architecture:** `AccountContent` is a shared client component (renders Neon Auth cards + subscription card) that accepts `user` and `subscription` props. The `/account` route fetches data server-side and renders it full-page. `AccountModal` wraps the same component in a Dialog and is opened from `SidebarUserCard`. `AppSidebar` gets `user` + `subscription` as new props passed from `dashboard/layout.tsx` (which already fetches both). `DashboardHeader` and `UserButton` are deleted — ThemeToggle moves to `SidebarUserCard`.
+**Architecture:** Rewrite `AccountContent` to use shadcn `Tabs` with individual Neon Auth cards. Add `account/layout.tsx` for the centered page shell. Add a `enforceSessionLimit()` server action called non-blocking from `dashboard/layout.tsx`.
 
-**Tech Stack:** Next.js 16 App Router, Neon Auth (`@neondatabase/auth/react` — `AccountSettingsCards`, `SecuritySettingsCards`), shadcn/ui Dialog, Tailwind CSS v4, `lucide-react`.
-
----
-
-## Context
-
-**Working directory:** `app/`
-
-**Key existing types (from `src/lib/data.ts`):**
-```typescript
-export type SubscriptionRow = {
-  subscription_id: string;
-  plan_id: string;
-  status: string;          // 'ACTIVE' | 'CANCELLED' | 'SUSPENDED' | 'EXPIRED'
-  trial_end_at: string | null;
-  next_billing_at: string | null;
-};
-```
-
-**`dashboard/layout.tsx` already has:**
-```typescript
-const subscription = await getSubscriptionStatus(user.id); // SubscriptionRow | null
-const isPaid = subscription?.status === 'ACTIVE';
-```
-The layout passes `isPaid` to `SubscriptionProvider` but does NOT yet pass `subscription` or `user` to `AppSidebar`.
-
-**`AppSidebar` (client component)** currently has props: `courses`, `courseProgress`, `contentCompletion`, `stats`. Its `<SidebarFooter>` shows only `© 2026 zuzu.codes`.
-
-**`CoursePlayerShell`** uses both `ThemeToggle` and `{isAuthenticated && <UserButton />}`. After this plan, `UserButton` is gone — remove that line and the `isAuthenticated` prop.
-
-**`SettingsDialog`** (`src/components/shared/settings-dialog.tsx`) is NOT imported anywhere — it is safe to delete.
-
-**`UserButton`** is imported in `dashboard/header.tsx` and `course-player-shell.tsx`.
+**Tech Stack:** Next.js App Router, shadcn `Tabs` (already at `app/src/components/ui/tabs.tsx`), `@neondatabase/auth/react` individual cards, `authServer` from `@neondatabase/auth/next/server`.
 
 ---
 
-## Task 1: Create `AccountContent` component
+## Key Facts
+
+- `authServer` is created by `createAuthServer()` in `app/src/lib/auth/server.ts`. It's a `NeonAuthServer = Pick<VanillaBetterAuthClient, ServerAuthMethods>` — methods include `listSessions()`, `revokeSession()`, `revokeSessions()`. They read cookies from the current Next.js request context automatically (same as `authServer.getSession()`).
+- Session objects have: `id`, `token`, `createdAt`, `userId`, `expiresAt`, `userAgent`, `ipAddress`. Revoke by `token`.
+- `SubscribeModal` requires `open`, `onOpenChange`, and `planId` props. Import `PLAN_ID` from `@/lib/paypal`.
+- `shadcn Tabs` is already installed at `app/src/components/ui/tabs.tsx`.
+- `AccountModal` (`account-modal.tsx`) and the `/account` page both render `<AccountContent subscription={subscription} />` — changing `AccountContent` updates both at once.
+- Design doc: `docs/plans/2026-02-28-account-page-redesign.md`
+
+---
+
+## Task 1: Create `enforceSessionLimit` server action
 
 **Files:**
-- Create: `src/components/shared/account-content.tsx`
+- Create: `app/src/lib/actions/session-limit.ts`
 
-**Step 1: Create the file**
+**Step 1: Create the server action**
 
-```typescript
-// src/components/shared/account-content.tsx
+```ts
+'use server';
+
+import { authServer } from '@/lib/auth/server';
+
+const MAX_SESSIONS = 2;
+
+/**
+ * Revokes oldest sessions if the current user has more than MAX_SESSIONS active.
+ * Non-blocking — call with `void enforceSessionLimit()` in layout.
+ */
+export async function enforceSessionLimit() {
+  try {
+    const result = await authServer.listSessions();
+    // better-auth vanilla client returns { data, error }
+    const sessions = (result as { data?: { token: string; createdAt: string }[]; error?: unknown }).data;
+    if (!sessions || sessions.length <= MAX_SESSIONS) return;
+
+    // Sort ascending by createdAt — oldest first
+    const sorted = [...sessions].sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+
+    // Revoke all beyond the MAX_SESSIONS most recent
+    const toRevoke = sorted.slice(0, sorted.length - MAX_SESSIONS);
+    await Promise.all(
+      toRevoke.map((s) =>
+        authServer.revokeSession({ token: s.token } as Parameters<typeof authServer.revokeSession>[0])
+      )
+    );
+  } catch {
+    // Never break dashboard load
+  }
+}
+```
+
+> **Note:** The cast to `{ data?: ...; error?: unknown }` is needed because the better-auth types are complex. If the TypeScript call fails at the `listSessions()` call, check `node_modules/@neondatabase/auth/dist/next/server/index.d.mts` for the exact signature and adjust the call (may need `{ fetchOptions: { headers } }` wrapper).
+
+**Step 2: Type-check**
+
+```bash
+cd app && npx tsc --noEmit
+```
+
+Expected: no new errors (cast handles type complexity). If `revokeSession` shape is wrong, the only fix needed is the argument shape — check the type definition.
+
+**Step 3: Commit**
+
+```bash
+git add app/src/lib/actions/session-limit.ts
+git commit -m "feat: add enforceSessionLimit server action (max 2 active sessions)"
+```
+
+---
+
+## Task 2: Call `enforceSessionLimit` in dashboard layout
+
+**Files:**
+- Modify: `app/src/app/dashboard/layout.tsx`
+
+**Step 1: Add import**
+
+After the existing imports, add:
+```ts
+import { enforceSessionLimit } from "@/lib/actions/session-limit";
+```
+
+**Step 2: Add the non-blocking call**
+
+In `DashboardLayout`, after the `auth()` call and `redirect` check, add:
+```ts
+// Enforce max 2 active sessions — fire and forget
+void enforceSessionLimit();
+```
+
+Example placement (after the existing user check):
+```ts
+const { session, user } = await auth();
+if (!user) {
+  redirect("/auth/sign-in");
+}
+
+void enforceSessionLimit();
+```
+
+**Step 3: Type-check**
+
+```bash
+npx tsc --noEmit
+```
+
+**Step 4: Commit**
+
+```bash
+git add app/src/app/dashboard/layout.tsx
+git commit -m "feat: enforce session limit on dashboard load"
+```
+
+---
+
+## Task 3: Create centered account page layout
+
+**Files:**
+- Create: `app/src/app/account/layout.tsx`
+- Modify: `app/src/app/account/page.tsx`
+
+**Step 1: Create the layout file**
+
+```tsx
+// app/src/app/account/layout.tsx
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
+
+export default function AccountLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background px-4 py-12">
+      <div className="w-full max-w-xl">
+        {/* Back link */}
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Dashboard
+        </Link>
+
+        {/* Card */}
+        <div className="rounded-2xl border bg-card shadow-sm overflow-hidden">
+          <div className="px-6 py-5 border-b">
+            <h1 className="text-base font-semibold">Account</h1>
+          </div>
+          <div className="p-6">
+            {children}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+```
+
+**Step 2: Simplify `account/page.tsx`**
+
+Replace the entire `page.tsx`:
+```tsx
+import { auth } from '@/lib/auth/server';
+import { getSubscriptionStatus } from '@/lib/data';
+import { redirect } from 'next/navigation';
+import { AccountContent } from '@/components/shared/account-content';
+
+export default async function AccountPage() {
+  const { user } = await auth();
+  if (!user) redirect('/auth/sign-in');
+
+  const subscription = await getSubscriptionStatus(user.id);
+
+  return <AccountContent subscription={subscription} />;
+}
+```
+
+(The outer card/heading now comes from `layout.tsx`, so `page.tsx` is just data + render.)
+
+**Step 3: Type-check**
+
+```bash
+npx tsc --noEmit
+```
+
+**Step 4: Commit**
+
+```bash
+git add app/src/app/account/layout.tsx app/src/app/account/page.tsx
+git commit -m "feat: centered standalone layout for account page"
+```
+
+---
+
+## Task 4: Rewrite `AccountContent` with 3-tab UI
+
+This is the core change. `AccountModal` already wraps `AccountContent` — updating this component updates both the page and the modal at once.
+
+**Files:**
+- Modify: `app/src/components/shared/account-content.tsx`
+
+**Step 1: Read the current file** (3 sections: Profile, Security, Subscription — all flat, no tabs)
+
+**Step 2: Rewrite the entire file**
+
+```tsx
 'use client';
 
-import { AccountSettingsCards, SecuritySettingsCards } from '@neondatabase/auth/react';
+import {
+  UpdateNameCard,
+  ChangeEmailCard,
+  ChangePasswordCard,
+  SessionsCard,
+  DeleteAccountCard,
+} from '@neondatabase/auth/react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { SubscribeModal } from './subscribe-modal';
+import { useState } from 'react';
+import { PLAN_ID } from '@/lib/paypal';
 import type { SubscriptionRow } from '@/lib/data';
 
 interface AccountContentProps {
   subscription: SubscriptionRow | null;
 }
+
+// ─── Subscription status badge ───────────────────────────────────────────────
 
 function SubscriptionBadge({ status }: { status: string | undefined }) {
   if (!status || status === 'FREE') {
@@ -87,109 +270,112 @@ function SubscriptionBadge({ status }: { status: string | undefined }) {
 function formatDate(iso: string | null): string | null {
   if (!iso) return null;
   return new Date(iso).toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
+    month: 'long', day: 'numeric', year: 'numeric',
   });
 }
 
-export function AccountContent({ subscription }: AccountContentProps) {
+// ─── Subscription card ────────────────────────────────────────────────────────
+
+function SubscriptionCard({ subscription }: { subscription: SubscriptionRow | null }) {
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const isPaid = subscription?.status === 'ACTIVE';
+
   return (
-    <div className="space-y-8">
-      {/* Profile */}
-      <section>
-        <h2 className="text-sm font-semibold text-foreground mb-4">Profile</h2>
-        <AccountSettingsCards />
-      </section>
+    <>
+      <div className="rounded-lg border bg-card p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium">Monthly Subscription</span>
+          <SubscriptionBadge status={subscription?.status} />
+        </div>
 
-      {/* Security */}
-      <section>
-        <h2 className="text-sm font-semibold text-foreground mb-4">Security</h2>
-        <SecuritySettingsCards />
-      </section>
-
-      {/* Subscription */}
-      <section>
-        <h2 className="text-sm font-semibold text-foreground mb-4">Subscription</h2>
-        <div className="rounded-lg border bg-card p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">Monthly Subscription</span>
-            <SubscriptionBadge status={subscription?.status} />
+        {subscription?.trial_end_at && (
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>Trial ends</span>
+            <span>{formatDate(subscription.trial_end_at)}</span>
           </div>
-          {subscription?.trial_end_at && (
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>Trial ends</span>
-              <span>{formatDate(subscription.trial_end_at)}</span>
-            </div>
-          )}
-          {subscription?.next_billing_at && subscription.status === 'ACTIVE' && (
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>Next billing</span>
-              <span>{formatDate(subscription.next_billing_at)}</span>
-            </div>
-          )}
-          {!subscription && (
-            <p className="text-xs text-muted-foreground">
-              No active subscription. Subscribe to unlock all lessons and quizzes.
-            </p>
+        )}
+
+        {subscription?.next_billing_at && isPaid && (
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>Next billing</span>
+            <span>{formatDate(subscription.next_billing_at)}</span>
+          </div>
+        )}
+
+        {!subscription && (
+          <p className="text-xs text-muted-foreground">
+            No active subscription. Subscribe to unlock all lessons and quizzes.
+          </p>
+        )}
+
+        <div className="pt-1">
+          {isPaid ? (
+            <a
+              href="https://www.paypal.com/myaccount/autopay/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-primary hover:underline"
+            >
+              Manage on PayPal →
+            </a>
+          ) : (
+            <Button size="sm" onClick={() => setUpgradeOpen(true)}>
+              Upgrade
+            </Button>
           )}
         </div>
-      </section>
-    </div>
+      </div>
+
+      <SubscribeModal
+        open={upgradeOpen}
+        onOpenChange={setUpgradeOpen}
+        planId={PLAN_ID}
+      />
+    </>
   );
 }
-```
 
-**Step 2: Type-check**
+// ─── Main export ──────────────────────────────────────────────────────────────
 
-```bash
-cd app && npx tsc --noEmit
-```
-
-Expected: no errors.
-
-**Step 3: Commit**
-
-```bash
-git add src/components/shared/account-content.tsx
-git commit -m "feat: add AccountContent component with profile, security, subscription sections"
-```
-
----
-
-## Task 2: Create `/account` route page
-
-**Files:**
-- Delete: `src/app/account/[path]/page.tsx`
-- Create: `src/app/account/page.tsx`
-
-**Step 1: Delete old route**
-
-```bash
-rm src/app/account/[path]/page.tsx
-rmdir src/app/account/[path]
-```
-
-**Step 2: Create the new page**
-
-```typescript
-// src/app/account/page.tsx
-import { auth } from '@/lib/auth/server';
-import { getSubscriptionStatus } from '@/lib/data';
-import { redirect } from 'next/navigation';
-import { AccountContent } from '@/components/shared/account-content';
-
-export default async function AccountPage() {
-  const { user } = await auth();
-  if (!user) redirect('/');
-
-  const subscription = await getSubscriptionStatus(user.id);
-
+export function AccountContent({ subscription }: AccountContentProps) {
   return (
-    <main className="container max-w-xl py-8 px-4">
-      <h1 className="text-xl font-semibold mb-8">Account</h1>
-      <AccountContent subscription={subscription} />
-    </main>
+    <Tabs defaultValue="profile" className="w-full">
+      <TabsList className="mb-6 w-full justify-start">
+        <TabsTrigger value="profile">Profile</TabsTrigger>
+        <TabsTrigger value="security">Security</TabsTrigger>
+        <TabsTrigger value="sessions">Sessions</TabsTrigger>
+      </TabsList>
+
+      {/* ── Profile ── */}
+      <TabsContent value="profile" className="space-y-6 mt-0">
+        <UpdateNameCard />
+        <SubscriptionCard subscription={subscription} />
+      </TabsContent>
+
+      {/* ── Security ── */}
+      <TabsContent value="security" className="space-y-6 mt-0">
+        <ChangeEmailCard />
+        <ChangePasswordCard />
+      </TabsContent>
+
+      {/* ── Sessions ── */}
+      <TabsContent value="sessions" className="space-y-6 mt-0">
+        <div className="rounded-lg border bg-muted/30 px-4 py-2.5">
+          <p className="text-xs text-muted-foreground">
+            Maximum 2 active sessions allowed per account.
+          </p>
+        </div>
+        <SessionsCard />
+        <div className="space-y-3 pt-2">
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <div className="h-px flex-1 bg-border" />
+            <span className="uppercase tracking-wider">Danger zone</span>
+            <div className="h-px flex-1 bg-border" />
+          </div>
+          <DeleteAccountCard />
+        </div>
+      </TabsContent>
+    </Tabs>
   );
 }
 ```
@@ -197,430 +383,67 @@ export default async function AccountPage() {
 **Step 3: Type-check**
 
 ```bash
-cd app && npx tsc --noEmit
+npx tsc --noEmit
 ```
 
-Expected: no errors.
+Fix any errors. Likely issues:
+- `PLAN_ID` is a `string` but the import might need the `app/` working directory
+- If `UpdateNameCard`, `ChangeEmailCard`, `ChangePasswordCard`, `SessionsCard`, or `DeleteAccountCard` have required props, wrap them with appropriate values (check types in `@neondatabase/auth/react`)
 
-**Step 4: Verify route renders**
-
-```bash
-npm run dev
-# Open http://localhost:3000/account — should show Profile, Security, Subscription sections
-```
-
-**Step 5: Commit**
+**Step 4: Commit**
 
 ```bash
-git add src/app/account/page.tsx
-git commit -m "feat: add unified /account route with profile, security, subscription"
+git add app/src/components/shared/account-content.tsx
+git commit -m "feat: rewrite AccountContent with 3-tab UI (Profile/Security/Sessions)"
 ```
 
 ---
 
-## Task 3: Create `AccountModal`
+## Task 5: Verify AccountModal + dev smoke test
 
-**Files:**
-- Create: `src/components/shared/account-modal.tsx`
+**Files:** No changes needed to `account-modal.tsx` — it already wraps `AccountContent` in a Dialog.
 
-**Step 1: Create the file**
+**Step 1: Run dev server**
 
-```typescript
-// src/components/shared/account-modal.tsx
-'use client';
-
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { AccountContent } from './account-content';
-import type { SubscriptionRow } from '@/lib/data';
-
-interface AccountModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  subscription: SubscriptionRow | null;
-}
-
-export function AccountModal({ open, onOpenChange, subscription }: AccountModalProps) {
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl p-0 overflow-hidden gap-0">
-        <DialogTitle className="sr-only">Account</DialogTitle>
-        <div className="overflow-y-auto max-h-[80vh] p-6">
-          <AccountContent subscription={subscription} />
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
+```bash
+cd app && npm run dev
 ```
 
-**Step 2: Type-check**
+**Step 2: Test the `/account` page**
+
+Navigate to `http://localhost:3000/account`:
+- [ ] Centered card with `← Dashboard` back link
+- [ ] "Account" heading in card header
+- [ ] Three tabs: Profile, Security, Sessions
+- [ ] Profile tab: name edit card + subscription card
+- [ ] Security tab: change email + change password cards
+- [ ] Sessions tab: "Maximum 2 active sessions" notice + sessions list + danger zone + delete account
+
+**Step 3: Test the AccountModal**
+
+- Open the sidebar, click the gear icon (Settings)
+- [ ] Modal opens with same 3-tab layout
+- [ ] Modal scrolls independently within `max-h-[80vh]`
+
+**Step 4: Fix anything that looks off, commit if needed**
+
+```bash
+git add -A && git commit -m "fix: account page/modal integration tweaks"
+```
+
+---
+
+## Task 6: Build, type-check, deploy
+
+**Step 1: Full type-check**
 
 ```bash
 cd app && npx tsc --noEmit
 ```
 
-Expected: no errors.
+Expected: clean (zero errors).
 
-**Step 3: Commit**
-
-```bash
-git add src/components/shared/account-modal.tsx
-git commit -m "feat: add AccountModal wrapping AccountContent in a Dialog"
-```
-
----
-
-## Task 4: Create `SidebarUserCard`
-
-**Files:**
-- Create: `src/components/shared/sidebar-user-card.tsx`
-
-This replaces the `© 2026 zuzu.codes` copyright line in the sidebar footer. It shows avatar + name + email + subscription badge, with three actions: link to `/account`, open `AccountModal`, and `ThemeToggle`.
-
-**Step 1: Create the file**
-
-```typescript
-// src/components/shared/sidebar-user-card.tsx
-'use client';
-
-import { useState } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { Settings } from 'lucide-react';
-import { ThemeToggle } from './theme-toggle';
-import { AccountModal } from './account-modal';
-import type { SubscriptionRow } from '@/lib/data';
-
-interface SidebarUserCardProps {
-  user: {
-    name: string | null;
-    email: string | null;
-    image: string | null;
-  };
-  subscription: SubscriptionRow | null;
-}
-
-function StatusDot({ status }: { status: string | undefined }) {
-  const colorMap: Record<string, string> = {
-    ACTIVE:    'bg-green-500',
-    CANCELLED: 'bg-destructive',
-    SUSPENDED: 'bg-amber-500',
-    EXPIRED:   'bg-muted-foreground/40',
-  };
-  const color = status ? (colorMap[status] ?? 'bg-muted-foreground/40') : 'bg-muted-foreground/30';
-  const label = status === 'ACTIVE' ? 'Active' : status ? status.charAt(0) + status.slice(1).toLowerCase() : 'Free';
-  return (
-    <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-      <span className={`h-1.5 w-1.5 rounded-full ${color} shrink-0`} />
-      {label}
-    </span>
-  );
-}
-
-export function SidebarUserCard({ user, subscription }: SidebarUserCardProps) {
-  const [modalOpen, setModalOpen] = useState(false);
-
-  const displayName = user.name || user.email?.split('@')[0] || 'User';
-  const initials = displayName
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
-
-  return (
-    <>
-      <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg hover:bg-muted/30 transition-colors">
-        {/* Avatar */}
-        <div className="relative h-7 w-7 shrink-0">
-          {user.image ? (
-            <Image
-              src={user.image}
-              alt={displayName}
-              fill
-              className="rounded-md object-cover"
-            />
-          ) : (
-            <div className="flex h-7 w-7 items-center justify-center rounded-md border border-border/60 bg-muted/50 font-mono text-[10px] font-medium tracking-wider text-foreground/60">
-              {initials}
-            </div>
-          )}
-        </div>
-
-        {/* Name + email + badge */}
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-medium text-foreground truncate leading-none mb-0.5">
-            {displayName}
-          </p>
-          <StatusDot status={subscription?.status} />
-        </div>
-
-        {/* Actions */}
-        <div className="flex items-center gap-1 shrink-0">
-          <ThemeToggle />
-          <button
-            onClick={() => setModalOpen(true)}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-            aria-label="Account settings"
-          >
-            <Settings className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      </div>
-
-      <AccountModal
-        open={modalOpen}
-        onOpenChange={setModalOpen}
-        subscription={subscription}
-      />
-    </>
-  );
-}
-```
-
-**Step 2: Type-check**
-
-```bash
-cd app && npx tsc --noEmit
-```
-
-Expected: no errors.
-
-**Step 3: Commit**
-
-```bash
-git add src/components/shared/sidebar-user-card.tsx
-git commit -m "feat: add SidebarUserCard with avatar, subscription badge, theme toggle, account modal"
-```
-
----
-
-## Task 5: Wire `SidebarUserCard` into `AppSidebar` + `dashboard/layout.tsx`
-
-**Files:**
-- Modify: `src/components/shared/app-sidebar.tsx`
-- Modify: `src/app/dashboard/layout.tsx`
-
-### Part A — `app-sidebar.tsx`
-
-**Step 1: Add imports at the top of `app-sidebar.tsx`**
-
-After the existing imports block, add:
-```typescript
-import { SidebarUserCard } from '@/components/shared/sidebar-user-card';
-import type { SubscriptionRow } from '@/lib/data';
-```
-
-**Step 2: Extend `AppSidebarProps`**
-
-Change:
-```typescript
-interface AppSidebarProps {
-  courses: CourseWithModules[];
-  courseProgress?: Record<string, SidebarCourseProgress>;
-  contentCompletion?: Record<string, SectionStatus>;
-  stats?: DashboardStats;
-}
-```
-
-To:
-```typescript
-interface AppSidebarProps {
-  courses: CourseWithModules[];
-  courseProgress?: Record<string, SidebarCourseProgress>;
-  contentCompletion?: Record<string, SectionStatus>;
-  stats?: DashboardStats;
-  user: { name: string | null; email: string | null; image: string | null };
-  subscription: SubscriptionRow | null;
-}
-```
-
-**Step 3: Destructure new props in `AppSidebar`**
-
-Change the function signature from:
-```typescript
-export function AppSidebar({
-  courses,
-  courseProgress,
-  contentCompletion = {},
-  stats,
-}: AppSidebarProps) {
-```
-
-To:
-```typescript
-export function AppSidebar({
-  courses,
-  courseProgress,
-  contentCompletion = {},
-  stats,
-  user,
-  subscription,
-}: AppSidebarProps) {
-```
-
-**Step 4: Replace `<SidebarFooter>` content**
-
-Find and replace the entire `<SidebarFooter>` block:
-
-Old:
-```typescript
-      {/* Footer */}
-      <SidebarFooter className="border-t border-border/40 h-12 flex items-center justify-center px-4">
-        <p className="text-[10px] text-muted-foreground text-center">
-          &copy; 2026 zuzu.codes
-        </p>
-      </SidebarFooter>
-```
-
-New:
-```typescript
-      {/* Footer */}
-      <SidebarFooter className="border-t border-border/40 px-2 py-2">
-        <SidebarUserCard user={user} subscription={subscription} />
-      </SidebarFooter>
-```
-
-### Part B — `dashboard/layout.tsx`
-
-**Step 5: Pass `user` and `subscription` to `AppSidebar`**
-
-Find:
-```typescript
-        <AppSidebar
-          courses={courses}
-          courseProgress={courseProgress}
-          contentCompletion={contentCompletion}
-          stats={stats}
-        />
-```
-
-Replace with:
-```typescript
-        <AppSidebar
-          courses={courses}
-          courseProgress={courseProgress}
-          contentCompletion={contentCompletion}
-          stats={stats}
-          user={{ name: user.name ?? null, email: user.email ?? null, image: user.image ?? null }}
-          subscription={subscription}
-        />
-```
-
-**Step 6: Type-check**
-
-```bash
-cd app && npx tsc --noEmit
-```
-
-Expected: no errors.
-
-**Step 7: Visual check**
-
-```bash
-npm run dev
-# Open http://localhost:3000/dashboard
-# Sidebar footer should show: avatar initials + name + status dot + ThemeToggle + settings gear
-# Clicking gear should open AccountModal
-```
-
-**Step 8: Commit**
-
-```bash
-git add src/components/shared/app-sidebar.tsx src/app/dashboard/layout.tsx
-git commit -m "feat: add SidebarUserCard to AppSidebar footer, pass user + subscription from layout"
-```
-
----
-
-## Task 6: Cleanup — delete old files, remove UserButton from CoursePlayerShell, delete DashboardHeader
-
-**Files:**
-- Delete: `src/components/shared/user-button.tsx`
-- Delete: `src/components/shared/settings-dialog.tsx`
-- Delete: `src/components/dashboard/header.tsx`
-- Modify: `src/components/course/course-player-shell.tsx`
-- Modify: `src/app/dashboard/layout.tsx`
-- Modify: All course pages that pass `isAuthenticated` to `CoursePlayerShell`
-
-### Step 1: Remove `UserButton` + `isAuthenticated` from `CoursePlayerShell`
-
-In `src/components/course/course-player-shell.tsx`:
-
-1. Remove this import line:
-```typescript
-import { UserButton } from '@/components/shared/user-button';
-```
-
-2. Remove `isAuthenticated?: boolean;` from `CoursePlayerShellProps`
-
-3. Remove `isAuthenticated = false,` from the function destructuring
-
-4. Remove the `UserButton` usage in the header:
-```typescript
-          {isAuthenticated && <UserButton />}
-```
-The header `<div className="flex items-center gap-1.5 shrink-0">` that wraps `ThemeToggle` + `UserButton` becomes just:
-```typescript
-        <div className="flex items-center gap-1.5 shrink-0">
-          <ThemeToggle />
-        </div>
-```
-
-### Step 2: Remove `isAuthenticated` prop from all course pages
-
-Run this to find all usages:
-```bash
-grep -r "isAuthenticated" src/app --include="*.tsx" -l
-```
-
-For each file found, remove the `isAuthenticated={!!user}` (or equivalent) prop from the `<CoursePlayerShell>` call.
-
-The files are:
-- `src/app/dashboard/course/[courseSlug]/page.tsx`
-- `src/app/dashboard/course/[courseSlug]/[moduleSlug]/page.tsx`
-- `src/app/dashboard/course/[courseSlug]/[moduleSlug]/quiz/page.tsx`
-- `src/app/dashboard/course/[courseSlug]/[moduleSlug]/lesson/[order]/page.tsx`
-- `src/app/dashboard/course/[courseSlug]/[moduleSlug]/lesson/[order]/intro/page.tsx`
-- `src/app/dashboard/course/[courseSlug]/[moduleSlug]/lesson/[order]/outro/page.tsx`
-- `src/app/dashboard/course/[courseSlug]/[moduleSlug]/outro/page.tsx`
-- `src/app/dashboard/course/[courseSlug]/graduation/page.tsx`
-- `src/app/dashboard/course/[courseSlug]/certificate/page.tsx`
-
-In each file, find `isAuthenticated={...}` and delete that line.
-
-### Step 3: Remove `DashboardHeader` from `dashboard/layout.tsx`
-
-In `src/app/dashboard/layout.tsx`:
-
-1. Remove the import:
-```typescript
-import { DashboardHeader } from "@/components/dashboard/header";
-```
-
-2. Remove the `<DashboardHeader />` JSX line from the return.
-
-### Step 4: Delete the unused files
-
-```bash
-rm src/components/shared/user-button.tsx
-rm src/components/shared/settings-dialog.tsx
-rm src/components/dashboard/header.tsx
-```
-
-### Step 5: Type-check + lint
-
-```bash
-cd app && npx tsc --noEmit && npm run lint
-```
-
-Expected: no errors. No references to `UserButton`, `SettingsDialog`, or `DashboardHeader` should remain.
-
-### Step 6: Build check
+**Step 2: Build**
 
 ```bash
 npm run build
@@ -628,24 +451,20 @@ npm run build
 
 Expected: ✓ Compiled successfully.
 
-### Step 7: Commit
+**Step 3: Deploy**
 
 ```bash
-git add -A
-git commit -m "feat: remove UserButton/SettingsDialog/DashboardHeader, clean up CoursePlayerShell"
+vercel --prod --yes
 ```
 
----
+**Step 4: Smoke test production**
 
-## Verification Checklist
+- `https://app.zuzu.codes/account` → centered card, 3 tabs
+- Open AccountModal from sidebar gear → same UI
+- Log in from a 3rd browser → oldest session auto-revoked (verify by checking Sessions tab)
 
-- [ ] `/account` renders Profile, Security, Subscription sections
-- [ ] Subscription card shows correct status badge for active/free/cancelled states
-- [ ] Sidebar footer shows avatar + name + status dot + ThemeToggle + gear icon
-- [ ] Clicking gear opens AccountModal with same three sections
-- [ ] ThemeToggle in sidebar card switches theme correctly
-- [ ] Dashboard header (non-course pages) has no profile icon or theme toggle
-- [ ] Course player shell header shows only ThemeToggle (no avatar/profile)
-- [ ] No TypeScript errors (`npx tsc --noEmit`)
-- [ ] No lint errors (`npm run lint`)
-- [ ] `npm run build` passes
+**Step 5: Push**
+
+```bash
+git push
+```
