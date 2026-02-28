@@ -164,12 +164,20 @@ export const getCourseWithModules = cache(async (courseSlug: string): Promise<Co
       ORDER BY m."order" ASC
     `;
 
+    // Fetch capstone for this course
+    const capstoneRows = await sql`
+      SELECT id, title FROM capstones WHERE course_id = ${course.id} LIMIT 1
+    `
+    const capstoneRow = capstoneRows[0] as any
+    const capstone = capstoneRow ? { id: capstoneRow.id as string, title: capstoneRow.title as string } : null
+
     return {
       ...course,
       modules: (modules as Module[]).map((m) => ({
         ...m,
         contentItems: deriveContentItems(m),
       })),
+      capstone,
     } as CourseWithModules;
   } catch (error) {
     console.error('getCourseWithModules error:', error);
@@ -948,22 +956,27 @@ export async function getBatchModuleCompletionStatus(
 export const getCapstone = cache(async function getCapstone(
   courseId: string,
 ): Promise<Capstone | null> {
-  const rows = await sql`
-    SELECT id, course_id, title, description, starter_code, required_packages, hints
-    FROM capstones
-    WHERE course_id = ${courseId}
-    LIMIT 1
-  `
-  if (!rows[0]) return null
-  const r = rows[0] as any
-  return {
-    id: r.id,
-    courseId: r.course_id,
-    title: r.title,
-    description: r.description,
-    starterCode: r.starter_code,
-    requiredPackages: r.required_packages ?? [],
-    hints: r.hints ?? [],
+  try {
+    const rows = await sql`
+      SELECT id, course_id, title, description, starter_code, required_packages, hints
+      FROM capstones
+      WHERE course_id = ${courseId}
+      LIMIT 1
+    `
+    if (!rows[0]) return null
+    const r = rows[0] as any
+    return {
+      id: r.id,
+      courseId: r.course_id,
+      title: r.title,
+      description: r.description,
+      starterCode: r.starter_code,
+      requiredPackages: r.required_packages ?? [],
+      hints: r.hints ?? [],
+    }
+  } catch (error) {
+    console.error('getCapstone error:', error)
+    return null
   }
 })
 
@@ -975,20 +988,25 @@ export const getUserCapstoneSubmission = cache(async function getUserCapstoneSub
   userId: string,
   capstoneId: string,
 ): Promise<CapstoneSubmission | null> {
-  const rows = await sql`
-    SELECT user_id, capstone_id, code, output, submitted_at
-    FROM user_capstone_submissions
-    WHERE user_id = ${userId} AND capstone_id = ${capstoneId}
-    LIMIT 1
-  `
-  if (!rows[0]) return null
-  const r = rows[0] as any
-  return {
-    userId: r.user_id,
-    capstoneId: r.capstone_id,
-    code: r.code,
-    output: r.output,
-    submittedAt: r.submitted_at,
+  try {
+    const rows = await sql`
+      SELECT user_id, capstone_id, code, output, submitted_at
+      FROM user_capstone_submissions
+      WHERE user_id = ${userId} AND capstone_id = ${capstoneId}
+      LIMIT 1
+    `
+    if (!rows[0]) return null
+    const r = rows[0] as any
+    return {
+      userId: r.user_id,
+      capstoneId: r.capstone_id,
+      code: r.code,
+      output: r.output,
+      submittedAt: r.submitted_at,
+    }
+  } catch (error) {
+    console.error('getUserCapstoneSubmission error:', error)
+    return null
   }
 })
 
