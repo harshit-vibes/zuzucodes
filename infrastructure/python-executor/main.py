@@ -3,10 +3,17 @@ import os
 import time
 import uuid
 from collections import defaultdict
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    asyncio.create_task(cleanup_loop())
+    yield
+
+app = FastAPI(lifespan=lifespan)
 
 EXECUTOR_API_KEY = os.environ["EXECUTOR_API_KEY"]
 MAX_CONCURRENT = int(os.getenv("MAX_CONCURRENT", "4"))
@@ -113,15 +120,13 @@ async def process_submission(token: str, code: str, stdin: str, time_limit: floa
 async def cleanup_loop():
     while True:
         await asyncio.sleep(60)
-        cutoff = time.time() - RESULT_TTL_SECONDS
-        expired = [t for t, r in results.items() if r.get("created_at", 0) < cutoff]
-        for t in expired:
-            results.pop(t, None)
-
-
-@app.on_event("startup")
-async def startup():
-    asyncio.create_task(cleanup_loop())
+        try:
+            cutoff = time.time() - RESULT_TTL_SECONDS
+            expired = [t for t, r in results.items() if r.get("created_at", 0) < cutoff]
+            for t in expired:
+                results.pop(t, None)
+        except Exception:
+            pass  # never let cleanup crash stop the loop
 
 
 # ─── Routes ──────────────────────────────────────────────────────────────────
