@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { usePostHog } from "posthog-js/react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
-import { getSignUpUrl } from "@/lib/get-sign-up-url";
+import { getSignUpUrl, SIGN_IN_URL } from "@/lib/get-sign-up-url";
 
 const particles = Array.from({ length: 10 }, (_, i) => ({
   id: i,
@@ -121,8 +121,13 @@ export function HeroSection() {
             <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-center fade-in-up stagger-3 lg:mt-0">
               <Button size="lg" className="group h-12 px-6 text-base btn-shimmer" asChild>
                 <a
-                  href={getSignUpUrl()}
-                  onClick={() => ph?.capture('cta_clicked', { section: 'hero', text: 'Get Started' })}
+                  href={SIGN_IN_URL}
+                  onClick={(e) => {
+                    if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+                    e.preventDefault();
+                    ph?.capture('cta_clicked', { section: 'hero', text: 'Get Started' });
+                    window.location.assign(getSignUpUrl());
+                  }}
                 >
                   Get Started
                   <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />

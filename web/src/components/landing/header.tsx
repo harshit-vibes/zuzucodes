@@ -8,7 +8,7 @@ import { BrandLogo } from "@/components/shared/brand-logo";
 import { Menu, X } from "lucide-react";
 import { ThemeToggle } from "@/components/landing/theme-toggle";
 import { cn } from "@/lib/utils";
-import { getSignUpUrl } from "@/lib/get-sign-up-url";
+import { getSignUpUrl, SIGN_IN_URL } from "@/lib/get-sign-up-url";
 
 const navLinks = [
   { label: "Courses", href: "#courses" },
@@ -66,8 +66,13 @@ export function Header() {
             <ThemeToggle />
             <Button size="sm" className="btn-shimmer" asChild>
               <a
-                href={getSignUpUrl()}
-                onClick={() => ph?.capture('cta_clicked', { section: 'header', text: 'Get Started' })}
+                href={SIGN_IN_URL}
+                onClick={(e) => {
+                  if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+                  e.preventDefault();
+                  ph?.capture('cta_clicked', { section: 'header', text: 'Get Started' });
+                  window.location.assign(getSignUpUrl());
+                }}
               >
                 Get Started
               </a>
@@ -103,8 +108,13 @@ export function Header() {
               <div className="flex flex-col gap-2 pt-4">
                 <Button size="sm" asChild>
                   <a
-                    href={getSignUpUrl()}
-                    onClick={() => ph?.capture('cta_clicked', { section: 'header', text: 'Get Started' })}
+                    href={SIGN_IN_URL}
+                    onClick={(e) => {
+                      if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+                      e.preventDefault();
+                      ph?.capture('cta_clicked', { section: 'header', text: 'Get Started' });
+                      window.location.assign(getSignUpUrl());
+                    }}
                   >
                     Get Started
                   </a>

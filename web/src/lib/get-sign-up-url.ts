@@ -1,8 +1,10 @@
 import posthog from 'posthog-js';
 
-const APP_SIGN_IN = process.env.NEXT_PUBLIC_APP_URL
+export const SIGN_IN_URL = process.env.NEXT_PUBLIC_APP_URL
   ? `${process.env.NEXT_PUBLIC_APP_URL}/auth/sign-in`
   : 'https://app.zuzu.codes/auth/sign-in';
+
+const APP_SIGN_IN = SIGN_IN_URL;
 
 export function getSignUpUrl(): string {
   try {

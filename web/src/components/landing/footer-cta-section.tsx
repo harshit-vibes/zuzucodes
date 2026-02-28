@@ -3,7 +3,7 @@
 import { usePostHog } from "posthog-js/react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
-import { getSignUpUrl } from "@/lib/get-sign-up-url";
+import { getSignUpUrl, SIGN_IN_URL } from "@/lib/get-sign-up-url";
 
 export function FooterCtaSection() {
   const ph = usePostHog();
@@ -29,8 +29,13 @@ export function FooterCtaSection() {
               asChild
             >
               <a
-                href={getSignUpUrl()}
-                onClick={() => ph?.capture('cta_clicked', { section: 'footer_cta', text: 'Get Started Free' })}
+                href={SIGN_IN_URL}
+                onClick={(e) => {
+                  if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+                  e.preventDefault();
+                  ph?.capture('cta_clicked', { section: 'footer_cta', text: 'Get Started Free' });
+                  window.location.assign(getSignUpUrl());
+                }}
               >
                 Get Started Free
                 <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />

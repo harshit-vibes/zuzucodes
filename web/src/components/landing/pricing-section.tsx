@@ -3,7 +3,7 @@
 import { Check, ArrowRight } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 import { Button } from "@/components/ui/button";
-import { getSignUpUrl } from "@/lib/get-sign-up-url";
+import { getSignUpUrl, SIGN_IN_URL } from "@/lib/get-sign-up-url";
 
 const features = [
   "Full access to the Coding Foundations track",
@@ -70,8 +70,13 @@ export function PricingSection() {
 
               <Button className="w-full btn-shimmer group" size="lg" asChild>
                 <a
-                  href={getSignUpUrl()}
-                  onClick={() => ph?.capture('cta_clicked', { section: 'pricing', text: 'Get Started Free' })}
+                  href={SIGN_IN_URL}
+                  onClick={(e) => {
+                    if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+                    e.preventDefault();
+                    ph?.capture('cta_clicked', { section: 'pricing', text: 'Get Started Free' });
+                    window.location.assign(getSignUpUrl());
+                  }}
                 >
                   Get Started Free
                   <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
