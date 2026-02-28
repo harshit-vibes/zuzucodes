@@ -6,15 +6,15 @@ import { AuthDialog } from "./auth-dialog";
 
 export function AuthTrigger() {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [authView, setAuthView] = useState<"sign-in" | "sign-up">("sign-in");
+  const [authPath, setAuthPath] = useState<"sign-in" | "sign-up">("sign-in");
 
   const openSignIn = () => {
-    setAuthView("sign-in");
+    setAuthPath("sign-in");
     setDialogOpen(true);
   };
 
   const openSignUp = () => {
-    setAuthView("sign-up");
+    setAuthPath("sign-up");
     setDialogOpen(true);
   };
 
@@ -32,7 +32,7 @@ export function AuthTrigger() {
       <AuthDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
-        defaultView={authView}
+        path={authPath}
       />
     </>
   );
