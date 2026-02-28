@@ -16,13 +16,13 @@ const testimonials = [
   },
   {
     quote:
-      "I'm not in tech at all — I work in marketing. But three weeks in, I wrote a script that saved me two hours a week. That felt incredible.",
+      "I don't work in tech. But I kept seeing people around me use AI to build things and I felt completely left out. Three weeks in, I wrote a script that saved me two hours a week. That feeling was worth every rupee.",
     name: "Rohan K.",
     role: "Marketing analyst",
   },
   {
     quote:
-      "The 4-quadrant method is unlike anything else I've seen. It forced me to actually think, not just copy examples.",
+      "The 4-quadrant method is unlike anything I've seen. It made me actually think — not just copy examples. I feel like I'm learning to code, not learning to pass a course.",
     name: "Aanya S.",
     role: "Undergraduate, 21",
   },
