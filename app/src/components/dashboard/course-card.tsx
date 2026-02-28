@@ -1,17 +1,15 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import type { Course, CourseProgress } from '@/lib/data';
 
-// Tag → gradient fallback when no thumbnail
-const TAG_GRADIENTS: Record<string, string> = {
-  python:  'from-blue-500/20 to-cyan-500/20',
-  ai:      'from-violet-500/20 to-purple-500/20',
-  agents:  'from-rose-500/20 to-pink-500/20',
+const TRACK_GRADIENTS: Record<string, string> = {
+  'python':          'from-blue-600/40 to-cyan-500/20',
+  'ai foundations':  'from-violet-600/40 to-purple-500/20',
+  'agent builders':  'from-amber-600/40 to-orange-400/20',
 };
-const DEFAULT_GRADIENT = 'from-primary/20 to-primary/10';
+const DEFAULT_GRADIENT = 'from-primary/30 to-primary/10';
 
 function isNew(publishedAt: string | null): boolean {
   if (!publishedAt) return false;
@@ -32,67 +30,78 @@ export function CourseCard({ course, progress }: CourseCardProps) {
     status === 'completed' ? 'Review' :
     status === 'in_progress' ? 'Continue' :
     'Start';
-  const gradient = TAG_GRADIENTS[course.tag?.toLowerCase() ?? ''] ?? DEFAULT_GRADIENT;
+  const gradient = TRACK_GRADIENTS[course.tag?.toLowerCase() ?? ''] ?? DEFAULT_GRADIENT;
   const showNew = isNew(course.published_at);
 
   return (
     <Link
       href={`/dashboard/course/${course.slug}`}
-      className="group flex-shrink-0 w-64 rounded-xl border border-border/60 bg-card overflow-hidden hover:border-primary/40 hover:shadow-md transition-all duration-200"
+      className="group flex-shrink-0 w-56 rounded-2xl overflow-hidden border border-border/40 bg-card hover:border-primary/30 hover:shadow-lg hover:shadow-black/10 transition-all duration-300"
     >
-      {/* Thumbnail */}
-      <div className={`relative h-36 bg-gradient-to-br ${gradient}`}>
+      {/* Thumbnail — full bleed with overlay */}
+      <div className={`relative h-40 bg-gradient-to-br ${gradient} overflow-hidden`}>
         {course.thumbnail_url && (
           <Image
             src={course.thumbnail_url}
             alt={course.title}
             fill
-            className="object-cover"
+            className="object-cover opacity-75 group-hover:scale-105 transition-transform duration-500"
           />
         )}
+        {/* Dark gradient overlay for text legibility */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+
+        {/* New badge — top right */}
         {showNew && (
-          <span className="absolute top-2 left-2 bg-primary text-primary-foreground text-[10px] font-semibold px-2 py-0.5 rounded-full">
+          <span className="absolute top-2.5 right-2.5 bg-white/90 text-black text-[9px] font-bold px-1.5 py-0.5 rounded-full tracking-wide uppercase">
             New
           </span>
         )}
-        {status === 'completed' && (
-          <span className="absolute top-2 right-2 bg-background/80 backdrop-blur-sm text-[10px] font-medium px-2 py-0.5 rounded-full text-muted-foreground">
-            Completed
+
+        {/* Completed badge */}
+        {status === 'completed' && !showNew && (
+          <span className="absolute top-2.5 right-2.5 bg-black/40 backdrop-blur-sm text-white/70 text-[9px] font-medium px-1.5 py-0.5 rounded-full">
+            ✓ Done
           </span>
         )}
-      </div>
 
-      {/* Body */}
-      <div className="p-4 space-y-3">
-        <div>
+        {/* Bottom overlay text */}
+        <div className="absolute bottom-0 left-0 right-0 px-3 pb-3">
           {course.tag && (
-            <p className="text-[10px] font-mono text-muted-foreground/60 uppercase tracking-widest mb-1">
+            <p className="text-[9px] font-mono text-white/50 uppercase tracking-widest mb-0.5">
               {course.tag}
             </p>
           )}
-          <p className="text-sm font-semibold text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors">
+          <p className="text-sm font-semibold text-white line-clamp-2 leading-snug">
             {course.title}
           </p>
         </div>
+      </div>
 
-        {progressValue > 0 && (
-          <div className="flex items-center gap-2">
-            <Progress value={progressValue} className="flex-1 h-1" />
-            <span className="text-[10px] font-mono text-primary tabular-nums w-7 text-right">
+      {/* Footer */}
+      <div className="px-3 py-2.5 flex items-center gap-3">
+        {progressValue > 0 ? (
+          <div className="flex-1 flex items-center gap-2">
+            <div className="flex-1 h-px bg-border/60 relative overflow-hidden rounded-full">
+              <div
+                className="absolute inset-y-0 left-0 bg-primary rounded-full transition-all duration-500"
+                style={{ width: `${progressValue}%` }}
+              />
+            </div>
+            <span className="text-[10px] font-mono text-primary tabular-nums shrink-0">
               {progressValue}%
             </span>
           </div>
+        ) : (
+          <div className="flex-1" />
         )}
-
-        <div className="flex items-center justify-end pt-1 border-t border-border/40">
-          <span className={cn(
-            'flex items-center gap-1 text-xs font-medium transition-all group-hover:gap-2',
-            status === 'completed' ? 'text-muted-foreground' : 'text-primary',
-          )}>
-            {ctaLabel}
-            <ArrowRight className="h-3 w-3" />
-          </span>
-        </div>
+        <span className={cn(
+          'flex items-center gap-1 text-xs font-medium shrink-0 transition-all group-hover:gap-1.5',
+          status === 'completed' ? 'text-muted-foreground' : 'text-primary',
+        )}>
+          {ctaLabel}
+          <ArrowRight className="h-3 w-3" />
+        </span>
       </div>
     </Link>
   );

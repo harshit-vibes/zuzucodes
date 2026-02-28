@@ -9,6 +9,7 @@ import {
   Flame,
   GraduationCap,
   Home,
+  Map,
   Sparkles,
   Target,
   Timer,
@@ -276,6 +277,18 @@ export function AppSidebar({
                       <Link href="/dashboard" className="flex items-center gap-3 px-3 py-2">
                         <Home className="h-4 w-4" />
                         <span>Dashboard</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      tooltip="Roadmap"
+                      className="rounded-lg text-muted-foreground hover:text-foreground"
+                    >
+                      <Link href="/roadmap" className="flex items-center gap-3 px-3 py-2">
+                        <Map className="h-4 w-4" />
+                        <span>Roadmap</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

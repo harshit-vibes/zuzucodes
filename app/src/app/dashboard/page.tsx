@@ -10,7 +10,6 @@ import type { Course, CourseProgress } from '@/lib/data';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, Play, Sparkles } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
 import { TrackSection } from '@/components/dashboard/track-section';
 import { RoadmapCTABanner } from '@/components/dashboard/roadmap-cta-banner';
 
@@ -111,55 +110,77 @@ function HeroSection({
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
   return (
-    <div className="relative border-b border-border/50">
-      <div className="container mx-auto px-6 py-6">
-        <h1 className="text-2xl font-semibold tracking-tight mb-1">
-          {greeting}, {firstName}
-        </h1>
-        <p className="text-sm text-muted-foreground mb-5">
-          {stats.streak > 0
-            ? `You're on a ${stats.streak}-day streak. Keep building!`
-            : resumeData
-              ? 'Pick up where you left off.'
-              : 'Start your journey to becoming an Agent Architect.'}
-        </p>
+    <div className="relative border-b border-border/40 overflow-hidden">
+      {/* Subtle dot grid background */}
+      <div
+        className="absolute inset-0 opacity-[0.03] dark:opacity-[0.06]"
+        style={{
+          backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)',
+          backgroundSize: '24px 24px',
+        }}
+      />
+      <div className="relative container mx-auto px-6 py-8">
+        <div className="flex items-start justify-between gap-6">
+          <div className="min-w-0">
+            <p className="text-xs font-mono text-muted-foreground/60 uppercase tracking-widest mb-1">{greeting}</p>
+            <h1 className="text-3xl font-bold tracking-tight mb-0.5">
+              {firstName}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {stats.streak > 0
+                ? `${stats.streak}-day streak — keep the momentum going.`
+                : resumeData
+                  ? 'Pick up where you left off.'
+                  : 'Start your journey to becoming an Agent Architect.'}
+            </p>
+          </div>
 
+          {/* Streak badge (if active) */}
+          {stats.streak > 0 && (
+            <div className="shrink-0 flex flex-col items-center justify-center w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20">
+              <span className="text-xl">🔥</span>
+              <span className="text-xs font-bold font-mono text-amber-500 tabular-nums leading-none mt-0.5">{stats.streak}d</span>
+            </div>
+          )}
+        </div>
+
+        {/* Resume / Start CTA */}
         {resumeData ? (
           <Link
             href={resumeData.href}
-            className="group inline-flex items-center gap-4 rounded-2xl bg-card border border-border/50 p-4 pr-6 transition-all hover:border-primary/30"
+            className="group mt-5 inline-flex items-center gap-4 rounded-2xl bg-card/80 backdrop-blur-sm border border-border/50 p-3 pr-5 transition-all hover:border-primary/30 hover:bg-card max-w-sm"
           >
-            <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-muted flex-shrink-0 ring-2 ring-primary/20">
+            <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-muted flex-shrink-0 ring-1 ring-border">
               {resumeData.course.thumbnail_url ? (
                 <Image src={resumeData.course.thumbnail_url} alt={resumeData.course.title} fill className="object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-primary/10">
-                  <Play className="h-5 w-5 text-primary" />
+                  <Play className="h-4 w-4 text-primary" />
                 </div>
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-muted-foreground mb-0.5">Continue learning</p>
+              <p className="text-[10px] font-mono text-muted-foreground/60 uppercase tracking-wider mb-0.5">Continue</p>
               <h3 className="font-semibold text-sm truncate group-hover:text-primary transition-colors">
                 {resumeData.course.title}
               </h3>
-              <div className="flex items-center gap-3 mt-1.5">
-                <Progress value={resumeData.progress} className="flex-1 h-1.5" />
-                <span className="text-xs font-medium text-primary">{resumeData.progress}%</span>
+              <div className="flex items-center gap-2 mt-1">
+                <div className="flex-1 h-px bg-border/60 relative overflow-hidden rounded-full">
+                  <div className="absolute inset-y-0 left-0 bg-primary/70 rounded-full" style={{ width: `${resumeData.progress}%` }} />
+                </div>
+                <span className="text-[10px] font-mono text-primary tabular-nums">{resumeData.progress}%</span>
               </div>
             </div>
-            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-all flex-shrink-0">
-              <ArrowRight className="h-4 w-4" />
-            </div>
+            <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
           </Link>
         ) : startUrl ? (
           <Link
             href={startUrl}
-            className="group inline-flex items-center gap-3 rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-medium transition-all hover:bg-primary/90"
+            className="group mt-5 inline-flex items-center gap-2 rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold transition-all hover:bg-primary/90"
           >
             <Sparkles className="h-4 w-4" />
             Start Your Journey
-            <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+            <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
           </Link>
         ) : null}
       </div>
