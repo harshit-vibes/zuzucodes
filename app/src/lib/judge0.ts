@@ -1,8 +1,10 @@
-const API_KEY = process.env.JUDGE0_API_KEY!;
-const API_HOST = process.env.JUDGE0_API_HOST!;
-const BASE_URL = `https://${API_HOST}`;
+const BASE_URL = process.env.JUDGE0_BASE_URL!;
+const AUTH_TOKEN = process.env.JUDGE0_AUTH_TOKEN!;
+const AUTH_HEADER = 'X-Auth-Token';
 
 const PYTHON_LANGUAGE_ID = 71;
+const POLL_INTERVAL_MS = 500;
+const MAX_POLLS = 60; // 30s timeout
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -10,7 +12,7 @@ export interface TestCase {
   description: string;
   args: unknown[];
   expected: unknown;
-  visible: boolean; // shown as example in ProblemPanel
+  visible: boolean;
 }
 
 export interface Judge0RunResult {
@@ -18,18 +20,12 @@ export interface Judge0RunResult {
   stderr: string;
   statusId: number;
   statusDescription: string;
-  time: number | null;    // seconds, e.g. 0.124
-  memory: number | null;  // kilobytes
-  remaining: number | null;
-  resetAt: number | null;
+  time: number | null;
+  memory: number | null;
 }
 
-/**
- * Result for a single test case execution.
- * Pass/fail is determined by JSON.stringify(expected) vs stdout.trim().
- */
 export interface TestCaseResult {
-  d: string;      // description
+  d: string;
   pass: boolean;
   got: string;
   exp: unknown;
@@ -40,54 +36,53 @@ export interface Judge0TestsResult {
   allPassed: boolean;
   time: number | null;
   memory: number | null;
-  remaining: number | null;
-  resetAt: number | null;
-}
-
-export interface UsageResult {
-  remaining: number | null;
-  resetAt: number | null;
 }
 
 // ─── Internal helpers ────────────────────────────────────────────────────────
 
-function parseRateLimitHeaders(headers: Headers): { remaining: number | null; resetAt: number | null } {
-  const remaining = headers.get('x-ratelimit-submissions-remaining');
-  const reset = headers.get('x-ratelimit-submissions-reset');
-  return {
-    remaining: remaining !== null ? parseInt(remaining, 10) : null,
-    resetAt: reset !== null ? parseInt(reset, 10) : null,
-  };
-}
-
-async function postSubmission(
-  sourceCode: string,
-  stdin?: string,
-): Promise<{ data: Record<string, unknown>; remaining: number | null; resetAt: number | null }> {
+async function submitCode(sourceCode: string, stdin?: string): Promise<string> {
   const body: Record<string, unknown> = {
     source_code: sourceCode,
     language_id: PYTHON_LANGUAGE_ID,
   };
   if (stdin !== undefined) body.stdin = stdin;
 
-  const res = await fetch(`${BASE_URL}/submissions?base64_encoded=false&wait=true`, {
+  const res = await fetch(`${BASE_URL}/submissions?base64_encoded=false`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-rapidapi-key': API_KEY,
-      'x-rapidapi-host': API_HOST,
+      [AUTH_HEADER]: AUTH_TOKEN,
     },
     body: JSON.stringify(body),
   });
 
-  const { remaining, resetAt } = parseRateLimitHeaders(res.headers);
+  if (!res.ok) throw new Error(`Judge0 submit error: ${res.status}`);
 
-  if (!res.ok) {
-    throw new Error(`Judge0 error: ${res.status}`);
+  const data = await res.json() as { token: string };
+  return data.token;
+}
+
+async function pollResult(token: string): Promise<Record<string, unknown>> {
+  const fields = 'stdout,stderr,status,time,memory';
+
+  for (let i = 0; i < MAX_POLLS; i++) {
+    const res = await fetch(
+      `${BASE_URL}/submissions/${token}?base64_encoded=false&fields=${fields}`,
+      { headers: { [AUTH_HEADER]: AUTH_TOKEN } },
+    );
+
+    if (!res.ok) throw new Error(`Judge0 poll error: ${res.status}`);
+
+    const data = await res.json() as Record<string, unknown>;
+    const status = data.status as { id: number; description: string };
+
+    // status.id >= 3 means done (3=Accepted, 4=WA, 5=TLE, 6=CE, 7-14=errors)
+    if (status.id >= 3) return data;
+
+    await new Promise<void>(resolve => setTimeout(resolve, POLL_INTERVAL_MS));
   }
 
-  const data = await res.json() as Record<string, unknown>;
-  return { data, remaining, resetAt };
+  throw new Error('Execution timed out after 30s');
 }
 
 // ─── Public API ──────────────────────────────────────────────────────────────
@@ -97,24 +92,24 @@ async function postSubmission(
  * Used by the "Run" button — shows raw stdout.
  */
 export async function runCode(sourceCode: string, stdin?: string): Promise<Judge0RunResult> {
-  const { data, remaining, resetAt } = await postSubmission(sourceCode, stdin);
+  const token = await submitCode(sourceCode, stdin);
+  const data = await pollResult(token);
+
+  const status = data.status as { id: number; description: string };
 
   return {
     stdout: (data.stdout as string) ?? '',
     stderr: (data.stderr as string) ?? '',
-    statusId: (data.status as { id: number })?.id ?? 0,
-    statusDescription: (data.status as { description: string })?.description ?? '',
+    statusId: status.id,
+    statusDescription: status.description,
     time: data.time !== null && data.time !== undefined ? parseFloat(data.time as string) : null,
     memory: data.memory !== null && data.memory !== undefined ? parseInt(data.memory as string, 10) : null,
-    remaining,
-    resetAt,
   };
 }
 
 /**
- * Run user code against test cases — one Judge0 call per test case, in parallel.
- * Each call builds a small program: userCode + harness that calls entryPoint(*args) and prints JSON.
- * Pass/fail is determined by comparing stdout.trim() to JSON.stringify(expected).
+ * Run user code against test cases — one Judge0 submission per test case, all in parallel.
+ * Pass/fail: stdout.trim() === JSON.stringify(tc.expected)
  */
 export async function runTests(
   userCode: string,
@@ -124,12 +119,12 @@ export async function runTests(
   if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(entryPoint)) {
     throw new Error(`Invalid entryPoint: ${entryPoint}`);
   }
-
   if (testCases.length === 0) {
     throw new Error('runTests requires at least one test case');
   }
 
-  const settled = await Promise.allSettled(
+  // Submit all in parallel, get tokens
+  const tokens = await Promise.all(
     testCases.map((tc) => {
       const argsJson = JSON.stringify(tc.args);
       const program = [
@@ -140,48 +135,35 @@ export async function runTests(
         `_result = ${entryPoint}(*_args)`,
         `print(_json.dumps(_result, separators=(',', ':')))`,
       ].join('\n');
-      return runCode(program);
-    })
+      return submitCode(program);
+    }),
   );
+
+  // Poll all in parallel
+  const settled = await Promise.allSettled(tokens.map(pollResult));
 
   const tests: TestCaseResult[] = testCases.map((tc, i) => {
     const result = settled[i];
     if (result.status === 'rejected') {
-      const got = (result.reason as Error)?.message ?? 'Request failed';
-      return { d: tc.description, pass: false, got, exp: tc.expected };
+      return { d: tc.description, pass: false, got: (result.reason as Error)?.message ?? 'Request failed', exp: tc.expected };
     }
-    const r = result.value;
-    if (r.statusId === 3) {
-      const got = (r.stdout ?? '').trim();
+    const data = result.value;
+    const status = data.status as { id: number };
+    if (status.id === 3) {
+      const got = ((data.stdout as string) ?? '').trim();
       return { d: tc.description, pass: got === JSON.stringify(tc.expected), got, exp: tc.expected };
     }
-    const got = (r.stderr ?? '').trim() || `Runtime error (status ${r.statusId})`;
+    const got = ((data.stderr as string) ?? '').trim() || `Runtime error (status ${status.id})`;
     return { d: tc.description, pass: false, got, exp: tc.expected };
   });
 
   const allPassed = tests.every(t => t.pass);
-  const lastFulfilled = settled.filter((s): s is PromiseFulfilledResult<Judge0RunResult> => s.status === 'fulfilled').at(-1)?.value;
+  const lastFulfilled = settled.filter((s): s is PromiseFulfilledResult<Record<string, unknown>> => s.status === 'fulfilled').at(-1)?.value;
+
   return {
     tests,
     allPassed,
-    time: lastFulfilled?.time ?? null,
-    memory: lastFulfilled?.memory ?? null,
-    remaining: lastFulfilled?.remaining ?? null,
-    resetAt: lastFulfilled?.resetAt ?? null,
+    time: lastFulfilled?.time !== null && lastFulfilled?.time !== undefined ? parseFloat(lastFulfilled.time as string) : null,
+    memory: lastFulfilled?.memory !== null && lastFulfilled?.memory !== undefined ? parseInt(lastFulfilled.memory as string, 10) : null,
   };
-}
-
-/**
- * Fetch current rate limit state (no code submission).
- */
-export async function getUsage(): Promise<UsageResult> {
-  const res = await fetch(`${BASE_URL}/config_info`, {
-    headers: {
-      'x-rapidapi-key': API_KEY,
-      'x-rapidapi-host': API_HOST,
-    },
-  });
-
-  const { remaining, resetAt } = parseRateLimitHeaders(res.headers);
-  return { remaining, resetAt };
 }
