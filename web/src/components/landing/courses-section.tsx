@@ -75,7 +75,7 @@ export function CoursesSection() {
               <h3 className="font-display text-2xl font-semibold sm:text-3xl">
                 {pythonFoundations.title}
               </h3>
-              <span className="text-xs text-muted-foreground">Taught in Python</span>
+              <span className="mt-1 block text-xs text-muted-foreground">Taught in Python</span>
               <p className="mt-3 text-lg italic text-muted-foreground">
                 {pythonFoundations.subtitle}
               </p>
