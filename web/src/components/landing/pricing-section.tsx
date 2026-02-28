@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
 const trialFeatures = [
-  "Full access to Python Foundations track",
+  "Full access to the Coding Foundations track",
   "All 12 lessons and interactive exercises",
   "4-quadrant learning method",
   "Progress tracking",
@@ -13,7 +13,7 @@ const trialFeatures = [
 
 const fullAccessFeatures = [
   "Everything in the trial",
-  "Continue past day 7 without interruption",
+  "Continue building past day 7",
   "Access to all future tracks when released",
   "Cancel anytime — no questions asked",
 ];
@@ -31,7 +31,7 @@ export function PricingSection() {
               Pricing
             </h2>
             <p className="mt-4 text-lg text-muted-foreground sm:text-xl">
-              Try it first. Commit only if it works for you.
+              Start free. Commit only when it clicks.
             </p>
           </div>
 
