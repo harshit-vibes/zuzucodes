@@ -22,6 +22,7 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -32,6 +33,29 @@ import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import type { CourseWithModules, SidebarCourseProgress, SectionStatus, SubscriptionRow } from "@/lib/data";
 import { SidebarUserCard } from "@/components/shared/sidebar-user-card";
+
+// ============================================
+// Feature tier registry
+// ============================================
+
+type FeatureTier = 'available' | 'beta' | 'preview';
+
+interface SidebarFeature {
+  title: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  tier: FeatureTier;
+}
+
+const TIER_CONFIG: Record<FeatureTier, { label: string; badge: string | null }> = {
+  available: { label: 'Available', badge: null },
+  beta:      { label: 'Beta',      badge: 'bg-amber-500/10 text-amber-600 dark:text-amber-400' },
+  preview:   { label: 'Preview',   badge: 'bg-purple-500/10 text-purple-600 dark:text-purple-400' },
+};
+
+// Add auxiliary feature items here as they ship.
+// Example: { title: 'AI Hints', href: '/dashboard/ai-hints', icon: Sparkles, tier: 'preview' }
+const FEATURE_ITEMS: SidebarFeature[] = [];
 
 // ============================================
 // Types
@@ -258,7 +282,53 @@ export function AppSidebar({
             {/* Separator */}
             <div className="mx-3 my-1 border-t border-border/40" />
 
-            {/* Utility pages */}
+            {/* Feature tier sections — only render non-empty tiers */}
+            {(['available', 'beta', 'preview'] as const).map((tier) => {
+              const items = FEATURE_ITEMS.filter((f) => f.tier === tier);
+              if (items.length === 0) return null;
+              const cfg = TIER_CONFIG[tier];
+              return (
+                <SidebarGroup key={tier} className="pt-1 pb-1">
+                  <SidebarGroupLabel className="flex items-center px-3 mb-1">
+                    {cfg.label}
+                    {cfg.badge && (
+                      <span className={`ml-1 text-[10px] px-1.5 py-0.5 rounded-full font-normal ${cfg.badge}`}>
+                        {cfg.label.toLowerCase()}
+                      </span>
+                    )}
+                  </SidebarGroupLabel>
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      {items.map((feature) => (
+                        <SidebarMenuItem key={feature.href}>
+                          <SidebarMenuButton
+                            asChild
+                            isActive={pathname === feature.href}
+                            tooltip={feature.title}
+                            className={cn(
+                              "rounded-lg",
+                              pathname === feature.href
+                                ? "bg-primary/10 text-primary font-medium"
+                                : "text-muted-foreground hover:text-foreground"
+                            )}
+                          >
+                            <Link href={feature.href} className="flex items-center gap-3 px-3 py-2">
+                              <feature.icon className="h-4 w-4" />
+                              <span>{feature.title}</span>
+                            </Link>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      ))}
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </SidebarGroup>
+              );
+            })}
+
+            {/* Bottom separator only when at least one tier section rendered */}
+            {FEATURE_ITEMS.length > 0 && <div className="mx-3 my-1 border-t border-border/40" />}
+
+            {/* Permanent utility section */}
             <SidebarGroup className="pt-1 pb-1">
               <SidebarGroupContent>
                 <SidebarMenu>
