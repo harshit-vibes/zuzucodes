@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
+import { usePostHog } from "posthog-js/react";
 import { cn } from "@/lib/utils";
 
 const faqs = [
@@ -16,9 +17,9 @@ const faqs = [
       "Go at your own pace. Most learners complete the first track in 4–6 weeks spending about an hour a day. There are no deadlines or cohort schedules.",
   },
   {
-    question: "What happens after the 7-day trial ends?",
+    question: "What happens after the 3-day trial ends?",
     answer:
-      "You'll be charged the monthly subscription fee automatically. If you cancel before day 7, you won't be charged anything. No questions, no hassle.",
+      "You'll be charged $14.99/month automatically. If you cancel before day 3, you won't be charged anything. No questions, no hassle.",
   },
   {
     question: "Is this for me if I'm not planning a career in tech?",
@@ -39,13 +40,22 @@ const faqs = [
 
 function FaqItem({ question, answer, id }: { question: string; answer: string; id: string }) {
   const [open, setOpen] = useState(false);
+  const ph = usePostHog();
   const panelId = `faq-panel-${id}`;
+
+  const handleToggle = () => {
+    const nextOpen = !open;
+    setOpen(nextOpen);
+    if (nextOpen) {
+      ph?.capture('faq_expanded', { question });
+    }
+  };
 
   return (
     <div className="border-b border-border last:border-0">
       <button
         type="button"
-        onClick={() => setOpen(!open)}
+        onClick={handleToggle}
         aria-expanded={open}
         aria-controls={panelId}
         className="flex w-full items-center justify-between py-5 text-left"

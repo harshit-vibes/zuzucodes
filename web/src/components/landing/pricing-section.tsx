@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { Check, ArrowRight } from "lucide-react";
 import { usePostHog } from "posthog-js/react";
 import { Button } from "@/components/ui/button";
@@ -17,9 +18,27 @@ const features = [
 
 export function PricingSection() {
   const ph = usePostHog();
+  const sectionRef = useRef<HTMLElement>(null);
+  const firedRef = useRef(false);
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !firedRef.current) {
+          firedRef.current = true;
+          ph?.capture('pricing_viewed');
+        }
+      },
+      { threshold: 0.3 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [ph]);
 
   return (
-    <section id="pricing" className="relative overflow-hidden py-24 sm:py-32">
+    <section ref={sectionRef} id="pricing" className="relative overflow-hidden py-24 sm:py-32">
       <div className="absolute inset-0 bg-gradient-to-b from-background via-muted/20 to-background" />
       <div className="absolute inset-0 neural-grid opacity-30" />
 
