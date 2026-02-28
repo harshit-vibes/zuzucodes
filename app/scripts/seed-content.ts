@@ -591,8 +591,8 @@ async function main() {
         ${capstoneData.title},
         ${capstoneData.description ?? null},
         ${capstoneData.starter_code ?? null},
-        ${capstoneData.required_packages},
-        ${capstoneData.hints}
+        ${capstoneData.required_packages ?? []},
+        ${capstoneData.hints ?? []}
       )
       ON CONFLICT (id) DO UPDATE SET
         title             = EXCLUDED.title,

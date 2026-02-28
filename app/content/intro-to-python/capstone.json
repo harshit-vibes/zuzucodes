@@ -1,5 +1,5 @@
 {
-  "id": "capstone-intro-to-python-001",
+  "id": "capstone-intro-python-001",
   "course_id": "course-intro-python-001",
   "title": "Build a Quote Fetcher",
   "description": "# Capstone: Quote Fetcher\n\nYou've mastered Python fundamentals. Now put it all together.\n\nUsing the `requests` library, write a script that fetches a random quote from a public API, formats it nicely, and prints it to the terminal.\n\n**Requirements:**\n- Fetch from `https://zenquotes.io/api/random`\n- Print the quote text and author in a readable format\n- Handle the case where the request fails gracefully",
