@@ -6,7 +6,7 @@
  * Usage: npm run seed  (from app/)
  */
 
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { neon } from '@neondatabase/serverless';
 import { execSync } from 'child_process';
@@ -574,6 +574,36 @@ async function main() {
   await sql`UPDATE courses SET confidence_form = ${JSON.stringify(courseConfidenceForm)} WHERE id = ${courseId}`;
 
   console.log('  seeded intro_content, outro_content, and confidence_form for course');
+
+  // ── Capstone ──────────────────────────────────────────────────────────────
+  // Seed capstone if capstone.json exists for this course
+  const capstonePath = join(__dirname, '..', '..', 'content', 'intro-to-python', 'capstone.json');
+  if (existsSync(capstonePath)) {
+    const capstone = JSON.parse(readFileSync(capstonePath, 'utf8'));
+    // Strip _status sentinel (consistent with how lessons are seeded)
+    const { _status, ...capstoneData } = capstone;
+
+    await sql`
+      INSERT INTO capstones (id, course_id, title, description, starter_code, required_packages, hints)
+      VALUES (
+        ${capstoneData.id},
+        ${capstoneData.course_id},
+        ${capstoneData.title},
+        ${capstoneData.description ?? null},
+        ${capstoneData.starter_code ?? null},
+        ${capstoneData.required_packages},
+        ${capstoneData.hints}
+      )
+      ON CONFLICT (id) DO UPDATE SET
+        title             = EXCLUDED.title,
+        description       = EXCLUDED.description,
+        starter_code      = EXCLUDED.starter_code,
+        required_packages = EXCLUDED.required_packages,
+        hints             = EXCLUDED.hints,
+        updated_at        = NOW()
+    `;
+    console.log(`  ✓ Capstone: ${capstoneData.title}`);
+  }
 
   console.log('\nRunning validation...');
   try {
