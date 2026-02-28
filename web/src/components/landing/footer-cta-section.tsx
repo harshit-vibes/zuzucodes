@@ -1,8 +1,13 @@
-import Link from "next/link";
+"use client";
+
+import { usePostHog } from "posthog-js/react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import { getSignUpUrl } from "@/lib/get-sign-up-url";
 
 export function FooterCtaSection() {
+  const ph = usePostHog();
+
   return (
     <section className="relative overflow-hidden py-24 sm:py-32">
       <div className="absolute inset-0 neural-grid opacity-20" />
@@ -14,7 +19,7 @@ export function FooterCtaSection() {
           Ready to start building?
         </h2>
         <p className="mt-6 mx-auto max-w-xl text-lg text-muted-foreground">
-          Join the next generation of builders. Try it free for 7 days.
+          Join the next generation of builders. Try it free for 3 days.
         </p>
         <div className="mt-10 flex flex-col items-center gap-4">
           <div className="gradient-border-animated rounded-xl">
@@ -23,10 +28,13 @@ export function FooterCtaSection() {
               className="group h-14 px-8 text-base btn-shimmer rounded-[calc(var(--radius-xl))]"
               asChild
             >
-              <Link href="https://app.zuzu.codes/auth/sign-up">
-                Start 7-Day Trial
+              <a
+                href={getSignUpUrl()}
+                onClick={() => ph?.capture('cta_clicked', { section: 'footer_cta', text: 'Get Started Free' })}
+              >
+                Get Started Free
                 <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </Link>
+              </a>
             </Button>
           </div>
           <p className="text-sm text-muted-foreground">Cancel anytime. No long-term commitment.</p>

@@ -1,8 +1,10 @@
 "use client";
 
-import Link from "next/link";
+import { useEffect } from "react";
+import { usePostHog } from "posthog-js/react";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Code2, CheckCircle2, Zap } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import { getSignUpUrl } from "@/lib/get-sign-up-url";
 
 const particles = Array.from({ length: 10 }, (_, i) => ({
   id: i,
@@ -12,31 +14,39 @@ const particles = Array.from({ length: 10 }, (_, i) => ({
   duration: `${6 + (i % 4)}s`,
 }));
 
-const milestones = [
-  {
-    icon: Code2,
-    step: "Step 1",
-    title: "Write your first program",
-    description: "Understand how code actually works",
-    active: false,
-  },
-  {
-    icon: CheckCircle2,
-    step: "Step 2",
-    title: "Solve real problems",
-    description: "Build logic, not just syntax",
-    active: true,
-  },
-  {
-    icon: Zap,
-    step: "Step 3",
-    title: "Ship something real",
-    description: "Go from learner to builder",
-    active: false,
-  },
-];
-
 export function HeroSection() {
+  const ph = usePostHog();
+
+  useEffect(() => {
+    if (!document.querySelector('script[src*="splinetool"]')) {
+      const script = document.createElement("script");
+      script.type = "module";
+      script.src = "https://unpkg.com/@splinetool/viewer@1.12.61/build/spline-viewer.js";
+      document.head.appendChild(script);
+    }
+
+    // Inject a <style> into the shadow root to persistently hide the Spline logo.
+    // Inline style overrides can be reset by the viewer; a stylesheet cannot.
+    const tryHide = (): boolean => {
+      const viewer = document.querySelector("spline-viewer");
+      const root = viewer?.shadowRoot;
+      if (!root) return false;
+      if (!root.querySelector("[data-zuzu-hide]")) {
+        const s = document.createElement("style");
+        s.setAttribute("data-zuzu-hide", "");
+        s.textContent = "#logo,a[href*='spline.design']{display:none!important}";
+        root.appendChild(s);
+      }
+      return true;
+    };
+
+    if (!tryHide()) {
+      const iv = setInterval(() => { if (tryHide()) clearInterval(iv); }, 200);
+      const to = setTimeout(() => clearInterval(iv), 15000);
+      return () => { clearInterval(iv); clearTimeout(to); };
+    }
+  }, []);
+
   return (
     <section className="relative min-h-screen overflow-hidden pt-16">
       {/* Neural grid background */}
@@ -64,9 +74,14 @@ export function HeroSection() {
       <div className="absolute inset-0 bg-gradient-to-b from-background/50 via-transparent to-background pointer-events-none" />
 
       <div className="container relative mx-auto flex min-h-[calc(100vh-4rem)] items-center px-6 py-20">
-        <div className="grid w-full gap-12 lg:grid-cols-2 lg:gap-16">
-          {/* Left: Content */}
-          <div className="flex flex-col justify-center">
+        {/*
+          Grid layout:
+          - Mobile (1 col): text → spline → cta (DOM order)
+          - Desktop (2 col): col-1 row-1=text, col-1 row-2=cta, col-2 rows-1-2=spline
+        */}
+        <div className="grid w-full grid-cols-1 lg:grid-cols-2 lg:gap-x-16">
+          {/* Text block: badge + headline + paragraph */}
+          <div className="flex flex-col lg:col-start-1 lg:row-start-1 lg:self-end lg:pb-6">
             <div className="mb-8">
               <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm font-medium text-primary">
                 <span className="relative flex h-2 w-2">
@@ -90,18 +105,36 @@ export function HeroSection() {
               Structured coding for students and early-career learners — starting from zero.
               Build real skills. Build real things.
             </p>
+          </div>
 
-            <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-center fade-in-up stagger-3">
+          {/* Spline 3D scene — between paragraph and CTA on mobile, right column on desktop */}
+          <div className="relative mt-8 flex items-center justify-center lg:col-start-2 lg:row-start-1 lg:row-end-3 lg:mt-0">
+            <spline-viewer
+              url="https://prod.spline.design/nJcOGf2mvI8wkCXH/scene.splinecode"
+              className="w-full"
+              style={{ minHeight: "280px" }}
+            />
+          </div>
+
+          {/* CTA + stats */}
+          <div className="flex flex-col lg:col-start-1 lg:row-start-2 lg:self-start lg:pt-6">
+            <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-center fade-in-up stagger-3 lg:mt-0">
               <Button size="lg" className="group h-12 px-6 text-base btn-shimmer" asChild>
-                <Link href="https://app.zuzu.codes/auth/sign-up">
-                  Start 7-Day Trial
+                <a
+                  href={getSignUpUrl()}
+                  onClick={() => ph?.capture('cta_clicked', { section: 'hero', text: 'Get Started' })}
+                >
+                  Get Started
                   <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                </Link>
+                </a>
               </Button>
               <Button variant="ghost" size="lg" className="h-12 px-6 text-base" asChild>
                 <a href="#courses">See what&apos;s inside ↓</a>
               </Button>
             </div>
+            <p className="mt-3 text-sm text-muted-foreground fade-in-up stagger-4">
+              ✓ 3-day free trial included &nbsp;·&nbsp; Cancel before day 3, pay nothing
+            </p>
 
             <div className="mt-16 flex flex-wrap items-center gap-8 border-t border-border pt-8 fade-in-up stagger-4">
               <div>
@@ -115,82 +148,8 @@ export function HeroSection() {
               </div>
               <div className="hidden h-10 w-px bg-border sm:block" />
               <div>
-                <p className="font-display text-3xl font-semibold">7-Day Trial</p>
+                <p className="font-display text-3xl font-semibold">3-Day Trial</p>
                 <p className="text-sm text-muted-foreground">Risk-free start</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Right: Learning path visualization */}
-          <div className="relative flex items-center justify-center lg:justify-end">
-            <div className="absolute -right-8 -top-8 h-72 w-72 rounded-full bg-primary/5 blur-3xl" />
-            <div className="absolute -bottom-8 -left-8 h-48 w-48 rounded-full bg-accent/20 blur-2xl" />
-
-            <div className="relative w-full max-w-md space-y-4">
-              {milestones.map((milestone) => {
-                const Icon = milestone.icon;
-                return (
-                  <div
-                    key={milestone.step}
-                    className={`rounded-xl border p-5 flex items-center gap-4 transition-all ${
-                      milestone.active
-                        ? "border-primary/50 bg-card shadow-lg shadow-primary/10"
-                        : "border-border bg-card/60 opacity-70"
-                    }`}
-                  >
-                    <div
-                      className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full ${
-                        milestone.active
-                          ? "bg-primary/15 text-primary"
-                          : "bg-muted text-muted-foreground"
-                      }`}
-                    >
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-muted-foreground">{milestone.step}</p>
-                      <p className="font-display text-base font-semibold">{milestone.title}</p>
-                      <p className="text-sm text-muted-foreground truncate">{milestone.description}</p>
-                    </div>
-                    {milestone.active && (
-                      <div className="flex-shrink-0">
-                        <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                          <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                          In progress
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-
-              {/* Floating badges */}
-              <div className="absolute -left-4 top-1/4 rounded-lg glass-premium p-3 shadow-lg card-lift">
-                <div className="flex items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-success/10 text-success">
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium">Beginner</p>
-                    <p className="text-xs text-muted-foreground">Friendly</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="absolute -right-4 bottom-4 rounded-lg glass-premium p-3 shadow-lg card-lift">
-                <div className="flex items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary icon-glow">
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium">Built for the</p>
-                    <p className="text-xs text-muted-foreground">AI era</p>
-                  </div>
-                </div>
               </div>
             </div>
           </div>

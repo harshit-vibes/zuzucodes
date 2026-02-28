@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { usePostHog } from "posthog-js/react";
 import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/shared/brand-logo";
 import { Menu, X } from "lucide-react";
 import { ThemeToggle } from "@/components/landing/theme-toggle";
 import { cn } from "@/lib/utils";
+import { getSignUpUrl } from "@/lib/get-sign-up-url";
 
 const navLinks = [
   { label: "Courses", href: "#courses" },
@@ -15,6 +17,7 @@ const navLinks = [
 ];
 
 export function Header() {
+  const ph = usePostHog();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -61,11 +64,13 @@ export function Header() {
           {/* Desktop Actions */}
           <div className="hidden items-center gap-3 md:flex">
             <ThemeToggle />
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="https://app.zuzu.codes/auth/sign-in">Sign In</Link>
-            </Button>
             <Button size="sm" className="btn-shimmer" asChild>
-              <Link href="https://app.zuzu.codes/auth/sign-up">Get Started</Link>
+              <a
+                href={getSignUpUrl()}
+                onClick={() => ph?.capture('cta_clicked', { section: 'header', text: 'Get Started' })}
+              >
+                Get Started
+              </a>
             </Button>
           </div>
 
@@ -96,11 +101,13 @@ export function Header() {
                 </Link>
               ))}
               <div className="flex flex-col gap-2 pt-4">
-                <Button variant="outline" size="sm" asChild>
-                  <Link href="https://app.zuzu.codes/auth/sign-in">Sign In</Link>
-                </Button>
                 <Button size="sm" asChild>
-                  <Link href="https://app.zuzu.codes/auth/sign-up">Get Started</Link>
+                  <a
+                    href={getSignUpUrl()}
+                    onClick={() => ph?.capture('cta_clicked', { section: 'header', text: 'Get Started' })}
+                  >
+                    Get Started
+                  </a>
                 </Button>
               </div>
             </nav>
