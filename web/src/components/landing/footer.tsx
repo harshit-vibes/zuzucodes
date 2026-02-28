@@ -12,7 +12,7 @@ const footerLinks = {
   ],
   legal: [
     { label: "Privacy Policy", href: "/privacy", external: false },
-    { label: "Terms of Service", href: "/service", external: false },
+    { label: "Terms of Service", href: "/terms", external: false },
   ],
 };
 
@@ -81,7 +81,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-16 flex flex-col items-center justify-between gap-4 border-t border-border pt-8 sm:flex-row">
+        <div className="mt-16 flex flex-col items-center justify-center gap-4 border-t border-border pt-8 sm:flex-row">
           <p className="text-sm text-muted-foreground">
             &copy; {new Date().getFullYear()} zuzu.codes. All rights reserved.
           </p>

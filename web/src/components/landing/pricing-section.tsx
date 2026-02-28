@@ -95,7 +95,7 @@ export function PricingSection() {
 
           <p className="mt-8 text-center text-sm text-muted-foreground">
             Trial converts to full access automatically. Cancel any time before day 7 and you
-            won&apos;t be charged again.
+            won&apos;t be charged anything.
           </p>
         </div>
       </div>
