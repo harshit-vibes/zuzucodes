@@ -1013,16 +1013,16 @@ export const getUserCapstoneSubmission = cache(async function getUserCapstoneSub
 /**
  * Check whether all modules in a course are fully complete (all lessons + quiz).
  */
-export async function areAllModulesComplete(
+export const areAllModulesComplete = cache(async (
   userId: string,
   moduleIds: string[],
-): Promise<boolean> {
+): Promise<boolean> => {
   if (moduleIds.length === 0) return true
   const statuses = await getBatchModuleCompletionStatus(userId, moduleIds)
   return moduleIds.every(
     (id) => statuses[id]?.allLessonsCompleted && statuses[id]?.quizCompleted,
   )
-}
+})
 
 /**
  * Get capstone submission statuses for a set of courses.

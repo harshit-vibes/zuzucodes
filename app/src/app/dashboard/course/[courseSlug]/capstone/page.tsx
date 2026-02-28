@@ -1,47 +1,48 @@
-import { notFound } from 'next/navigation'
-import { auth } from '@/lib/auth/server'
+import { notFound } from 'next/navigation';
+import { auth } from '@/lib/auth/server';
 import {
   getCourseWithModules,
   getCapstone,
   getUserCapstoneSubmission,
   getLessonsForCourse,
   areAllModulesComplete,
-} from '@/lib/data'
-import { buildCourseSequence } from '@/lib/course-sequence'
-import { CapstoneLayout } from '@/components/capstone/capstone-layout'
-import { CoursePlayerShell } from '@/components/course/course-player-shell'
-import Link from 'next/link'
+} from '@/lib/data';
+import { buildCourseSequence } from '@/lib/course-sequence';
+import { CapstoneLayout } from '@/components/capstone/capstone-layout';
+import { CoursePlayerShell } from '@/components/course/course-player-shell';
+import Link from 'next/link';
 
-interface Props {
-  params: Promise<{ courseSlug: string }>
+interface CapstonePageProps {
+  params: Promise<{ courseSlug: string }>;
 }
 
-export default async function CapstonePage({ params }: Props) {
-  const { courseSlug } = await params
-  const { user } = await auth()
+export default async function CapstonePage({ params }: CapstonePageProps) {
+  const { courseSlug } = await params;
+  const { user } = await auth();
 
-  const course = await getCourseWithModules(courseSlug)
-  if (!course) notFound()
+  const course = await getCourseWithModules(courseSlug);
+  if (!course || !course.capstone) notFound();
 
-  const capstone = await getCapstone(course.id)
-  if (!capstone) notFound()
+  const capstone = await getCapstone(course.id);
+  if (!capstone) notFound();
 
-  const moduleIds = course.modules.map((m) => m.id)
+  const moduleIds = course.modules.map((m) => m.id);
 
   const [submission, allComplete, allLessonsMap] = await Promise.all([
     user ? getUserCapstoneSubmission(user.id, capstone.id) : Promise.resolve(null),
     user ? areAllModulesComplete(user.id, moduleIds) : Promise.resolve(false),
     getLessonsForCourse(moduleIds),
-  ])
+  ]);
 
-  const steps = buildCourseSequence(courseSlug, course.modules, allLessonsMap, capstone.title)
-  const currentHref = `/dashboard/course/${courseSlug}/capstone`
-  const currentIdx = steps.findIndex((s) => s.href === currentHref)
-  const prevStep = currentIdx > 0 ? steps[currentIdx - 1] : null
-  const nextStep = currentIdx < steps.length - 1 ? steps[currentIdx + 1] : null
+  const steps = buildCourseSequence(courseSlug, course.modules, allLessonsMap, capstone.title);
+  const currentHref = `/dashboard/course/${courseSlug}/capstone`;
+  const currentIdx = steps.findIndex((s) => s.href === currentHref);
+  const prevStep = currentIdx > 0 ? steps[currentIdx - 1] : null;
+  const nextStep = currentIdx < steps.length - 1 ? steps[currentIdx + 1] : null;
 
-  // Locked state — all modules must be complete (and not already submitted)
-  const isLocked = !allComplete && !submission
+  // isLocked: unlock if all modules complete OR user already has a prior submission.
+  // Unauthenticated users always see the lock screen (allComplete=false, submission=null).
+  const isLocked = !allComplete && !submission;
 
   if (isLocked) {
     return (
@@ -74,7 +75,7 @@ export default async function CapstonePage({ params }: Props) {
           </div>
         </div>
       </CoursePlayerShell>
-    )
+    );
   }
 
   return (
@@ -86,5 +87,5 @@ export default async function CapstonePage({ params }: Props) {
       prevStep={prevStep}
       nextStep={nextStep}
     />
-  )
+  );
 }
