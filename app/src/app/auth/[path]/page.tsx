@@ -1,5 +1,7 @@
 import { AuthView } from '@neondatabase/auth/react';
 import { BrandLogo } from '@/components/shared/brand-logo';
+import { auth } from '@/lib/auth/server';
+import { redirect } from 'next/navigation';
 import Link from 'next/link';
 
 export const dynamicParams = false;
@@ -10,6 +12,11 @@ export default async function AuthPage({
   params: Promise<{ path: string }>;
 }) {
   const { path } = await params;
+
+  // After OAuth (Google), better-auth-ui redirects back to this page with an active session.
+  // Detect that and send the user to their destination instead of showing the auth UI again.
+  const { session } = await auth();
+  if (session) redirect('/dashboard');
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-background overflow-hidden px-4 py-20">
