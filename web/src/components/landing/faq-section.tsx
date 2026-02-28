@@ -8,7 +8,7 @@ const faqs = [
   {
     question: "Do I need any prior coding experience?",
     answer:
-      "No. The Python Foundations track assumes you've never written a line of code. We start from the very beginning and move at a pace that makes sense.",
+      "None at all. We start from the very first concept — what code is, how a computer reads it, and how to write your first program. No shortcuts, no assumptions.",
   },
   {
     question: "How long does the course take?",
@@ -23,12 +23,12 @@ const faqs = [
   {
     question: "Is this for me if I'm not planning a career in tech?",
     answer:
-      "Absolutely. Knowing Python makes you better at almost any job — it's like knowing Excel was 20 years ago, but more powerful. Doctors, lawyers, analysts, and marketers all benefit from being able to write code.",
+      "Absolutely. In the AI era, knowing how to code makes you better at almost any job — it's like knowing Excel was 20 years ago, but far more powerful. It gives you the ability to build tools, automate work, and understand what AI is actually doing.",
   },
   {
     question: "How is this different from freeCodeCamp or Codecademy?",
     answer:
-      "Those platforms give you exercises. zuzu.codes gives you a learning system. The Zuzu Method's 4-quadrant approach ensures you build genuine understanding — not just the ability to pass tests and forget what you learned.",
+      "Those platforms give you exercises. zuzu.codes gives you a learning system built for this moment — when AI makes coding relevant to everyone, not just developers. The 4-quadrant method builds genuine understanding, not just the ability to pass tests.",
   },
   {
     question: "Can I cancel anytime?",
