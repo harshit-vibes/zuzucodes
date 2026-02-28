@@ -343,14 +343,14 @@
 .gradient-border-animated {
   position: relative;
   background: var(--card);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
 }
 
 .gradient-border-animated::before {
   content: '';
   position: absolute;
   inset: -2px;
-  border-radius: calc(var(--radius-lg) + 2px);
+  border-radius: calc(var(--radius-xl) + 2px);
   background: linear-gradient(
     90deg,
     oklch(0.58 0.16 195),

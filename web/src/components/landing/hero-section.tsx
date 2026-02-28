@@ -78,13 +78,12 @@ export function HeroSection() {
             </div>
 
             <h1 className="font-display text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl xl:text-7xl">
-              <span className="text-reveal inline-block">The AI era rewards</span>{" "}
-              <span className="relative inline-block text-reveal text-reveal-delay-1">
-                <span className="relative z-10 text-gradient">people who can build.</span>
+              <span className="text-reveal inline-block">The AI era</span>{" "}
+              <span className="text-reveal text-reveal-delay-1 inline-block">rewards</span>{" "}
+              <span className="relative inline-block text-reveal text-reveal-delay-2">
+                <span className="relative z-10 text-gradient">builders.</span>
                 <span className="absolute -bottom-2 left-0 right-0 h-3 bg-gradient-to-r from-primary/20 to-accent/20 -skew-x-3 rounded-sm" />
               </span>
-              <br />
-              <span className="text-reveal text-reveal-delay-2 inline-block">Here&apos;s where you start.</span>
             </h1>
 
             <p className="mt-6 max-w-lg text-lg leading-relaxed text-muted-foreground sm:text-xl fade-in-up stagger-2">
