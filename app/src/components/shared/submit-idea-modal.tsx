@@ -1,8 +1,18 @@
 'use client';
 
 import { useState } from 'react';
+import { Sparkles, Bug, BookOpen } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+
+type ItemType = 'feature' | 'bug' | 'learning';
+
+const TYPE_OPTIONS: { value: ItemType; label: string; Icon: React.ComponentType<{ className?: string }>; description: string }[] = [
+  { value: 'feature',  label: 'Feature',  Icon: Sparkles,  description: 'Platform improvement' },
+  { value: 'bug',      label: 'Bug',      Icon: Bug,        description: 'Something is broken'  },
+  { value: 'learning', label: 'Learning', Icon: BookOpen,   description: 'New course or lesson'  },
+];
 
 interface SubmitIdeaModalProps {
   open: boolean;
@@ -10,6 +20,7 @@ interface SubmitIdeaModalProps {
 }
 
 export function SubmitIdeaModal({ open, onOpenChange }: SubmitIdeaModalProps) {
+  const [type, setType] = useState<ItemType>('feature');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -17,6 +28,7 @@ export function SubmitIdeaModal({ open, onOpenChange }: SubmitIdeaModalProps) {
 
   function handleClose(value: boolean) {
     if (!value) {
+      setType('feature');
       setTitle('');
       setDescription('');
       setSubmitted(false);
@@ -32,7 +44,7 @@ export function SubmitIdeaModal({ open, onOpenChange }: SubmitIdeaModalProps) {
       const res = await fetch('/api/roadmap/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: title.trim(), description: description.trim() }),
+        body: JSON.stringify({ title: title.trim(), description: description.trim(), type }),
       });
       if (res.ok) {
         setSubmitted(true);
@@ -54,6 +66,29 @@ export function SubmitIdeaModal({ open, onOpenChange }: SubmitIdeaModalProps) {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4 pt-1">
+            {/* Type selector */}
+            <div>
+              <label className="text-xs font-medium text-foreground/80 mb-1.5 block">Type</label>
+              <div className="grid grid-cols-3 gap-2">
+                {TYPE_OPTIONS.map(({ value, label, Icon, description }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setType(value)}
+                    className={cn(
+                      'flex flex-col items-center gap-1 rounded-lg border px-2 py-2.5 text-center transition-all',
+                      type === value
+                        ? 'border-primary/50 bg-primary/8 text-primary'
+                        : 'border-border/50 text-muted-foreground hover:border-border hover:text-foreground',
+                    )}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    <span className="text-[11px] font-medium">{label}</span>
+                    <span className="text-[9px] text-muted-foreground/60 leading-tight">{description}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
             <div>
               <label className="text-xs font-medium text-foreground/80 mb-1.5 block">
                 Title <span className="text-destructive">*</span>

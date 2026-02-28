@@ -8,6 +8,10 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const title = body?.title?.trim();
   const description = body?.description?.trim() ?? '';
+  const VALID_TYPES = ['feature', 'bug', 'learning'] as const;
+  const type: 'feature' | 'bug' | 'learning' = VALID_TYPES.includes(body?.type)
+    ? body.type
+    : 'feature';
 
   if (!title) {
     return Response.json({ error: 'Title required' }, { status: 400 });
@@ -20,7 +24,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    await submitRoadmapIdea(user.id, title, description);
+    await submitRoadmapIdea(user.id, title, description, type);
     return Response.json({ ok: true });
   } catch {
     return Response.json({ error: 'Failed to submit idea' }, { status: 500 });

@@ -2,9 +2,15 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronUp } from 'lucide-react';
+import { ChevronUp, Sparkles, Bug, BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { RoadmapItem } from '@/lib/data';
+
+const TYPE_MAP = {
+  feature:  { label: 'feature',  Icon: Sparkles, color: '#818cf8' },
+  bug:      { label: 'bug',      Icon: Bug,       color: '#f87171' },
+  learning: { label: 'learning', Icon: BookOpen,  color: '#34d399' },
+} satisfies Record<RoadmapItem['type'], { label: string; Icon: React.ComponentType<{ className?: string }>; color: string }>;
 
 interface IdeaCardProps {
   item: RoadmapItem;
@@ -52,6 +58,7 @@ export function IdeaCard({ item, isAuthenticated, accentColor, animDelay = 0 }: 
   }
 
   const isCommunity = item.created_by !== 'admin';
+  const typeInfo = TYPE_MAP[item.type] ?? TYPE_MAP.feature;
 
   return (
     <div
@@ -67,6 +74,12 @@ export function IdeaCard({ item, isAuthenticated, accentColor, animDelay = 0 }: 
 
       {/* Card content */}
       <div className="pl-4 pr-3 pt-3 pb-2.5 flex flex-col gap-2">
+        {/* Type badge */}
+        <div className="flex items-center gap-1" style={{ color: typeInfo.color }}>
+          <typeInfo.Icon className="h-2.5 w-2.5" />
+          <span className="text-[9px] font-mono uppercase tracking-wider">{typeInfo.label}</span>
+        </div>
+
         <p className="text-[12px] font-medium text-foreground leading-snug">
           {item.title}
         </p>

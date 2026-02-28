@@ -986,6 +986,7 @@ export interface RoadmapItem {
   title: string;
   description: string | null;
   status: 'idea' | 'planned' | 'in_progress' | 'done';
+  type: 'feature' | 'bug' | 'learning';
   created_by: string;
   created_at: string;
   vote_count: number;
@@ -1022,6 +1023,7 @@ export const getRoadmapItems = cache(async (userId: string | null): Promise<Road
         ri.title,
         ri.description,
         ri.status,
+        ri.type,
         ri.created_by,
         ri.created_at,
         COUNT(rv.user_id)::int                        AS vote_count,
@@ -1067,10 +1069,11 @@ export async function submitRoadmapIdea(
   userId: string,
   title: string,
   description: string,
+  type: 'feature' | 'bug' | 'learning' = 'feature',
 ): Promise<void> {
   await sql`
-    INSERT INTO roadmap_items (title, description, created_by, is_published)
-    VALUES (${title}, ${description || null}, ${userId}, false)
+    INSERT INTO roadmap_items (title, description, created_by, type, is_published)
+    VALUES (${title}, ${description || null}, ${userId}, ${type}, false)
   `;
 }
 
