@@ -1,0 +1,12 @@
+{
+  "name": "zuzucodes",
+  "private": true,
+  "scripts": {
+    "dev:web": "cd web && npm run dev",
+    "dev:app": "cd app && npm run dev",
+    "build:web": "cd web && npm run build",
+    "build:app": "cd app && npm run build",
+    "deploy:web": "cd web && vercel --prod",
+    "deploy:app": "cd app && vercel --prod"
+  }
+}

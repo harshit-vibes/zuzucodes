@@ -12,12 +12,22 @@ See `brochure.md` for course content details and `app/migrations/MIGRATION_NOTES
 
 ## Two-App Architecture
 
-| App | Directory | Purpose |
-|-----|-----------|---------|
-| **Platform** | `app/` | Full learner platform (auth, dashboard, lessons, quizzes) |
-| **Landing** | `web/` | Marketing landing page only |
+| App | Directory | Vercel Project | Domain |
+|-----|-----------|----------------|--------|
+| **Platform** | `app/` | `web` (harshitvibes/web) | `app.zuzu.codes` |
+| **Landing** | `web/` | `zuzucodes` (harshitvibes/zuzucodes) | `zuzu.codes` |
 
 Most active development happens in `app/`.
+
+> **IMPORTANT — Vercel deployments:** Each app is a separate Vercel project. Always deploy from the app's own subdirectory (or use the root `npm run deploy:*` scripts). Running `vercel --prod` from the repo root deploys to the wrong project.
+
+```bash
+# Deploy landing page (web/ → zuzu.codes)
+npm run deploy:web
+
+# Deploy platform (app/ → app.zuzu.codes)
+npm run deploy:app
+```
 
 ---
 
