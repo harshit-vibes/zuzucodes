@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/shared/brand-logo";
 import { Menu, X } from "lucide-react";
+import { ThemeToggle } from "@/components/landing/theme-toggle";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
@@ -59,6 +60,7 @@ export function Header() {
 
           {/* Desktop Actions */}
           <div className="hidden items-center gap-3 md:flex">
+            <ThemeToggle />
             <Button variant="ghost" size="sm" asChild>
               <Link href="https://app.zuzu.codes/auth/sign-in">Sign In</Link>
             </Button>
