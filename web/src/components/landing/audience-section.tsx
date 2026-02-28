@@ -7,25 +7,25 @@ const audiences = [
     icon: GraduationCap,
     title: "The Student",
     description:
-      "Building foundational skills before entering the workforce. Every line of code you write now is compound interest on your career.",
+      "You're watching the world change and you want to be ready for it — not playing catch-up when you graduate. Every line of code you write now is compound interest on your career.",
   },
   {
     icon: Briefcase,
     title: "The Career Starter",
     description:
-      "Just started your first job and watching AI change everything around you. Time to stay two steps ahead.",
+      "You just started your first job and you can already see AI changing what gets valued. You'd rather be the person who builds the tools than the one who waits to be handed them.",
   },
   {
     icon: ArrowLeftRight,
     title: "The Career Switcher",
     description:
-      "Transitioning into tech, or adding technical depth to the profession you already love. Python is your on-ramp.",
+      "You're moving toward tech — or bringing technical depth to the profession you already love. You don't need a degree. You need a structured starting point.",
   },
   {
     icon: Code2,
     title: "The Curious Builder",
     description:
-      "You just want to understand how this stuff works — and to actually build something for once.",
+      "You've seen what people build with AI and you want to understand how it works. Not just use it. Actually understand it — and build something of your own.",
   },
 ];
 
@@ -64,9 +64,9 @@ export function AudienceSection() {
 
           <div className="mx-auto max-w-3xl text-center">
             <p className="text-lg leading-relaxed text-muted-foreground sm:text-xl">
-              Whether you&apos;re a complete beginner or have tinkered before, the Zuzu Method gives you the
+              Whether you&apos;ve never written a line of code or you&apos;ve tinkered and gotten stuck, the Zuzu Method gives you the
               structured path to go from{" "}
-              <span className="font-medium text-foreground">curious to capable</span>.
+              <strong>curious</strong> to <strong>capable</strong>.
             </p>
           </div>
         </div>
