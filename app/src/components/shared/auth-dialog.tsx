@@ -13,7 +13,7 @@ export function AuthDialog({ open, onOpenChange, path = "sign-in" }: AuthDialogP
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-sm overflow-hidden p-0 [&>button:last-child]:hidden">
-        <AuthView path={path} />
+        <AuthView path={path} localization={path === 'sign-up' ? { SIGN_IN_WITH: 'Sign up with' } : undefined} />
       </DialogContent>
     </Dialog>
   );

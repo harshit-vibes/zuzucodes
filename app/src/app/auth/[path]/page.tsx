@@ -41,7 +41,11 @@ export default async function AuthPage({
 
       {/* Auth card */}
       <div className="relative z-10 w-full max-w-sm glass-premium rounded-2xl shadow-lg p-8">
-        <AuthView path={path} redirectTo="/dashboard" />
+        <AuthView
+          path={path}
+          redirectTo="/dashboard"
+          localization={path === 'sign-up' ? { SIGN_IN_WITH: 'Sign up with' } : undefined}
+        />
       </div>
 
     </div>
