@@ -6,25 +6,18 @@ import { ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { RoadmapItem } from '@/lib/data';
 
-const STATUS_MAP: Record<string, { label: string; color: string }> = {
-  idea:        { label: 'Idea',        color: 'bg-muted text-muted-foreground' },
-  planned:     { label: 'Planned',     color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400' },
-  in_progress: { label: 'In Progress', color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400' },
-  done:        { label: 'Done',        color: 'bg-green-500/10 text-green-600 dark:text-green-400' },
-};
-
 interface IdeaCardProps {
   item: RoadmapItem;
   isAuthenticated: boolean;
+  accentColor: string;
+  animDelay?: number;
 }
 
-export function IdeaCard({ item, isAuthenticated }: IdeaCardProps) {
+export function IdeaCard({ item, isAuthenticated, accentColor, animDelay = 0 }: IdeaCardProps) {
   const router = useRouter();
   const [voted, setVoted] = useState(item.user_voted);
   const [count, setCount] = useState(item.vote_count);
   const [loading, setLoading] = useState(false);
-
-  const status = STATUS_MAP[item.status] ?? STATUS_MAP.idea;
 
   async function handleVote() {
     if (!isAuthenticated) {
@@ -58,37 +51,58 @@ export function IdeaCard({ item, isAuthenticated }: IdeaCardProps) {
     }
   }
 
-  return (
-    <div className="flex gap-4 rounded-xl border border-border/60 bg-card p-4 hover:border-border/80 transition-colors">
-      {/* Upvote column */}
-      <button
-        onClick={handleVote}
-        disabled={loading}
-        className={cn(
-          'flex flex-col items-center justify-center gap-1 min-w-[3rem] rounded-lg border px-2 py-2 transition-all disabled:opacity-70',
-          voted
-            ? 'border-primary/40 bg-primary/10 text-primary'
-            : 'border-border/60 text-muted-foreground hover:border-primary/40 hover:text-primary',
-        )}
-        aria-label={voted ? 'Remove vote' : 'Upvote'}
-      >
-        <ChevronUp className="h-4 w-4" />
-        <span className="text-xs font-mono font-semibold tabular-nums leading-none">{count}</span>
-      </button>
+  const isCommunity = item.created_by !== 'admin';
 
-      {/* Content */}
-      <div className="flex-1 min-w-0 space-y-1.5">
-        <p className="text-sm font-semibold text-foreground leading-snug">{item.title}</p>
+  return (
+    <div
+      className="kanban-anim relative rounded-lg border border-border/30 bg-card overflow-hidden
+                 hover:border-border/50 hover:shadow-sm transition-all duration-200 group"
+      style={{ animationDelay: `${animDelay}ms` }}
+    >
+      {/* Left accent bar */}
+      <div
+        className="absolute left-0 top-0 bottom-0 w-[3px]"
+        style={{ background: accentColor }}
+      />
+
+      {/* Card content */}
+      <div className="pl-4 pr-3 pt-3 pb-2.5 flex flex-col gap-2">
+        <p className="text-[12px] font-medium text-foreground leading-snug">
+          {item.title}
+        </p>
+
         {item.description && (
-          <p className="text-xs text-muted-foreground leading-relaxed">{item.description}</p>
+          <p className="text-[11px] text-muted-foreground/60 leading-relaxed line-clamp-3">
+            {item.description}
+          </p>
         )}
-        <div className="flex items-center gap-2 pt-0.5">
-          <span className={cn('text-[10px] font-medium px-2 py-0.5 rounded-full', status.color)}>
-            {status.label}
+
+        {/* Footer */}
+        <div className="flex items-center justify-between pt-0.5">
+          <span className="text-[9px] font-mono uppercase tracking-wider text-muted-foreground/30">
+            {isCommunity ? 'community' : 'zuzu team'}
           </span>
-          <span className="text-[10px] text-muted-foreground/60">
-            {item.created_by === 'admin' ? 'by zuzu team' : 'suggested by community'}
-          </span>
+
+          <button
+            onClick={handleVote}
+            disabled={loading}
+            aria-label={voted ? 'Remove vote' : 'Upvote'}
+            className={cn(
+              'flex items-center gap-1 px-1.5 py-0.5 rounded-md font-mono text-[11px] font-semibold tabular-nums',
+              'transition-all duration-150 active:scale-95 disabled:opacity-60',
+              voted
+                ? 'text-primary bg-primary/10'
+                : 'text-muted-foreground/50 hover:text-foreground hover:bg-muted/50',
+            )}
+          >
+            <ChevronUp
+              className={cn(
+                'h-3 w-3 transition-transform duration-150',
+                voted && 'scale-110',
+              )}
+            />
+            {count}
+          </button>
         </div>
       </div>
     </div>

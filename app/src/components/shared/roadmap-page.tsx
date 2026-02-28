@@ -2,20 +2,48 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Lightbulb } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
 import { IdeaCard } from './idea-card';
 import { SubmitIdeaModal } from './submit-idea-modal';
-import { cn } from '@/lib/utils';
 import type { RoadmapItem } from '@/lib/data';
 
-const STATUS_TABS = [
-  { value: null,          label: 'All'         },
-  { value: 'idea',        label: 'Ideas'        },
-  { value: 'planned',     label: 'Planned'      },
-  { value: 'in_progress', label: 'In Progress'  },
-  { value: 'done',        label: 'Done'         },
-] as const;
+type Status = RoadmapItem['status'];
+
+interface KanbanColumn {
+  status: Status;
+  label: string;
+  description: string;
+  color: string;
+  pulse?: boolean;
+}
+
+const COLUMNS: KanbanColumn[] = [
+  {
+    status: 'idea',
+    label: 'Ideas',
+    description: 'Community suggestions',
+    color: '#94a3b8',
+  },
+  {
+    status: 'planned',
+    label: 'Planned',
+    description: 'Confirmed for development',
+    color: '#818cf8',
+  },
+  {
+    status: 'in_progress',
+    label: 'In Progress',
+    description: 'Building now',
+    color: '#fbbf24',
+    pulse: true,
+  },
+  {
+    status: 'done',
+    label: 'Done',
+    description: 'Shipped',
+    color: '#34d399',
+  },
+];
 
 interface RoadmapPageProps {
   items: RoadmapItem[];
@@ -24,69 +52,111 @@ interface RoadmapPageProps {
 
 export function RoadmapPage({ items, isAuthenticated }: RoadmapPageProps) {
   const router = useRouter();
-  const [activeStatus, setActiveStatus] = useState<string | null>(null);
   const [submitOpen, setSubmitOpen] = useState(false);
 
-  const filtered = activeStatus
-    ? items.filter((i) => i.status === activeStatus)
-    : items;
-
   function handleSubmitClick() {
-    if (!isAuthenticated) {
-      router.push('/auth/sign-in');
-      return;
-    }
-    setSubmitOpen(true);
+    if (!isAuthenticated) router.push('/auth/sign-in');
+    else setSubmitOpen(true);
   }
 
   return (
-    <div className="overflow-y-auto h-full">
-      <div className="container mx-auto max-w-2xl px-4 py-10">
-        {/* Page header */}
-        <div className="flex items-start justify-between mb-8">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Lightbulb className="h-5 w-5 text-primary" />
-              <h1 className="text-xl font-semibold text-foreground">Idea Log</h1>
-            </div>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Vote on what we build next. Your voice shapes the roadmap.
-            </p>
-          </div>
-          <Button size="sm" onClick={handleSubmitClick} className="shrink-0 ml-4">
-            Submit an idea
-          </Button>
+    <div className="flex flex-col h-full">
+      {/* Page header */}
+      <div className="px-6 py-4 border-b border-border/30 flex items-center justify-between shrink-0">
+        <div>
+          <h1 className="text-sm font-semibold tracking-tight text-foreground">Roadmap</h1>
+          <p className="text-[11px] font-mono text-muted-foreground/50 mt-0.5">
+            vote · suggest · shape what we build
+          </p>
         </div>
+        <button
+          onClick={handleSubmitClick}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 active:scale-95 transition-all duration-150"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Submit idea
+        </button>
+      </div>
 
-        {/* Status filter tabs */}
-        <div className="flex gap-0 mb-6 border-b border-border/50 overflow-x-auto">
-          {STATUS_TABS.map(({ value, label }) => (
-            <button
-              key={label}
-              onClick={() => setActiveStatus(value)}
-              className={cn(
-                'px-3 py-2.5 text-xs font-medium border-b-2 -mb-px whitespace-nowrap transition-colors',
-                activeStatus === value
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-muted-foreground hover:text-foreground',
-              )}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+      {/* Kanban board */}
+      <div className="flex-1 min-h-0 overflow-x-auto overflow-y-hidden">
+        <div className="h-full flex gap-3 p-5" style={{ width: 'max-content', minWidth: '100%' }}>
+          {COLUMNS.map((col, colIdx) => {
+            const colItems = items
+              .filter((i) => i.status === col.status)
+              .sort((a, b) => b.vote_count - a.vote_count);
 
-        {/* Items list */}
-        <div className="space-y-3">
-          {filtered.length === 0 ? (
-            <div className="py-16 text-center">
-              <p className="text-sm text-muted-foreground">No items in this category yet.</p>
-            </div>
-          ) : (
-            filtered.map((item) => (
-              <IdeaCard key={item.id} item={item} isAuthenticated={isAuthenticated} />
-            ))
-          )}
+            return (
+              <div
+                key={col.status}
+                className="kanban-anim flex flex-col w-[268px] shrink-0 h-full rounded-xl overflow-hidden border border-border/25"
+                style={{ animationDelay: `${colIdx * 55}ms` }}
+              >
+                {/* Column header */}
+                <div
+                  className="shrink-0 px-3.5 pt-4 pb-3 relative"
+                  style={{ background: `${col.color}10` }}
+                >
+                  {/* Colored top bar */}
+                  <div
+                    className="absolute top-0 left-0 right-0 h-[3px]"
+                    style={{ background: col.color }}
+                  />
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        {col.pulse && (
+                          <span className="relative flex h-1.5 w-1.5 shrink-0">
+                            <span
+                              className="animate-ping absolute h-full w-full rounded-full opacity-60"
+                              style={{ background: col.color }}
+                            />
+                            <span
+                              className="relative h-1.5 w-1.5 rounded-full"
+                              style={{ background: col.color }}
+                            />
+                          </span>
+                        )}
+                        <span
+                          className="text-[10px] font-mono font-bold uppercase tracking-[0.15em]"
+                          style={{ color: col.color }}
+                        >
+                          {col.label}
+                        </span>
+                      </div>
+                      <p className="text-[10px] font-mono text-muted-foreground/40 mt-0.5">
+                        {col.description}
+                      </p>
+                    </div>
+                    <span className="text-xs font-mono font-bold tabular-nums text-muted-foreground/30">
+                      {colItems.length}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Cards */}
+                <div className="flex-1 min-h-0 overflow-y-auto px-2 py-2 space-y-2 bg-muted/5">
+                  {colItems.length === 0 ? (
+                    <div className="flex items-center justify-center h-20 rounded-lg border border-dashed border-border/20">
+                      <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/20">
+                        empty
+                      </span>
+                    </div>
+                  ) : (
+                    colItems.map((item, cardIdx) => (
+                      <IdeaCard
+                        key={item.id}
+                        item={item}
+                        isAuthenticated={isAuthenticated}
+                        accentColor={col.color}
+                        animDelay={colIdx * 55 + cardIdx * 28}
+                      />
+                    ))
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
