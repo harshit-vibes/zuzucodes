@@ -57,6 +57,15 @@ The task description will provide:
 - Map directly to the module topics (not to individual lessons)
 - `id`: `q1`, `q2`...
 
+## Updating course.json
+Read the existing file. Update ONLY these fields:
+- `intro_content`
+- `outro_content`
+- `confidence_form`
+- `_status` — set to `"complete"`
+
+Do NOT overwrite `id`, `title`, `slug`, `description`, `outcomes`, `tag`, `order`. Use Read + Write to preserve all existing content.
+
 ## After updating
 Read course.json, update the fields above, write it back.
 Report: course title, hook (first sentence), confidence form question count.
