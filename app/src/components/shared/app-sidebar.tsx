@@ -8,6 +8,7 @@ import {
   Diamond,
   GraduationCap,
   Home,
+  Layers,
   Map,
   Sparkles,
 } from "lucide-react";
@@ -406,6 +407,36 @@ export function AppSidebar({
                 </div>
               </SidebarGroupContent>
             </SidebarGroup>
+
+            {/* Capstone item — shown after all modules if the course has one */}
+            {activeCourse.capstone && (() => {
+              const capstoneCompleted = (contentCompletion[`capstone:${activeCourse.id}`] ?? 'not-started') === 'completed';
+              const isActiveCapstone = pathname === `/dashboard/course/${activeCourse.slug}/capstone`;
+              return (
+                <div className="px-1 mt-1">
+                  <Link
+                    href={`/dashboard/course/${activeCourse.slug}/capstone`}
+                    className={cn(
+                      "flex items-center gap-2 px-2 py-1.5 rounded-md text-[11px] transition-colors mt-1",
+                      isActiveCapstone
+                        ? "bg-primary/10 text-primary font-medium"
+                        : capstoneCompleted
+                        ? "text-muted-foreground/60 hover:text-muted-foreground hover:bg-muted/40"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
+                    )}
+                  >
+                    {isActiveCapstone ? (
+                      <CircleDot className={cn("h-3.5 w-3.5 shrink-0", capstoneCompleted ? "text-green-500" : "text-primary")} />
+                    ) : capstoneCompleted ? (
+                      <div className="h-3.5 w-3.5 rounded-full bg-green-500/70 shrink-0" />
+                    ) : (
+                      <Layers className="h-3.5 w-3.5 shrink-0 text-muted-foreground/40" />
+                    )}
+                    <span className="truncate">{activeCourse.capstone.title}</span>
+                  </Link>
+                </div>
+              );
+            })()}
 
             {/* Course-level nav: Graduation + Certificate */}
             <div className="px-1 mt-1 space-y-0.5">

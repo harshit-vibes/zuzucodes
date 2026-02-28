@@ -1,6 +1,6 @@
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/shared/app-sidebar";
-import { getCoursesForSidebar, getSidebarProgress, getSectionCompletionStatus, getSubscriptionStatus, type SectionStatus } from "@/lib/data";
+import { getCoursesForSidebar, getSidebarProgress, getSectionCompletionStatus, getSubscriptionStatus, getCapstoneSubmissionStatuses, type SectionStatus } from "@/lib/data";
 import { auth } from "@/lib/auth/server";
 import { redirect } from "next/navigation";
 import { enforceSessionLimit } from "@/lib/actions/session-limit";
@@ -25,12 +25,16 @@ export default async function DashboardLayout({
   const courseIds = courses.map((c) => c.id);
   const allModules = courses.flatMap((c) => c.modules);
 
-  const [courseProgress, contentCompletion] = await Promise.all([
+  const [courseProgress, contentCompletion, capstoneStatuses] = await Promise.all([
     getSidebarProgress(user.id, courseIds),
     allModules.length > 0
       ? getSectionCompletionStatus(user.id, allModules)
       : Promise.resolve({} as Record<string, SectionStatus>),
+    getCapstoneSubmissionStatuses(user.id, courses),
   ]);
+
+  // Merge capstone statuses into contentCompletion
+  const mergedCompletion = { ...contentCompletion, ...capstoneStatuses };
 
   const subscription = await getSubscriptionStatus(user.id);
   const isPaid = subscription?.status === 'ACTIVE';
@@ -41,7 +45,7 @@ export default async function DashboardLayout({
         <AppSidebar
           courses={courses}
           courseProgress={courseProgress}
-          contentCompletion={contentCompletion}
+          contentCompletion={mergedCompletion}
           user={{ name: user.name ?? null, email: user.email ?? null, image: user.image ?? null }}
           subscription={subscription}
         />
