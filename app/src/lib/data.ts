@@ -1080,7 +1080,7 @@ export async function submitRoadmapIdea(
 
 export type NextAction =
   | { type: 'start';       course: Course; href: string }
-  | { type: 'lesson';      course: Course; moduleTitle: string; lessonTitle: string; href: string }
+  | { type: 'lesson';      course: Course; moduleTitle: string; href: string }
   | { type: 'quiz';        course: Course; moduleTitle: string; href: string }
   | { type: 'next_course'; course: Course; href: string }
   | { type: 'all_done' }
@@ -1148,7 +1148,6 @@ export async function getNextAction(
         type: 'lesson',
         course: activeCourse,
         moduleTitle: mod.title,
-        lessonTitle: nextLesson.title,
         href: `/dashboard/course/${activeCourse.slug}/${mod.slug}/lesson/${order}`,
       };
     }
@@ -1172,6 +1171,7 @@ export async function getNextAction(
     return {
       type: 'next_course',
       course: nextCourse,
+      // course overview page — real route, used by sidebar welcome link too
       href: `/dashboard/course/${nextCourse.slug}`,
     };
   }
