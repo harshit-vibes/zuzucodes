@@ -1,58 +1,12 @@
 'use client';
 
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
+import { RATE_LIMITS } from '@/lib/rate-limit';
 
-const DAILY_LIMIT = 50;
-const STORAGE_KEY = 'judge0_usage';
-
-interface StoredUsage {
-  date: string; // YYYY-MM-DD UTC
-  count: number;
-}
-
-function getTodayUTC(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function getNextMidnightUTC(): number {
-  const d = new Date();
-  d.setUTCHours(24, 0, 0, 0);
-  return Math.floor(d.getTime() / 1000);
-}
-
-function loadUsage(): StoredUsage {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { date: getTodayUTC(), count: 0 };
-    const parsed = JSON.parse(raw) as StoredUsage;
-    if (parsed.date !== getTodayUTC()) return { date: getTodayUTC(), count: 0 };
-    return parsed;
-  } catch {
-    return { date: getTodayUTC(), count: 0 };
-  }
-}
-
-function saveUsage(usage: StoredUsage): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(usage));
-  } catch {
-    // ignore storage errors
-  }
-}
-
-// ─── Actions Context (stable refs — never re-renders consumers) ──────────────
-
-interface RateLimitActions {
-  /** Returns false if daily limit already reached (no increment). True if incremented. */
-  increment: () => boolean;
-  refresh: () => Promise<void>;
-}
-
-const RateLimitActionsContext = createContext<RateLimitActions | null>(null);
-
-// ─── State Context (re-renders on every count/sync change) ───────────────────
+// ─── State ───────────────────────────────────────────────────────────────────
 
 export interface RateLimitState {
+  // "remaining" reflects the most constrained window (min of all three)
   remaining: number | null;
   resetAt: number | null;
   isSyncing: boolean;
@@ -60,6 +14,14 @@ export interface RateLimitState {
 }
 
 const RateLimitStateContext = createContext<RateLimitState | null>(null);
+
+// ─── Actions ─────────────────────────────────────────────────────────────────
+
+interface RateLimitActions {
+  refresh: () => Promise<void>;
+}
+
+const RateLimitActionsContext = createContext<RateLimitActions | null>(null);
 
 // ─── Provider ────────────────────────────────────────────────────────────────
 
@@ -71,45 +33,47 @@ export function RateLimitProvider({ children }: { children: ReactNode }) {
     isSyncing: false,
   });
 
-  // Load from localStorage on mount (client-only)
-  useEffect(() => {
-    const usage = loadUsage();
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setState({
-      remaining: Math.max(0, DAILY_LIMIT - usage.count),
-      resetAt: getNextMidnightUTC(),
-      lastSynced: null,
-      isSyncing: false,
-    });
-  }, []);
-
-  const increment = useCallback((): boolean => {
-    const usage = loadUsage();
-    if (usage.count >= DAILY_LIMIT) return false;
-    usage.count += 1;
-    saveUsage(usage);
-    setState({
-      remaining: Math.max(0, DAILY_LIMIT - usage.count),
-      resetAt: getNextMidnightUTC(),
-      lastSynced: new Date(),
-      isSyncing: false,
-    });
-    return true;
-  }, []);
-
   const refresh = useCallback(async () => {
     setState(prev => ({ ...prev, isSyncing: true }));
-    const usage = loadUsage();
-    setState({
-      remaining: Math.max(0, DAILY_LIMIT - usage.count),
-      resetAt: getNextMidnightUTC(),
-      lastSynced: new Date(),
-      isSyncing: false,
-    });
+    try {
+      const res = await fetch('/api/code/usage');
+      if (!res.ok) throw new Error('Usage fetch failed');
+
+      const data = await res.json() as {
+        perMin: number;
+        per3hr: number;
+        perDay: number;
+        limits: typeof RATE_LIMITS;
+      };
+
+      // Most constrained window determines "remaining"
+      const remainingMin = data.limits.perMin - data.perMin;
+      const remaining3hr = data.limits.per3hr - data.per3hr;
+      const remainingDay = data.limits.perDay - data.perDay;
+      const remaining = Math.max(0, Math.min(remainingMin, remaining3hr, remainingDay));
+
+      // resetAt: next midnight UTC (day window)
+      const resetAt = new Date();
+      resetAt.setUTCHours(24, 0, 0, 0);
+
+      setState({
+        remaining,
+        resetAt: Math.floor(resetAt.getTime() / 1000),
+        lastSynced: new Date(),
+        isSyncing: false,
+      });
+    } catch {
+      setState(prev => ({ ...prev, isSyncing: false }));
+    }
   }, []);
 
+  // Fetch on mount
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
   return (
-    <RateLimitActionsContext.Provider value={{ increment, refresh }}>
+    <RateLimitActionsContext.Provider value={{ refresh }}>
       <RateLimitStateContext.Provider value={state}>
         {children}
       </RateLimitStateContext.Provider>
@@ -131,7 +95,6 @@ export function useRateLimitState(): RateLimitState {
   return ctx;
 }
 
-/** Combined hook — subscribes to state changes. Prefer useRateLimitActions() in hot paths. */
 export function useRateLimit() {
   return { ...useRateLimitActions(), ...useRateLimitState() };
 }

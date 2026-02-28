@@ -51,7 +51,7 @@ export function CodeLessonLayout({
   problemHints,
 }: CodeLessonLayoutProps) {
   const router = useRouter();
-  const { increment: incrementRateLimit } = useRateLimitActions();
+  const { refresh: refreshRateLimit } = useRateLimitActions();
   const [code, setCode] = useState(savedCode ?? codeTemplate ?? '');
   const [output, setOutput] = useState('');
   const [parsedError, setParsedError] = useState<ParsedError | null>(null);
@@ -106,17 +106,6 @@ export function CodeLessonLayout({
     if (isExecutingRef.current) return;
     isExecutingRef.current = true;
     try {
-      if (!incrementRateLimit()) {
-        setParsedError({
-          errorType: 'LimitError',
-          message: 'Daily limit reached · see footer for reset time',
-          line: null,
-          raw: '',
-        });
-        setExecutionPhase('error');
-        return;
-      }
-
       setExecutionPhase('running');
       setOutput('');
       setParsedError(null);
@@ -142,9 +131,21 @@ export function CodeLessonLayout({
 
         const [runRes, testRes] = await Promise.all([runPromise, testPromise ?? Promise.resolve(null)]);
 
+        // Sync server-side usage count after the run completes
+        refreshRateLimit().catch(() => {});
+
         if (!runRes.ok) {
-          const msg = 'Execution service unavailable';
-          setParsedError({ errorType: 'Error', message: msg, line: null, raw: msg });
+          if (runRes.status === 429) {
+            setParsedError({
+              errorType: 'LimitError',
+              message: 'Rate limit reached · try again shortly',
+              line: null,
+              raw: '',
+            });
+          } else {
+            const msg = 'Execution service unavailable';
+            setParsedError({ errorType: 'Error', message: msg, line: null, raw: msg });
+          }
           setExecutionPhase('error');
           return;
         }
