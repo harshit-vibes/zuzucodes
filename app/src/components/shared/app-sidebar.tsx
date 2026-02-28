@@ -426,9 +426,9 @@ export function AppSidebar({
                     )}
                   >
                     {isActiveCapstone ? (
-                      <CircleDot className={cn("h-3.5 w-3.5 shrink-0", capstoneCompleted ? "text-green-500" : "text-primary")} />
+                      <CircleDot className={cn("h-3.5 w-3.5 shrink-0", capstoneCompleted ? "text-success" : "text-primary")} />
                     ) : capstoneCompleted ? (
-                      <div className="h-3.5 w-3.5 rounded-full bg-green-500/70 shrink-0" />
+                      <div className="h-3.5 w-3.5 rounded-full bg-success/70 shrink-0" />
                     ) : (
                       <Layers className="h-3.5 w-3.5 shrink-0 text-muted-foreground/40" />
                     )}
