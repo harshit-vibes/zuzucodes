@@ -5,14 +5,9 @@ import { AccountContent } from '@/components/shared/account-content';
 
 export default async function AccountPage() {
   const { user } = await auth();
-  if (!user) redirect('/');
+  if (!user) redirect('/auth/sign-in');
 
   const subscription = await getSubscriptionStatus(user.id);
 
-  return (
-    <main className="container max-w-xl py-8 px-4">
-      <h1 className="text-xl font-semibold mb-8">Account</h1>
-      <AccountContent subscription={subscription} />
-    </main>
-  );
+  return <AccountContent subscription={subscription} />;
 }
