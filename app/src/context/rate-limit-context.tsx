@@ -52,13 +52,22 @@ export function RateLimitProvider({ children }: { children: ReactNode }) {
       const remainingDay = data.limits.perDay - data.perDay;
       const remaining = Math.max(0, Math.min(remainingMin, remaining3hr, remainingDay));
 
-      // resetAt: next midnight UTC (day window)
-      const resetAt = new Date();
-      resetAt.setUTCHours(24, 0, 0, 0);
+      // resetAt: reflects the most constrained window
+      const now = Date.now();
+      let resetAtMs: number;
+      if (remainingMin <= Math.min(remaining3hr, remainingDay)) {
+        resetAtMs = now + 60_000;
+      } else if (remaining3hr <= remainingDay) {
+        resetAtMs = now + 3 * 60 * 60 * 1000;
+      } else {
+        const d = new Date();
+        d.setUTCHours(24, 0, 0, 0);
+        resetAtMs = d.getTime();
+      }
 
       setState({
         remaining,
-        resetAt: Math.floor(resetAt.getTime() / 1000),
+        resetAt: Math.floor(resetAtMs / 1000),
         lastSynced: new Date(),
         isSyncing: false,
       });

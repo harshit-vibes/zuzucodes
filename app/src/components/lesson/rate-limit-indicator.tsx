@@ -28,7 +28,7 @@ export function RateLimitIndicator() {
   return (
     <div className="flex items-center gap-2">
       <span className={`font-mono text-[11px] tabular-nums ${countColor}`}>
-        {remaining === null ? '— / 50' : `${remaining} / 50`}
+        {remaining === null ? '—' : `${remaining} runs left`}
         {resetAt !== null && (
           <span className="text-muted-foreground/40"> · resets in {formatTimeUntil(resetAt)}</span>
         )}
