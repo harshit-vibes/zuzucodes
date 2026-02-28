@@ -53,38 +53,117 @@ interface RoadmapPageProps {
 export function RoadmapPage({ items, isAuthenticated }: RoadmapPageProps) {
   const router = useRouter();
   const [submitOpen, setSubmitOpen] = useState(false);
+  const [activeCol, setActiveCol] = useState(0);
 
   function handleSubmitClick() {
     if (!isAuthenticated) router.push('/auth/sign-in');
     else setSubmitOpen(true);
   }
 
+  // Pre-compute all column items once
+  const columnItems = COLUMNS.map((col) =>
+    items
+      .filter((i) => i.status === col.status)
+      .sort((a, b) => b.vote_count - a.vote_count),
+  );
+
   return (
     <div className="flex flex-col h-full">
       {/* Page header */}
-      <div className="px-6 py-4 border-b border-border/30 flex items-center justify-between shrink-0">
+      <div className="px-4 md:px-6 py-3 md:py-4 border-b border-border/30 flex items-center justify-between shrink-0">
         <div>
           <h1 className="text-sm font-semibold tracking-tight text-foreground">Roadmap</h1>
-          <p className="text-[11px] font-mono text-muted-foreground/50 mt-0.5">
+          <p className="hidden sm:block text-[11px] font-mono text-muted-foreground/50 mt-0.5">
             vote · suggest · shape what we build
           </p>
         </div>
         <button
           onClick={handleSubmitClick}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 active:scale-95 transition-all duration-150"
+          className="flex items-center gap-1.5 px-2.5 md:px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 active:scale-95 transition-all duration-150"
         >
           <Plus className="h-3.5 w-3.5" />
-          Submit idea
+          <span className="hidden sm:inline">Submit idea</span>
+          <span className="sm:hidden">Submit</span>
         </button>
       </div>
 
-      {/* Kanban board */}
-      <div className="flex-1 min-h-0 overflow-x-auto overflow-y-hidden">
+      {/* ── Mobile: tab strip + single column ── */}
+      <div className="md:hidden flex flex-col flex-1 min-h-0">
+        {/* Tab strip */}
+        <div className="shrink-0 flex border-b border-border/20">
+          {COLUMNS.map((col, i) => {
+            const isActive = activeCol === i;
+            const count = columnItems[i].length;
+            return (
+              <button
+                key={col.status}
+                onClick={() => setActiveCol(i)}
+                className="flex-1 py-2.5 flex flex-col items-center gap-0.5 relative transition-colors"
+              >
+                {/* Active bottom indicator */}
+                <div
+                  className="absolute bottom-0 left-1 right-1 h-[2px] rounded-full transition-all duration-200"
+                  style={{
+                    background: col.color,
+                    opacity: isActive ? 1 : 0,
+                    transform: isActive ? 'scaleX(1)' : 'scaleX(0)',
+                  }}
+                />
+                {/* Pulse dot for in-progress */}
+                {col.pulse && isActive && (
+                  <span className="relative flex h-1.5 w-1.5 mb-0.5">
+                    <span
+                      className="animate-ping absolute h-full w-full rounded-full opacity-60"
+                      style={{ background: col.color }}
+                    />
+                    <span
+                      className="relative h-1.5 w-1.5 rounded-full"
+                      style={{ background: col.color }}
+                    />
+                  </span>
+                )}
+                <span
+                  className="text-[10px] font-mono font-bold uppercase tracking-wider transition-colors duration-200"
+                  style={{ color: isActive ? col.color : undefined }}
+                >
+                  {/* Short labels on very small screens */}
+                  <span className="xs:hidden">{col.label.split(' ')[0]}</span>
+                  <span className="hidden xs:inline">{col.label}</span>
+                </span>
+                <span className="text-[9px] font-mono tabular-nums text-muted-foreground/40">
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Active column cards */}
+        <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-2">
+          {columnItems[activeCol].length === 0 ? (
+            <div className="flex items-center justify-center h-24 rounded-lg border border-dashed border-border/20">
+              <span className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground/20">
+                empty
+              </span>
+            </div>
+          ) : (
+            columnItems[activeCol].map((item, idx) => (
+              <IdeaCard
+                key={item.id}
+                item={item}
+                isAuthenticated={isAuthenticated}
+                animDelay={idx * 30}
+              />
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* ── Desktop: 4-column kanban ── */}
+      <div className="hidden md:flex flex-1 min-h-0 overflow-x-auto overflow-y-hidden">
         <div className="h-full flex gap-3 p-5" style={{ width: 'max-content', minWidth: '100%' }}>
           {COLUMNS.map((col, colIdx) => {
-            const colItems = items
-              .filter((i) => i.status === col.status)
-              .sort((a, b) => b.vote_count - a.vote_count);
+            const colItems = columnItems[colIdx];
 
             return (
               <div
@@ -97,7 +176,6 @@ export function RoadmapPage({ items, isAuthenticated }: RoadmapPageProps) {
                   className="shrink-0 px-3.5 pt-4 pb-3 relative"
                   style={{ background: `${col.color}10` }}
                 >
-                  {/* Colored top bar */}
                   <div
                     className="absolute top-0 left-0 right-0 h-[3px]"
                     style={{ background: col.color }}
