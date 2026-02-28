@@ -7,19 +7,18 @@ import { cn } from '@/lib/utils';
 import type { RoadmapItem } from '@/lib/data';
 
 const TYPE_MAP = {
-  feature:  { label: 'feature',  Icon: Sparkles, color: '#818cf8' },
-  bug:      { label: 'bug',      Icon: Bug,       color: '#f87171' },
-  learning: { label: 'learning', Icon: BookOpen,  color: '#34d399' },
-} satisfies Record<RoadmapItem['type'], { label: string; Icon: React.ComponentType<{ className?: string }>; color: string }>;
+  feature:  { label: 'Feature',  Icon: Sparkles, color: '#818cf8', bg: '#818cf818' },
+  bug:      { label: 'Bug',      Icon: Bug,       color: '#f87171', bg: '#f8717118' },
+  learning: { label: 'Learning', Icon: BookOpen,  color: '#34d399', bg: '#34d39918' },
+} satisfies Record<RoadmapItem['type'], { label: string; Icon: React.ComponentType<{ className?: string }>; color: string; bg: string }>;
 
 interface IdeaCardProps {
   item: RoadmapItem;
   isAuthenticated: boolean;
-  accentColor: string;
   animDelay?: number;
 }
 
-export function IdeaCard({ item, isAuthenticated, accentColor, animDelay = 0 }: IdeaCardProps) {
+export function IdeaCard({ item, isAuthenticated, animDelay = 0 }: IdeaCardProps) {
   const router = useRouter();
   const [voted, setVoted] = useState(item.user_voted);
   const [count, setCount] = useState(item.vote_count);
@@ -63,21 +62,24 @@ export function IdeaCard({ item, isAuthenticated, accentColor, animDelay = 0 }: 
   return (
     <div
       className="kanban-anim relative rounded-lg border border-border/30 bg-card overflow-hidden
-                 hover:border-border/50 hover:shadow-sm transition-all duration-200 group"
+                 hover:border-border/50 hover:shadow-sm transition-all duration-200"
       style={{ animationDelay: `${animDelay}ms` }}
     >
-      {/* Left accent bar */}
+      {/* Left accent bar — type color */}
       <div
         className="absolute left-0 top-0 bottom-0 w-[3px]"
-        style={{ background: accentColor }}
+        style={{ background: typeInfo.color }}
       />
 
       {/* Card content */}
       <div className="pl-4 pr-3 pt-3 pb-2.5 flex flex-col gap-2">
-        {/* Type badge */}
-        <div className="flex items-center gap-1" style={{ color: typeInfo.color }}>
+        {/* Type pill */}
+        <div
+          className="self-start inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-mono font-medium uppercase tracking-wider"
+          style={{ background: typeInfo.bg, color: typeInfo.color }}
+        >
           <typeInfo.Icon className="h-2.5 w-2.5" />
-          <span className="text-[9px] font-mono uppercase tracking-wider">{typeInfo.label}</span>
+          {typeInfo.label}
         </div>
 
         <p className="text-[12px] font-medium text-foreground leading-snug">
@@ -108,12 +110,7 @@ export function IdeaCard({ item, isAuthenticated, accentColor, animDelay = 0 }: 
                 : 'text-muted-foreground/50 hover:text-foreground hover:bg-muted/50',
             )}
           >
-            <ChevronUp
-              className={cn(
-                'h-3 w-3 transition-transform duration-150',
-                voted && 'scale-110',
-              )}
-            />
+            <ChevronUp className={cn('h-3 w-3 transition-transform duration-150', voted && 'scale-110')} />
             {count}
           </button>
         </div>

@@ -148,7 +148,6 @@ export function RoadmapPage({ items, isAuthenticated }: RoadmapPageProps) {
                         key={item.id}
                         item={item}
                         isAuthenticated={isAuthenticated}
-                        accentColor={col.color}
                         animDelay={colIdx * 55 + cardIdx * 28}
                       />
                     ))
