@@ -141,7 +141,7 @@ export function CodeEditor({ value, onChange }: CodeEditorProps) {
   const extensions = mounted && resolvedTheme === 'light' ? lightExtensions : darkExtensions;
 
   return (
-    <div className="flex-1 overflow-hidden">
+    <div className="flex-1 overflow-hidden ph-no-capture">
       <CodeMirror
         value={value}
         theme={mounted && resolvedTheme === 'light' ? 'light' : 'dark'}

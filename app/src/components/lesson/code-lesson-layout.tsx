@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { usePostHog } from 'posthog-js/react';
 import dynamic from 'next/dynamic';
 import type { ExecutionPhase, ExecutionMetrics } from '@/components/lesson/output-panel';
 import { parsePythonError, ParsedError } from '@/lib/python-output';
@@ -38,10 +39,13 @@ interface CodeLessonLayoutProps {
   problemSummary: string | null;
   problemConstraints: string[];
   problemHints: string[];
+  courseSlug: string;
+  moduleSlug: string;
+  lessonIndex: number;  // 0-based
 }
 
 export function CodeLessonLayout({
-  lessonTitle: _lessonTitle,
+  lessonTitle,
   children,
   outroHref,
   codeTemplate,
@@ -58,6 +62,9 @@ export function CodeLessonLayout({
   problemSummary,
   problemConstraints,
   problemHints,
+  courseSlug,
+  moduleSlug,
+  lessonIndex,
 }: CodeLessonLayoutProps) {
   const router = useRouter();
   const [code, setCode] = useState(savedCode ?? codeTemplate ?? '');
@@ -78,6 +85,21 @@ export function CodeLessonLayout({
   );
   const [hasRun, setHasRun] = useState(() => !!(lastTestResults && lastTestResults.length > 0));
   const [metrics, setMetrics] = useState<ExecutionMetrics | null>(null);
+
+  const posthog = usePostHog();
+  const runAttemptsRef = useRef(0);
+  const lessonCompletedFiredRef = useRef(false);
+
+  // lesson_started — fire once on mount
+  useEffect(() => {
+    posthog?.capture('lesson_started', {
+      course_slug: courseSlug,
+      module_slug: moduleSlug,
+      lesson_index: lessonIndex,
+      lesson_title: lessonTitle,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleCodeChange = useCallback((val: string) => {
     setCode(val);
@@ -109,6 +131,7 @@ export function CodeLessonLayout({
   const handleRun = async () => {
     if (isExecutingRef.current) return;
     isExecutingRef.current = true;
+    runAttemptsRef.current += 1;
     try {
       setExecutionPhase('running');
       setOutput('');
@@ -151,6 +174,7 @@ export function CodeLessonLayout({
 
         if (statusId === 5) {
           setExecutionPhase('tle');
+          posthog?.capture('code_run', { course_slug: courseSlug, module_slug: moduleSlug, lesson_index: lessonIndex, phase: 'tle' });
           return;
         }
 
@@ -158,6 +182,7 @@ export function CodeLessonLayout({
           const errorText = stderr || `Runtime error (status ${statusId})`;
           setParsedError(parsePythonError(errorText.trim()));
           setExecutionPhase('error');
+          posthog?.capture('code_run', { course_slug: courseSlug, module_slug: moduleSlug, lesson_index: lessonIndex, phase: 'error' });
           return;
         }
 
@@ -168,6 +193,12 @@ export function CodeLessonLayout({
           const testResult = await testRes.json() as Judge0TestsResult;
           setTestResults(testResult.tests);
           setExecutionPhase(testResult.allPassed ? 'run-pass' : 'run-fail');
+          posthog?.capture('code_run', {
+            course_slug: courseSlug,
+            module_slug: moduleSlug,
+            lesson_index: lessonIndex,
+            phase: testResult.allPassed ? 'run-pass' : 'run-fail',
+          });
 
           if (isAuthenticated) {
             fetch('/api/code/save', {
@@ -178,6 +209,15 @@ export function CodeLessonLayout({
           }
 
           if (testResult.allPassed) {
+            if (!lessonCompletedFiredRef.current) {
+              lessonCompletedFiredRef.current = true;
+              posthog?.capture('lesson_completed', {
+                course_slug: courseSlug,
+                module_slug: moduleSlug,
+                lesson_index: lessonIndex,
+                attempts: runAttemptsRef.current,
+              });
+            }
             router.refresh();
             const confetti = (await import('canvas-confetti')).default;
             confetti({
@@ -192,6 +232,7 @@ export function CodeLessonLayout({
           }
         } else {
           setExecutionPhase('run-pass');
+          posthog?.capture('code_run', { course_slug: courseSlug, module_slug: moduleSlug, lesson_index: lessonIndex, phase: 'run-pass' });
         }
       } catch (err: unknown) {
         const message = (err as Error).message ?? 'Network error';

@@ -2,6 +2,7 @@ import { getLesson, getModule, getUserCode, getCourseWithModules, getLessonsForC
 import { auth } from '@/lib/auth/server';
 import { notFound, redirect } from 'next/navigation';
 import { CodeLessonLayout } from '@/components/lesson/code-lesson-layout';
+import { Markdown } from '@/components/shared/markdown';
 import { PaywallOverlay } from '@/components/shared/paywall-overlay';
 import { PLAN_ID } from '@/lib/paypal';
 import { CoursePlayerShell } from '@/components/course/course-player-shell';
@@ -14,6 +15,9 @@ interface LessonPageProps {
 export default async function LessonPage({ params }: LessonPageProps) {
   const { courseSlug, moduleSlug, order } = await params;
   const { user } = await auth();
+
+  // Start subscription fetch immediately — only needs user.id, not lessonData
+  const subscriptionPromise = user ? getSubscriptionStatus(user.id) : Promise.resolve(null);
 
   const position = parseInt(order, 10);
   if (isNaN(position) || position < 1) {
@@ -44,10 +48,11 @@ export default async function LessonPage({ params }: LessonPageProps) {
     notFound();
   }
 
-  const userCode = user ? await getUserCode(user.id, lessonData.id) : null;
+  const [userCode, subscription] = await Promise.all([
+    user ? getUserCode(user.id, lessonData.id) : Promise.resolve(null),
+    subscriptionPromise,
+  ]);
   const isCompleted = !!userCode?.passedAt;
-
-  const subscription = user ? await getSubscriptionStatus(user.id) : null;
   const isPaid = subscription?.status === 'ACTIVE';
 
   const modIndex = course.modules.findIndex((m) => m.id === module.id);
@@ -74,7 +79,6 @@ export default async function LessonPage({ params }: LessonPageProps) {
       {!isPaid && <PaywallOverlay planId={PLAN_ID} />}
       <CodeLessonLayout
         lessonTitle={lessonData.title}
-        content={lessonData.content}
         outroHref={outroHref}
         codeTemplate={lessonData.codeTemplate}
         testCases={lessonData.testCases}
@@ -90,7 +94,12 @@ export default async function LessonPage({ params }: LessonPageProps) {
         moduleId={moduleSlug}
         isAuthenticated={!!user}
         isCompleted={isCompleted}
-      />
+        courseSlug={courseSlug}
+        moduleSlug={moduleSlug}
+        lessonIndex={position - 1}
+      >
+        <Markdown content={lessonData.content} />
+      </CodeLessonLayout>
     </CoursePlayerShell>
   );
 }
