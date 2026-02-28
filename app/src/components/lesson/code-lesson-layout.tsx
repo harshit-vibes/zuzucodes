@@ -54,10 +54,7 @@ export function CodeLessonLayout({
   solutionCode,
   savedCode,
   lessonId,
-  courseId: _courseId,
-  moduleId: _moduleId,
   isAuthenticated,
-  isCompleted: _isCompleted,
   lastTestResults,
   problemSummary,
   problemConstraints,
@@ -164,6 +161,7 @@ export function CodeLessonLayout({
             : 'Execution service unavailable';
           setParsedError({ errorType: 'NetworkError', message: msg, line: null, raw: msg });
           setExecutionPhase('error');
+          posthog?.capture('code_run', { course_slug: courseSlug, module_slug: moduleSlug, lesson_index: lessonIndex, phase: 'error' });
           return;
         }
 
