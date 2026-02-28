@@ -56,7 +56,7 @@ export default async function GraduationPage({
     confidenceResponses.completion !== null;
 
   // Build sequence for prev/next navigation
-  const steps = buildCourseSequence(courseSlug, course.modules, lessonsByModule);
+  const steps = buildCourseSequence(courseSlug, course.modules, lessonsByModule, course.capstone?.title ?? undefined);
   const currentHref = `/dashboard/course/${courseSlug}/graduation`;
   const currentIdx = steps.findIndex((s) => s.href === currentHref);
   const prevStep = currentIdx > 0 ? steps[currentIdx - 1] : null;
