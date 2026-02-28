@@ -21,7 +21,6 @@ interface CapstoneLayoutProps {
   isSubmitted: boolean
   prevStep: CourseStep | null
   nextStep: CourseStep | null
-  isAuthenticated: boolean
 }
 
 export function CapstoneLayout({
@@ -31,7 +30,6 @@ export function CapstoneLayout({
   isSubmitted: initialIsSubmitted,
   prevStep,
   nextStep,
-  isAuthenticated,
 }: CapstoneLayoutProps) {
   const router = useRouter()
   const [code, setCode] = useState(savedCode ?? capstone.starterCode ?? '')
@@ -50,14 +48,22 @@ export function CapstoneLayout({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code }),
       })
+      if (!res.ok) {
+        setPhase('error')
+        setStdout(res.status === 429
+          ? 'Service busy — please try again in a moment.'
+          : 'Execution service unavailable.')
+        setHasRun(false)
+        return
+      }
       const result = await res.json()
       const out: string = result.stdout ?? result.stderr ?? ''
       setStdout(out)
       setHasRun(true)
       if (result.statusId === 5) {
         setPhase('tle')
-      } else if (result.stderr || (result.statusId && result.statusId > 3)) {
-        setPhase('run-fail')
+      } else if (result.stderr || (result.statusId !== 3 && result.statusId !== 0)) {
+        setPhase('error')
       } else {
         setPhase('run-pass')
       }
