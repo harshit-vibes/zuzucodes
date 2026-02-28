@@ -116,6 +116,7 @@ export default async function QuizPage({ params }: QuizPageProps) {
               questions={clientQuestions}
               passingScore={quizForm.passingScore}
               courseId={courseSlug}
+              moduleSlug={moduleSlug}
               isAlreadyPassed={isCompleted}
             />
           )}

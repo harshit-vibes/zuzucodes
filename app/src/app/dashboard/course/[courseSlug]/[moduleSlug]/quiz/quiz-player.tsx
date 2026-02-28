@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { usePostHog } from 'posthog-js/react';
 
 interface QuizOption {
   id: string;
@@ -20,6 +21,7 @@ interface QuizPlayerProps {
   questions: Question[];
   passingScore: number;
   courseId: string;
+  moduleSlug: string;
   isAlreadyPassed?: boolean;
 }
 
@@ -30,9 +32,11 @@ export function QuizPlayer({
   questions,
   passingScore,
   courseId,
+  moduleSlug,
   isAlreadyPassed = false,
 }: QuizPlayerProps) {
   const router = useRouter();
+  const posthog = usePostHog();
 
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<SelectedAnswers>({});
@@ -46,6 +50,14 @@ export function QuizPlayer({
   } | null>(null);
 
   const storageKey = `quiz-${moduleId}`;
+
+  // Fire quiz_started on mount (only if not already passed)
+  useEffect(() => {
+    if (!isAlreadyPassed) {
+      posthog?.capture('quiz_started', { course_slug: courseId, module_slug: moduleSlug });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Restore saved state on mount
   useEffect(() => {
@@ -141,6 +153,7 @@ export function QuizPlayer({
   };
 
   const handleRetake = async () => {
+    posthog?.capture('quiz_reset', { course_slug: courseId, module_slug: moduleSlug });
     setIsResetting(true);
     try {
       await fetch('/api/quiz/submit', {
