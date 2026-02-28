@@ -94,7 +94,7 @@ export default function RootLayout({
       <body
         className={`${dmSans.variable} ${jetbrainsMono.variable} ${playfair.variable} font-sans antialiased`}
       >
-        <NeonAuthUIProvider authClient={authClient} redirectTo="/dashboard" emailOTP>
+        <NeonAuthUIProvider authClient={authClient} redirectTo="/dashboard" emailOTP social={{ providers: ['google'] }}>
           <ThemeProvider
             attribute="class"
             defaultTheme="light"
