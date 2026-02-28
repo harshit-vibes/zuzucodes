@@ -1,16 +1,17 @@
 import Link from "next/link";
 import { BrandLogo } from "@/components/shared/brand-logo";
+import { WHATSAPP_URL } from "@/lib/constants";
 
 const footerLinks = {
   product: [
-    { label: "Personal Productivity", href: "#courses", external: false },
-    { label: "Business Operations", href: "#courses", external: false },
+    { label: "Python Foundations", href: "#courses", external: false },
+    { label: "The Method", href: "#method", external: false },
     { label: "Pricing", href: "#pricing", external: false },
   ],
   company: [
     { label: "About", href: "#", external: false },
-    { label: "The Method", href: "#method", external: false },
-    { label: "Contact", href: "https://wa.me/918011858376", external: true },
+    { label: "FAQ", href: "#faq", external: false },
+    { label: "Contact", href: WHATSAPP_URL, external: true },
   ],
   legal: [
     { label: "Privacy Policy", href: "/privacy", external: false },
@@ -31,7 +32,7 @@ export function Footer() {
               <span className="font-display text-lg font-semibold">zuzu.codes</span>
             </Link>
             <p className="mt-4 max-w-xs text-sm text-muted-foreground">
-              AI-native upskilling for the modern professional. Build operations instincts through our quadrant-based learning method.
+              Structured Python learning for the next generation of builders.
             </p>
             <p className="mt-3 text-xs text-muted-foreground">
               Questions? WhatsApp: +91 80118 58376
@@ -92,7 +93,7 @@ export function Footer() {
           </p>
           <div className="flex items-center gap-4">
             <Link
-              href="https://wa.me/918011858376"
+              href={WHATSAPP_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="text-muted-foreground transition-colors hover:text-foreground"
