@@ -292,7 +292,8 @@ export async function getUserCode(userId: string, lessonId: string): Promise<Use
     const row = result[0] as any;
     return {
       code: row.code,
-      lastTestResults: (row.last_test_results as import('@/lib/judge0').TestCaseResult[] | null) ?? null,
+      lastTestResults: (row.last_test_results as import('@/lib/judge0').TestCaseResult[] | null)
+        ?.map(({ kind = 'wrong-answer', ...r }) => ({ kind, ...r })) ?? null,
       passedAt: row.passed_at ? (row.passed_at as Date).toISOString() : null,
     };
   } catch (error) {

@@ -156,7 +156,7 @@ export async function runTests(
         got: msg,
         exp: tc.expected,
         kind: 'runtime-error',
-        error: { errorType: 'Error', message: msg, line: null, raw: msg },
+        error: { errorType: 'NetworkError', message: msg, line: null, raw: msg },
       };
     }
     const data = result.value;
