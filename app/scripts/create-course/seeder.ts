@@ -75,6 +75,12 @@ async function seedCourse(
     if (!allowIncomplete && mod._status !== 'complete') {
       throw new Error(`module ${mod.slug}._status is "${mod._status}" — use --allow-incomplete`);
     }
+    // Skip modules without quiz_form — DB enforces NOT NULL + structural CHECK on this column.
+    // Under --allow-incomplete the module may be 'content-complete' (Quiz Agent hasn't run yet).
+    if (!mod.quiz_form) {
+      if (allowIncomplete) { console.log(`  skip module ${mod.slug}: quiz_form not yet generated`); continue; }
+      throw new Error(`module ${mod.slug} has no quiz_form — run the Quiz Agent first`);
+    }
 
     const lessonsDir = join(moduleDir, 'lessons');
     if (!existsSync(lessonsDir)) {
@@ -102,7 +108,7 @@ async function seedCourse(
       VALUES (
         ${mod.id}, ${course.id}, ${mod.title}, ${mod.slug}, ${mod.description},
         ${mod.order}, ${actualLessonCount},
-        ${mod.quiz_form ? JSON.stringify(mod.quiz_form) : null},
+        ${JSON.stringify(mod.quiz_form)},
         ${JSON.stringify(mod.intro_content)},
         ${JSON.stringify(mod.outro_content)}
       )
@@ -132,6 +138,7 @@ async function seedCourse(
           ${JSON.stringify(lesson.intro_content)}, ${JSON.stringify(lesson.outro_content)}
         )
         ON CONFLICT (id) DO UPDATE SET
+          lesson_index        = EXCLUDED.lesson_index,
           title               = EXCLUDED.title,
           content             = EXCLUDED.content,
           code_template       = EXCLUDED.code_template,

@@ -11,6 +11,8 @@ export interface ValidationResult {
 export function validateLessonJson(lesson: Partial<LessonJson>): ValidationResult {
   const errors: string[] = [];
 
+  if (lesson.lesson_index === undefined || lesson.lesson_index === null) errors.push('missing lesson_index');
+  else if (!Number.isInteger(lesson.lesson_index) || lesson.lesson_index < 0) errors.push('lesson_index must be a non-negative integer');
   if (!lesson.code_template) errors.push('missing code_template');
   if (!lesson.entry_point)   errors.push('missing entry_point');
   if (!lesson.solution_code) errors.push('missing solution_code');
@@ -100,8 +102,10 @@ export function validateCourseJson(course: Partial<CourseJson>): ValidationResul
 
   if (!course.confidence_form) {
     errors.push('missing confidence_form');
-  } else if (!Array.isArray(course.confidence_form.questions) || course.confidence_form.questions.length === 0) {
-    errors.push('confidence_form: must have at least 1 question');
+  } else {
+    if (!course.confidence_form.title) errors.push('confidence_form: missing title');
+    if (!Array.isArray(course.confidence_form.questions) || course.confidence_form.questions.length === 0)
+      errors.push('confidence_form: must have at least 1 question');
   }
 
   return { ok: errors.length === 0, errors };
