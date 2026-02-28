@@ -5,8 +5,6 @@ import { auth } from "@/lib/auth/server";
 import { redirect } from "next/navigation";
 import { enforceSessionLimit } from "@/lib/actions/session-limit";
 import { DashboardMain } from "@/components/dashboard/main";
-import { RateLimitProvider } from "@/context/rate-limit-context";
-import { RateLimitFooter } from "@/components/dashboard/rate-limit-footer";
 import { SubscriptionProvider } from "@/context/subscription-context";
 
 export default async function DashboardLayout({
@@ -40,7 +38,6 @@ export default async function DashboardLayout({
 
   return (
     <SubscriptionProvider isPaid={isPaid}>
-    <RateLimitProvider>
       <SidebarProvider className="h-svh overflow-hidden">
         <AppSidebar
           courses={courses}
@@ -52,10 +49,8 @@ export default async function DashboardLayout({
         />
         <SidebarInset className="overflow-hidden flex flex-col">
           <DashboardMain>{children}</DashboardMain>
-          <RateLimitFooter />
         </SidebarInset>
       </SidebarProvider>
-    </RateLimitProvider>
     </SubscriptionProvider>
   );
 }

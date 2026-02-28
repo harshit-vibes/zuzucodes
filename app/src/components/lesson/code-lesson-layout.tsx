@@ -7,7 +7,6 @@ import { ProblemPanel } from '@/components/lesson/problem-panel';
 import { CodeEditor } from '@/components/lesson/code-editor';
 import { OutputPanel, ExecutionPhase } from '@/components/lesson/output-panel';
 import { parsePythonError, ParsedError } from '@/lib/python-output';
-import { useRateLimitActions } from '@/context/rate-limit-context';
 import type { TestCase, TestCaseResult, Judge0RunResult, Judge0TestsResult } from '@/lib/judge0';
 import type { ExecutionMetrics } from '@/components/lesson/output-panel';
 
@@ -51,7 +50,6 @@ export function CodeLessonLayout({
   problemHints,
 }: CodeLessonLayoutProps) {
   const router = useRouter();
-  const { refresh: refreshRateLimit } = useRateLimitActions();
   const [code, setCode] = useState(savedCode ?? codeTemplate ?? '');
   const [output, setOutput] = useState('');
   const [parsedError, setParsedError] = useState<ParsedError | null>(null);
@@ -131,21 +129,9 @@ export function CodeLessonLayout({
 
         const [runRes, testRes] = await Promise.all([runPromise, testPromise ?? Promise.resolve(null)]);
 
-        // Sync server-side usage count after the run completes
-        refreshRateLimit().catch(() => {});
-
         if (!runRes.ok) {
-          if (runRes.status === 429) {
-            setParsedError({
-              errorType: 'LimitError',
-              message: 'Rate limit reached · try again shortly',
-              line: null,
-              raw: '',
-            });
-          } else {
-            const msg = 'Execution service unavailable';
-            setParsedError({ errorType: 'Error', message: msg, line: null, raw: msg });
-          }
+          const msg = 'Execution service unavailable';
+          setParsedError({ errorType: 'Error', message: msg, line: null, raw: msg });
           setExecutionPhase('error');
           return;
         }
