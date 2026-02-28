@@ -16,19 +16,22 @@ export function ShiftSection() {
 
           <div className="space-y-8">
             <p className="text-lg leading-relaxed text-foreground/90 sm:text-xl">
-              AI-native tools are no longer optional. They&apos;re the new professional baseline.
+              AI is changing what it means to be skilled. The tools are getting smarter — but the
+              people who understand how they work will always run them.
             </p>
 
             <p className="text-lg leading-relaxed text-muted-foreground sm:text-xl">
-              But there&apos;s a gap. MBAs teach strategy. Bootcamps teach tools. Neither teaches{" "}
-              <span className="font-medium text-foreground">AI-native operations thinking</span> — the instinct to identify,
-              design, and manage automated processes.
+              There&apos;s a gap. YouTube teaches you <span className="font-medium text-foreground">about</span> coding.
+              Bootcamps compress six months into six weeks. Neither builds the patient, foundational
+              instincts that actually transfer — the ability to look at a problem and{" "}
+              <span className="font-medium text-foreground">know how to solve it in code</span>.
             </p>
 
             <p className="text-lg leading-relaxed text-muted-foreground sm:text-xl">
-              Surface-level tool familiarity isn&apos;t enough. The professionals who master AI-native
-              automation management become{" "}
-              <span className="font-medium text-foreground">force multipliers</span> — personally and organizationally.
+              Python is the language of this era. And the people who learn it properly — with the
+              right structure, the right practice, and the right guidance — become{" "}
+              <span className="font-medium text-foreground">force multipliers</span> in every room
+              they walk into.
             </p>
           </div>
 
