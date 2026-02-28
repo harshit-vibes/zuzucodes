@@ -22,25 +22,25 @@ const playfair = Playfair_Display({
 
 const siteUrl = "https://zuzu.codes";
 const siteName = "zuzu.codes";
-const siteDescription = "AI-native upskilling for the modern professional. Learn to identify, design, and manage automated processes with MBA-level rigor.";
+const siteDescription = "Structured Python learning for students and early-career learners. Build real skills. Build real things.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "zuzu.codes - AI-Native Upskilling",
+    default: "zuzu.codes — Learn Python for the AI Era",
     template: "%s | zuzu.codes",
   },
   description: siteDescription,
   keywords: [
-    "AI automation",
-    "workflow automation",
-    "n8n courses",
-    "AI upskilling",
-    "automation training",
-    "AI-native",
-    "professional development",
-    "process automation",
-    "business automation",
+    "learn Python",
+    "Python for beginners",
+    "Python course",
+    "coding for students",
+    "learn to code",
+    "programming fundamentals",
+    "AI era coding",
+    "hands-on Python",
+    "Python learning track",
   ],
   authors: [{ name: "Kuma Learn" }],
   creator: "Kuma Learn",
@@ -54,13 +54,13 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: siteUrl,
     siteName: siteName,
-    title: "zuzu.codes - AI-Native Upskilling",
+    title: "zuzu.codes — Learn Python for the AI Era",
     description: siteDescription,
     images: [{ url: "/og-image.png", width: 1080, height: 1080, alt: "zuzu.codes" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "zuzu.codes - AI-Native Upskilling",
+    title: "zuzu.codes — Learn Python for the AI Era",
     description: siteDescription,
     images: ["/og-image.png"],
   },
