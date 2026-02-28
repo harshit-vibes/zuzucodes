@@ -4,7 +4,7 @@ import { ArrowRight, Lightbulb } from 'lucide-react';
 export function RoadmapCTABanner() {
   return (
     <Link
-      href="/roadmap"
+      href="/dashboard/roadmap"
       className="group flex items-center gap-3 rounded-xl border border-border/50 bg-muted/20 px-5 py-4 hover:border-primary/30 hover:bg-primary/5 transition-all"
     >
       <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 shrink-0">

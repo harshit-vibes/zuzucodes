@@ -286,7 +286,7 @@ export function AppSidebar({
                       tooltip="Roadmap"
                       className="rounded-lg text-muted-foreground hover:text-foreground"
                     >
-                      <Link href="/roadmap" className="flex items-center gap-3 px-3 py-2">
+                      <Link href="/dashboard/roadmap" className="flex items-center gap-3 px-3 py-2">
                         <Map className="h-4 w-4" />
                         <span>Roadmap</span>
                       </Link>

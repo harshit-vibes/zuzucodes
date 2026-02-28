@@ -2,8 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { ArrowLeft, Lightbulb } from 'lucide-react';
+import { Lightbulb } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { IdeaCard } from './idea-card';
 import { SubmitIdeaModal } from './submit-idea-modal';
@@ -41,17 +40,8 @@ export function RoadmapPage({ items, isAuthenticated }: RoadmapPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="overflow-y-auto h-full">
       <div className="container mx-auto max-w-2xl px-4 py-10">
-        {/* Back link */}
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-8"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          Dashboard
-        </Link>
-
         {/* Page header */}
         <div className="flex items-start justify-between mb-8">
           <div>
