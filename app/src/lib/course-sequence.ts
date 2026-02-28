@@ -13,6 +13,7 @@ export type CourseStep = {
     | 'lesson-outro'
     | 'quiz'
     | 'module-outro'
+    | 'capstone'
     | 'graduation'
     | 'certificate'
 }
@@ -21,6 +22,7 @@ export function buildCourseSequence(
   courseSlug: string,
   modules: Pick<Module, 'id' | 'slug' | 'title' | 'quiz_form'>[],
   lessonsByModule: Record<string, Array<{ lesson_index: number; title: string }>>,
+  capstoneTitle?: string,
 ): CourseStep[] {
   const steps: CourseStep[] = []
   const base = `/dashboard/course/${courseSlug}`
@@ -58,6 +60,14 @@ export function buildCourseSequence(
       href: `${base}/${mod.slug}/outro`,
       label: mod.title,
       type: 'module-outro',
+    })
+  }
+
+  if (capstoneTitle) {
+    steps.push({
+      href: `${base}/capstone`,
+      label: capstoneTitle,
+      type: 'capstone',
     })
   }
 
