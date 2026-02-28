@@ -1073,3 +1073,108 @@ export async function submitRoadmapIdea(
     VALUES (${title}, ${description || null}, ${userId}, false)
   `;
 }
+
+// ============================================================
+// Next action — computed "what to do next" for the dashboard
+// ============================================================
+
+export type NextAction =
+  | { type: 'start';       course: Course; href: string }
+  | { type: 'lesson';      course: Course; moduleTitle: string; lessonTitle: string; href: string }
+  | { type: 'quiz';        course: Course; moduleTitle: string; href: string }
+  | { type: 'next_course'; course: Course; href: string }
+  | { type: 'all_done' }
+  | null;
+
+export async function getNextAction(
+  userId: string,
+  courses: Course[],
+  courseProgress: Record<string, CourseProgress>,
+): Promise<NextAction> {
+  if (courses.length === 0) return null;
+
+  const sorted = [...courses].sort((a, b) => a.order - b.order);
+
+  // Find first in_progress course, or first not_started if none
+  const activeCourse = sorted.find(
+    (c) => (courseProgress[c.id]?.status ?? 'not_started') === 'in_progress',
+  );
+
+  if (!activeCourse) {
+    const nextCourse = sorted.find(
+      (c) => (courseProgress[c.id]?.status ?? 'not_started') === 'not_started',
+    );
+    if (!nextCourse) return { type: 'all_done' };
+
+    const courseData = await getCourseWithModules(nextCourse.slug);
+    if (!courseData || courseData.modules.length === 0) return null;
+    const firstMod = courseData.modules[0];
+    return {
+      type: 'start',
+      course: nextCourse,
+      href: `/dashboard/course/${nextCourse.slug}/${firstMod.slug}/lesson/1`,
+    };
+  }
+
+  // Fetch active course structure + section completion (2 queries for 1 course)
+  const courseData = await getCourseWithModules(activeCourse.slug);
+  if (!courseData || courseData.modules.length === 0) return null;
+
+  const completion = await getSectionCompletionStatus(userId, courseData.modules);
+
+  for (const mod of courseData.modules) {
+    const lessons = mod.contentItems.filter((i) => i.type === 'lesson');
+    const hasQuiz = mod.contentItems.some((i) => i.type === 'quiz');
+
+    const allLessonsDone = lessons.every(
+      (item) =>
+        (completion[`${mod.id}:lesson-${item.index}`] ?? 'not-started') === 'completed',
+    );
+    const quizDone =
+      !hasQuiz ||
+      (completion[`${mod.id}:quiz`] ?? 'not-started') === 'completed';
+
+    if (allLessonsDone && quizDone) continue; // this module is fully complete
+
+    // Find first incomplete lesson in this module
+    const nextLesson = lessons.find(
+      (item) =>
+        (completion[`${mod.id}:lesson-${item.index}`] ?? 'not-started') !== 'completed',
+    );
+
+    if (nextLesson) {
+      const order = nextLesson.index + 1; // 1-indexed
+      return {
+        type: 'lesson',
+        course: activeCourse,
+        moduleTitle: mod.title,
+        lessonTitle: nextLesson.title,
+        href: `/dashboard/course/${activeCourse.slug}/${mod.slug}/lesson/${order}`,
+      };
+    }
+
+    // All lessons done but quiz pending
+    if (hasQuiz && !quizDone) {
+      return {
+        type: 'quiz',
+        course: activeCourse,
+        moduleTitle: mod.title,
+        href: `/dashboard/course/${activeCourse.slug}/${mod.slug}/quiz`,
+      };
+    }
+  }
+
+  // Active course fully complete — point to next not_started course
+  const nextCourse = sorted.find(
+    (c) => (courseProgress[c.id]?.status ?? 'not_started') === 'not_started',
+  );
+  if (nextCourse) {
+    return {
+      type: 'next_course',
+      course: nextCourse,
+      href: `/dashboard/course/${nextCourse.slug}`,
+    };
+  }
+
+  return { type: 'all_done' };
+}
