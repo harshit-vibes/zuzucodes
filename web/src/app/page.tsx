@@ -4,7 +4,10 @@ import { ShiftSection } from "@/components/landing/shift-section";
 import { MethodSection } from "@/components/landing/method-section";
 import { AudienceSection } from "@/components/landing/audience-section";
 import { CoursesSection } from "@/components/landing/courses-section";
+import { SocialProofSection } from "@/components/landing/social-proof-section";
 import { PricingSection } from "@/components/landing/pricing-section";
+import { FaqSection } from "@/components/landing/faq-section";
+import { FooterCtaSection } from "@/components/landing/footer-cta-section";
 import { Footer } from "@/components/landing/footer";
 
 export default function Home() {
@@ -17,7 +20,10 @@ export default function Home() {
         <MethodSection />
         <AudienceSection />
         <CoursesSection />
+        <SocialProofSection />
         <PricingSection />
+        <FaqSection />
+        <FooterCtaSection />
       </main>
       <Footer />
     </>
