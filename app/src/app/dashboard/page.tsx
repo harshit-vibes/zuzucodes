@@ -1,15 +1,13 @@
 import { auth } from '@/lib/auth/server';
 import {
   getDashboardStats,
-  getResumeData,
   getCourses,
-  getCourseWithModules,
   getUserCoursesProgress,
+  getNextAction,
 } from '@/lib/data';
-import type { Course, CourseProgress } from '@/lib/data';
+import type { Course, CourseProgress, NextAction } from '@/lib/data';
 import Link from 'next/link';
-import Image from 'next/image';
-import { ArrowRight, Play, Sparkles } from 'lucide-react';
+import { ArrowRight, Diamond, Play, Sparkles, Trophy } from 'lucide-react';
 import { TrackSection } from '@/components/dashboard/track-section';
 import { RoadmapCTABanner } from '@/components/dashboard/roadmap-cta-banner';
 
@@ -40,52 +38,41 @@ export default async function DashboardPage() {
   const userId = user?.id;
   const firstName = user?.name?.split(' ')[0] ?? 'Learner';
 
-  const [courses, userData] = await Promise.all([
+  const [courses, stats] = await Promise.all([
     getCourses(),
-    userId
-      ? Promise.all([getDashboardStats(userId), getResumeData(userId)])
-      : Promise.resolve(null),
+    userId ? getDashboardStats(userId) : null,
   ]);
 
-  const stats = userData?.[0] ?? { streak: 0, coursesInProgress: 0, coursesTotal: 0, quizAverage: null };
-  const resumeData = userData?.[1] ?? null;
+  const streak = stats?.streak ?? 0;
 
-  const [courseProgress, startCourse] = await Promise.all([
+  const courseProgress =
     userId && courses.length > 0
-      ? getUserCoursesProgress(userId, courses.map((c) => c.id))
-      : Promise.resolve({} as Record<string, CourseProgress>),
-    !resumeData && courses.length > 0
-      ? getCourseWithModules(courses[0].slug)
-      : Promise.resolve(null),
-  ]);
+      ? await getUserCoursesProgress(userId, courses.map((c) => c.id))
+      : ({} as Record<string, CourseProgress>);
 
-  const startUrl = startCourse?.modules[0]
-    ? `/dashboard/course/${startCourse.slug}/${startCourse.modules[0].slug}/lesson/1`
-    : null;
+  const nextAction = userId ? await getNextAction(userId, courses, courseProgress) : null;
 
   const tracks = groupByTrack(courses);
 
   return (
     <div className="min-h-screen">
-      <HeroSection
-        firstName={firstName}
-        stats={stats}
-        resumeData={resumeData}
-        startUrl={startUrl}
-      />
+      <HeroSection firstName={firstName} streak={streak} />
 
       {userId && courses.length > 0 && (
-        <div className="container mx-auto px-4 sm:px-6 py-8 space-y-10">
-          {tracks.map(({ tag, courses: trackCourses }) => (
-            <TrackSection
-              key={tag}
-              tag={tag}
-              courses={trackCourses}
-              courseProgress={courseProgress}
-            />
-          ))}
-          <RoadmapCTABanner />
-        </div>
+        <>
+          <TodaysFocusCard action={nextAction} />
+          <div className="container mx-auto px-4 sm:px-6 py-6 space-y-10">
+            {tracks.map(({ tag, courses: trackCourses }) => (
+              <TrackSection
+                key={tag}
+                tag={tag}
+                courses={trackCourses}
+                courseProgress={courseProgress}
+              />
+            ))}
+            <RoadmapCTABanner />
+          </div>
+        </>
       )}
 
       {!userId && <UnauthenticatedCTA />}
@@ -95,19 +82,10 @@ export default async function DashboardPage() {
 
 // ── Sub-components ──────────────────────────────────────────────────────────
 
-function HeroSection({
-  firstName,
-  stats,
-  resumeData,
-  startUrl,
-}: {
-  firstName: string;
-  stats: { streak: number; coursesInProgress: number; coursesTotal: number };
-  resumeData: Awaited<ReturnType<typeof getResumeData>>;
-  startUrl: string | null;
-}) {
+function HeroSection({ firstName, streak }: { firstName: string; streak: number }) {
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const greeting =
+    hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
   return (
     <div className="relative border-b border-border/40 overflow-hidden">
@@ -122,68 +100,112 @@ function HeroSection({
       <div className="relative container mx-auto px-6 py-8">
         <div className="flex items-start justify-between gap-6">
           <div className="min-w-0">
-            <p className="text-xs font-mono text-muted-foreground/60 uppercase tracking-widest mb-1">{greeting}</p>
-            <h1 className="text-3xl font-bold tracking-tight mb-0.5">
-              {firstName}
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              {stats.streak > 0
-                ? `${stats.streak}-day streak — keep the momentum going.`
-                : resumeData
-                  ? 'Pick up where you left off.'
-                  : 'Start your journey to becoming an Agent Architect.'}
+            <p className="text-xs font-mono text-muted-foreground/60 uppercase tracking-widest mb-1">
+              {greeting}
             </p>
+            <h1 className="text-3xl font-bold tracking-tight">{firstName}</h1>
           </div>
-
-          {/* Streak badge (if active) */}
-          {stats.streak > 0 && (
+          {streak > 0 && (
             <div className="shrink-0 flex flex-col items-center justify-center w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20">
               <span className="text-xl">🔥</span>
-              <span className="text-xs font-bold font-mono text-amber-500 tabular-nums leading-none mt-0.5">{stats.streak}d</span>
+              <span className="text-xs font-bold font-mono text-amber-500 tabular-nums leading-none mt-0.5">
+                {streak}d
+              </span>
             </div>
           )}
         </div>
-
-        {/* Resume / Start CTA */}
-        {resumeData ? (
-          <Link
-            href={resumeData.href}
-            className="group mt-5 inline-flex items-center gap-4 rounded-2xl bg-card/80 backdrop-blur-sm border border-border/50 p-3 pr-5 transition-all hover:border-primary/30 hover:bg-card max-w-sm"
-          >
-            <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-muted flex-shrink-0 ring-1 ring-border">
-              {resumeData.course.thumbnail_url ? (
-                <Image src={resumeData.course.thumbnail_url} alt={resumeData.course.title} fill className="object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-primary/10">
-                  <Play className="h-4 w-4 text-primary" />
-                </div>
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-mono text-muted-foreground/60 uppercase tracking-wider mb-0.5">Continue</p>
-              <h3 className="font-semibold text-sm truncate group-hover:text-primary transition-colors">
-                {resumeData.course.title}
-              </h3>
-              <div className="flex items-center gap-2 mt-1">
-                <div className="flex-1 h-px bg-border/60 relative overflow-hidden rounded-full">
-                  <div className="absolute inset-y-0 left-0 bg-primary/70 rounded-full" style={{ width: `${resumeData.progress}%` }} />
-                </div>
-                <span className="text-[10px] font-mono text-primary tabular-nums">{resumeData.progress}%</span>
-              </div>
-            </div>
-            <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
-          </Link>
-        ) : startUrl ? (
-          <Link
-            href={startUrl}
-            className="group mt-5 inline-flex items-center gap-2 rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold transition-all hover:bg-primary/90"
-          >
-            <Sparkles className="h-4 w-4" />
-            Start Your Journey
-            <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
-          </Link>
-        ) : null}
       </div>
+    </div>
+  );
+}
+
+// Config lookup for each NextAction type (excludes null and all_done — handled separately)
+function getActionConfig(action: Exclude<NextAction, null | { type: 'all_done' }>) {
+  switch (action.type) {
+    case 'start':
+      return {
+        Icon: Sparkles,
+        iconColor: 'text-primary',
+        iconBg: 'bg-primary/10',
+        headline: 'Start your journey',
+        subtext: action.course.title,
+        cta: 'Begin',
+        href: action.href,
+      };
+    case 'lesson':
+      return {
+        Icon: Play,
+        iconColor: 'text-primary',
+        iconBg: 'bg-primary/10',
+        headline: 'Pick up where you left off',
+        subtext: action.moduleTitle,
+        cta: 'Continue',
+        href: action.href,
+      };
+    case 'quiz':
+      return {
+        Icon: Diamond,
+        iconColor: 'text-amber-500',
+        iconBg: 'bg-amber-500/10',
+        headline: 'Time to test yourself',
+        subtext: action.moduleTitle,
+        cta: 'Take the quiz',
+        href: action.href,
+      };
+    case 'next_course':
+      return {
+        Icon: Sparkles,
+        iconColor: 'text-primary',
+        iconBg: 'bg-primary/10',
+        headline: 'Ready for the next challenge',
+        subtext: action.course.title,
+        cta: 'Start Course',
+        href: action.href,
+      };
+  }
+}
+
+function TodaysFocusCard({ action }: { action: NextAction }) {
+  if (!action) return null;
+
+  if (action.type === 'all_done') {
+    return (
+      <div className="container mx-auto px-6 pt-4 pb-0">
+        <div className="flex items-center gap-4 rounded-2xl border border-border/40 bg-card/50 px-5 py-4">
+          <div className="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center shrink-0">
+            <Trophy className="h-5 w-5 text-success" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold">You&apos;ve finished everything 🎉</p>
+            <p className="text-xs text-muted-foreground mt-0.5">More content coming soon.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const { Icon, iconColor, iconBg, headline, subtext, cta, href } = getActionConfig(action);
+
+  return (
+    <div className="container mx-auto px-6 pt-4 pb-0">
+      <Link
+        href={href}
+        className="group flex items-center gap-4 rounded-2xl border border-primary/20 bg-primary/5 px-5 py-4 hover:border-primary/40 hover:bg-primary/[0.08] transition-all"
+      >
+        <div
+          className={`w-10 h-10 rounded-xl ${iconBg} flex items-center justify-center shrink-0`}
+        >
+          <Icon className={`h-5 w-5 ${iconColor}`} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-foreground">{headline}</p>
+          <p className="text-xs text-muted-foreground mt-0.5 truncate">{subtext}</p>
+        </div>
+        <span className="flex items-center gap-1.5 text-sm font-medium text-primary shrink-0">
+          {cta}
+          <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+        </span>
+      </Link>
     </div>
   );
 }
@@ -197,7 +219,8 @@ function UnauthenticatedCTA() {
         </div>
         <h2 className="text-2xl font-semibold mb-3">Become an Agent Architect</h2>
         <p className="text-muted-foreground mb-6">
-          Sign in to track your progress, earn certificates, and unlock the full learning experience.
+          Sign in to track your progress, earn certificates, and unlock the full learning
+          experience.
         </p>
         <Link
           href="/auth/sign-in"
