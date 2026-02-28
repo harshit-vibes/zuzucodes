@@ -37,9 +37,8 @@ No ORM — raw SQL via `@neondatabase/serverless`. Migrations in `migrations/`.
 ### Key Patterns
 
 - `src/lib/data.ts` — all DB access. `React.cache()` on all per-request fetches. `getLesson()` aggregates test_cases via correlated subquery. No `LessonProblem` type — flat `problemSummary/Constraints/Hints` fields on `LessonData`.
-- `src/lib/judge0.ts` — code execution. Test harness uses `json.dumps(_result, separators=(',', ':'))` + `JSON.stringify(expected)` comparison. `visible: boolean` on `TestCase` (required, not optional).
+- `src/lib/judge0.ts` — code execution (talks to the self-hosted Python executor service). Test harness uses `json.dumps(_result, separators=(',', ':'))` + `JSON.stringify(expected)` comparison. `visible: boolean` on `TestCase` (required, not optional).
 - Auth: `src/lib/auth/server.ts` (`auth()`) for server, `src/lib/auth/client.ts` (`authClient`) for client. No middleware — routes check `auth()` directly.
-- Rate limiting: `src/context/rate-limit-context.tsx` — client-side Judge0 quota tracking.
 
 ### Routing
 
@@ -74,6 +73,6 @@ src/components/
 ```
 DATABASE_URL, NEON_AUTH_BASE_URL, NEON_AUTH_COOKIE_SECRET
 NEXT_PUBLIC_ROOT_DOMAIN, NEXT_PUBLIC_APP_URL
-JUDGE0_BASE_URL           # Self-hosted Judge0 server URL
-JUDGE0_AUTH_TOKEN         # Matches AUTHN_TOKEN set in Railway
+EXECUTOR_URL              # Python executor Railway service URL
+EXECUTOR_API_KEY          # Shared secret for executor auth (X-Api-Key header)
 ```

@@ -74,11 +74,11 @@ Key constraints: `entry_point` requires `code_template`; `quiz_form` has structu
 - `getSectionCompletionStatus(userId, modules[])` — returns map with keys `"{moduleId}:lesson-{i}"` and `"{moduleId}:quiz"`
 - `LessonData` shape: flat `problemSummary`, `problemConstraints`, `problemHints` (no nested object)
 
-### Code Execution (Judge0)
+### Code Execution (Python Executor)
 
-Python execution via Judge0 CE (RapidAPI). `app/src/lib/judge0.ts`, `app/src/lib/python-output.ts`, rate limit state in `RateLimitContext` (`app/src/context/rate-limit-context.tsx`).
+Python execution via a self-hosted executor service (Railway). `app/src/lib/judge0.ts`, `app/src/lib/python-output.ts`. Concurrency control is handled server-side by the executor (no client-side rate limiting).
 
-Single **Run** button fires two parallel Judge0 calls: `runCode()` for raw stdout, `runTests()` for per-test-case pass/fail. Test harness wraps user code with:
+Single **Run** button fires two parallel executor calls: `runCode()` for raw stdout, `runTests()` for per-test-case pass/fail. Test harness wraps user code with:
 
 ```python
 import json as _json
@@ -134,10 +134,9 @@ Tailwind CSS v4 + CSS variables (`app/src/app/globals.css`). Fonts: `DM_Sans` (U
 | `/api/auth/[...path]` | * | Neon Auth |
 | `/api/progress/lesson` | POST/DELETE | Mark lesson complete/incomplete |
 | `/api/quiz/submit` | POST/DELETE | Submit or reset quiz |
-| `/api/code/run` | POST | Execute Python via Judge0 (returns stdout) |
-| `/api/code/test` | POST | Run test cases via Judge0 |
+| `/api/code/run` | POST | Execute Python via executor service (returns stdout) |
+| `/api/code/test` | POST | Run test cases via executor service |
 | `/api/code/save` | POST | Autosave code + persist test results |
-| `/api/code/usage` | GET | Judge0 rate limit quota |
 
 ---
 
@@ -149,8 +148,8 @@ NEON_AUTH_BASE_URL        # Neon Auth API URL
 NEON_AUTH_COOKIE_SECRET   # Cookie secret
 NEXT_PUBLIC_ROOT_DOMAIN   # e.g. zuzu.codes
 NEXT_PUBLIC_APP_URL       # e.g. https://zuzu.codes
-JUDGE0_BASE_URL           # Self-hosted Judge0 server URL e.g. https://judge0-server-xxxx.up.railway.app
-JUDGE0_AUTH_TOKEN         # Matches AUTHN_TOKEN set in Railway (keep secret)
+EXECUTOR_URL              # Python executor Railway service URL
+EXECUTOR_API_KEY          # Shared secret for executor auth
 ```
 
 ---
