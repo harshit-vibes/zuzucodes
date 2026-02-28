@@ -97,6 +97,20 @@ function ErrorDisplay({ error }: { error: ParsedError }) {
   );
 }
 
+function ErrorBanner({ error }: { error: ParsedError }) {
+  return (
+    <div className="px-3 py-2.5 border-b border-red-500/20 bg-red-500/5">
+      <div className="flex items-baseline gap-2">
+        <span className="text-xs font-mono font-semibold text-red-400">{error.errorType}</span>
+        {error.line !== null && (
+          <span className="text-[11px] font-mono text-muted-foreground/60">line {error.line}</span>
+        )}
+      </div>
+      <div className="mt-0.5 text-xs font-mono text-red-300/90">{error.message}</div>
+    </div>
+  );
+}
+
 function OutputDisplay({ output }: { output: string }) {
   const formatted = formatOutput(output);
   if (formatted.type === 'json') {
@@ -121,14 +135,18 @@ function OutputDisplay({ output }: { output: string }) {
   );
 }
 
-function TestResultRow({ result }: { result: TestCaseResult }) {
+function TestResultRow({ result, suppressExpand = false }: { result: TestCaseResult; suppressExpand?: boolean }) {
   const [open, setOpen] = useState(false);
+  const canExpand = !result.pass && !suppressExpand;
+
   return (
     <div className="border-b border-border/20 last:border-b-0">
       <button
-        onClick={() => setOpen(o => !o)}
-        aria-expanded={open}
-        className="w-full flex items-center gap-2 px-3 py-2 hover:bg-muted/20 transition-colors text-left focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-primary"
+        onClick={() => { if (canExpand) setOpen(o => !o); }}
+        aria-expanded={canExpand ? open : undefined}
+        className={`w-full flex items-center gap-2 px-3 py-2 text-left focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-primary ${
+          canExpand ? 'hover:bg-muted/20 transition-colors' : 'cursor-default'
+        }`}
       >
         {result.pass ? (
           <svg className="w-3 h-3 text-green-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -142,7 +160,7 @@ function TestResultRow({ result }: { result: TestCaseResult }) {
         <span className={`text-xs font-mono flex-1 ${result.pass ? 'text-foreground/80' : 'text-red-300/90'}`}>
           {result.d}
         </span>
-        {!result.pass && (
+        {canExpand && (
           <svg
             className={`w-3 h-3 text-muted-foreground/40 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}
             fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
@@ -151,16 +169,30 @@ function TestResultRow({ result }: { result: TestCaseResult }) {
           </svg>
         )}
       </button>
-      {!result.pass && open && (
-        <div className="px-3 pb-2 space-y-1 ml-5">
-          <div className="text-[10px] font-mono text-muted-foreground/60">
-            <span className="text-muted-foreground/40">expected </span>
-            <span className="text-green-400/80">{JSON.stringify(result.exp)}</span>
-          </div>
-          <div className="text-[10px] font-mono text-muted-foreground/60">
-            <span className="text-muted-foreground/40">got      </span>
-            <span className="text-red-400/80">{JSON.stringify(result.got)}</span>
-          </div>
+      {canExpand && open && (
+        <div className="px-3 pb-2 ml-5">
+          {result.kind === 'runtime-error' && result.error ? (
+            <div className="space-y-0.5">
+              <div className="flex items-baseline gap-2">
+                <span className="text-[10px] font-mono font-semibold text-red-400">{result.error.errorType}</span>
+                {result.error.line !== null && (
+                  <span className="text-[10px] font-mono text-muted-foreground/60">line {result.error.line}</span>
+                )}
+              </div>
+              <div className="text-[10px] font-mono text-red-300/80">{result.error.message}</div>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              <div className="text-[10px] font-mono text-muted-foreground/60">
+                <span className="text-muted-foreground/40">expected </span>
+                <span className="text-green-400/80">{JSON.stringify(result.exp)}</span>
+              </div>
+              <div className="text-[10px] font-mono text-muted-foreground/60">
+                <span className="text-muted-foreground/40">got      </span>
+                <span className="text-red-400/80">{JSON.stringify(result.got)}</span>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -169,6 +201,18 @@ function TestResultRow({ result }: { result: TestCaseResult }) {
 
 function TestResultsList({ results }: { results: TestCaseResult[] }) {
   const passed = results.filter(r => r.pass).length;
+  const failures = results.filter(r => !r.pass);
+
+  // Show a single banner when every failure is the same runtime error
+  const commonError: ParsedError | null = (() => {
+    if (failures.length === 0) return null;
+    if (!failures.every(r => r.kind === 'runtime-error')) return null;
+    const first = failures[0].error;
+    if (!first) return null;
+    if (!failures.every(r => r.error?.errorType === first.errorType && r.error?.message === first.message)) return null;
+    return first;
+  })();
+
   return (
     <div className="flex-1 overflow-auto flex flex-col">
       <div className="px-3 py-1.5 border-b border-border/20 flex items-center justify-between">
@@ -176,7 +220,10 @@ function TestResultsList({ results }: { results: TestCaseResult[] }) {
           {passed}/{results.length} passed
         </span>
       </div>
-      {results.map((r, i) => <TestResultRow key={i} result={r} />)}
+      {commonError && <ErrorBanner error={commonError} />}
+      {results.map((r, i) => (
+        <TestResultRow key={i} result={r} suppressExpand={!!commonError && !r.pass} />
+      ))}
     </div>
   );
 }
