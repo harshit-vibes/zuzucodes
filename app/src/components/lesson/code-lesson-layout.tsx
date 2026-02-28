@@ -136,7 +136,9 @@ export function CodeLessonLayout({
         const [runRes, testRes] = await Promise.all([runPromise, testPromise ?? Promise.resolve(null)]);
 
         if (!runRes.ok) {
-          const msg = 'Execution service unavailable';
+          const msg = runRes.status === 429
+            ? 'Service busy — please try again in a moment'
+            : 'Execution service unavailable';
           setParsedError({ errorType: 'NetworkError', message: msg, line: null, raw: msg });
           setExecutionPhase('error');
           return;

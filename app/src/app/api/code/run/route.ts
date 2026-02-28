@@ -20,6 +20,7 @@ export async function POST(req: Request) {
     return NextResponse.json(result);
   } catch (err: unknown) {
     const message = (err as Error).message ?? 'Execution failed';
-    return NextResponse.json({ error: message }, { status: 502 });
+    const status = message.includes('429') ? 429 : 502;
+    return NextResponse.json({ error: message }, { status });
   }
 }
