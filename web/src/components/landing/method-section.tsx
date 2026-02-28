@@ -19,7 +19,7 @@ export function MethodSection() {
           <div className="mb-12 text-center">
             <p className="text-lg leading-relaxed text-foreground/90 sm:text-xl">
               Every topic traverses four quadrants — a complete learning cycle that produces deep,
-              transferable competence.
+              transferable understanding. Not just the ability to follow instructions. The ability to think in code.
             </p>
           </div>
 
@@ -77,7 +77,7 @@ export function MethodSection() {
               </p>
             </div>
             <p className="text-lg font-medium text-foreground">
-              Complete the quadrant. Build lasting competence.
+              Complete the quadrant. Think in code.
             </p>
           </div>
         </div>
