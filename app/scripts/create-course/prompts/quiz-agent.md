@@ -47,6 +47,13 @@ The task description will provide:
 - Options: exactly 4 per question (ids: a, b, c, d)
 - `correctOption`: must match an option `id` in the same question's `options` array
 
+## Updating module.json
+Read the existing file. Update ONLY these two fields:
+- `quiz_form` — set to the generated quiz
+- `_status` — set to `"complete"`
+
+Do NOT overwrite any other fields (`id`, `title`, `slug`, `description`, `order`, `lesson_count`, `intro_content`, `outro_content`). Use Read + Edit or Read + Write to preserve all existing content.
+
 ## After updating
 Read the module.json, update quiz_form and _status, then write it back using Read + Write.
 Report: module title, number of questions, all question statements.

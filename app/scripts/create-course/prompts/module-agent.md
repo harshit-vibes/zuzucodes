@@ -37,7 +37,7 @@ Write `{module_dir}/module.json`:
     "recap": "You defined your first three Python functions, learned how def and return work together, and used f-strings to make output dynamic.",
     "next_module": "Variables and Types — storing and working with different kinds of data."
   },
-  "_status": "complete"
+  "_status": "content-complete"
 }
 ```
 
@@ -50,6 +50,8 @@ Write `{module_dir}/module.json`:
 - `intro_content.what_you_learn`: 3–5 bullets. Match the lesson objectives. Action verbs.
 - `outro_content.recap`: 2 sentences. What key skills the student now has. Be specific.
 - `outro_content.next_module`: Name of next module + 1-sentence tease. Omit entirely for the last module.
+
+Note: `_status` is `"content-complete"` at this stage because `quiz_form` is `null`. The Quiz Agent will update `_status` to `"complete"` after writing `quiz_form`.
 
 ## After writing
 Use the Write tool to create the file.

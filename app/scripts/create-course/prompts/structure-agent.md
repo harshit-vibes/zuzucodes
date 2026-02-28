@@ -45,6 +45,10 @@ Create `{output_dir}/course-outline.json`:
 }
 ```
 
+Note: `status` starts empty — the skill orchestrator writes status keys
+(e.g. `"course"`, `"module:{slug}"`) as units are approved. The Structure Agent
+does not pre-populate these keys.
+
 Also create `{output_dir}/course.json` with the course metadata (no content fields yet):
 
 ```json

@@ -62,15 +62,17 @@ The task description will provide:
 
 Read the existing lesson JSON, then:
 
-1. Build the test harness for each test case:
-   ```
-   {solution_code}
+1. Build the test harness for each test case. Example for an `add(a, b)` function with args `[1, 2]`:
+   ```python
+   def add(a, b):
+       return a + b
 
    import json as _json
-   _args = _json.loads({JSON.stringify(tc.args)})
-   _result = {entry_point}(*_args)
+   _args = _json.loads('[1, 2]')  # the actual JSON-serialised args array
+   _result = add(*_args)
    print(_json.dumps(_result, separators=(',', ':')))
    ```
+   Replace `[1, 2]` with the actual JSON-serialised args for each test case: `json.dumps(tc.args)`. Each test case gets its own harness program.
 
 2. Submit each program to the executor:
    ```

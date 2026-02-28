@@ -22,8 +22,8 @@ Write `{output_path}`:
 
 ```json
 {
-  "id": "lesson-{course-slug}-{module-slug}-{lesson_index:02d}",
-  "lesson_index": 1,
+  "id": "lesson-{course-slug}-{module-slug}-00",
+  "lesson_index": 0,
   "title": "Your First Python Function",
   "content": "A function is a named block...\n\n```python\ndef greet():\n    pass\n```\n\n---\n\nThe `return` keyword...\n\n```python\ndef greet():\n    return \"Hello, World!\"\n```",
   "code_template": "",
@@ -46,7 +46,7 @@ Write `{output_path}`:
   },
   "outro_content": {
     "recap": "You wrote a function named greet that returns the string \"Hello, World!\". You used def to define it and return to send a value back — the two keywords at the heart of every Python function.",
-    "next_lesson_teaser": "Next up: make your greeting dynamic with f-strings."
+    "next_lesson_teaser": "Next up: f-strings — make your output dynamic by embedding variables in strings."
   },
   "test_cases": [],
   "_status": "content-complete"
