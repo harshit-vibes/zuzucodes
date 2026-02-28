@@ -108,6 +108,7 @@ async function seedCourse(
       )
       ON CONFLICT (id) DO UPDATE SET
         title         = EXCLUDED.title,
+        slug          = EXCLUDED.slug,
         description   = EXCLUDED.description,
         "order"       = EXCLUDED."order",
         lesson_count  = EXCLUDED.lesson_count,
