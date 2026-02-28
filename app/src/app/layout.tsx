@@ -4,6 +4,9 @@ import { NeonAuthUIProvider } from '@neondatabase/auth/react/ui';
 import { authClient } from '@/lib/auth/client';
 import { ThemeProvider } from "@/components/shared/theme-provider";
 import { PostHogProvider } from '@/components/shared/posthog-provider';
+import { PostHogIdentifier } from '@/components/shared/posthog-identifier';
+import { auth } from '@/lib/auth/server';
+import { getSubscriptionStatus } from '@/lib/data';
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -85,17 +88,26 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const { user } = await auth();
+  const subscription = user ? await getSubscriptionStatus(user.id) : null;
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body
         className={`${dmSans.variable} ${jetbrainsMono.variable} ${playfair.variable} font-sans antialiased`}
       >
         <PostHogProvider>
+          <PostHogIdentifier
+            userId={user?.id ?? null}
+            email={user?.email ?? null}
+            name={user?.name ?? null}
+            subscriptionStatus={subscription?.status ?? 'free'}
+          />
           <NeonAuthUIProvider authClient={authClient} redirectTo="/dashboard" emailOTP social={{ providers: ['google'] }}>
             <ThemeProvider
               attribute="class"
