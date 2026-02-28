@@ -55,6 +55,69 @@ CI runs only on `web/` (`.github/workflows/ci.yml`) — type-check + lint + buil
 
 ---
 
+## Creating a Course
+
+Use the `/create-course` Claude Code skill to generate and seed a new course end-to-end.
+
+```bash
+/create-course
+```
+
+The skill runs a 3-stage pipeline, pausing for human approval at every unit:
+
+```
+Stage 1 — Structure
+  Agree title, tag, outcomes, modules, lesson titles + objectives
+  → writes app/content/{course-slug}/course-outline.json
+  → approve outline before anything is generated
+
+Stage 2 — Content (per module, then per lesson)
+  Module Agent   → module intro/outro → approve
+  Lesson Agent   → Markdown body, problem fields, lesson intro/outro → approve
+  Code Agent     → solution_code, code_template, test_cases (verified against executor) → approve
+  Quiz Agent     → module quiz grounded in lesson content → approve
+
+Stage 3 — Course level
+  Course Content Agent → course intro/outro, confidence form → approve
+  → seeder writes all JSON to Neon DB
+```
+
+**Content files land in:**
+```
+app/content/{course-slug}/
+├── course-outline.json        # structure + per-unit completion status
+├── course.json                # course row + intro/outro + confidence_form
+└── {module-slug}/
+    ├── module.json            # module row + intro/outro + quiz_form
+    └── lessons/
+        ├── 00-{lesson-slug}.json
+        └── ...
+```
+
+**Seed manually (without running the full skill):**
+```bash
+cd app
+npm run create-course-seed                        # seed all courses in app/content/
+npm run create-course-seed -- --course=my-slug   # seed one course
+npm run create-course-seed -- --allow-incomplete  # seed partial content (skips todos)
+```
+
+**Validate DB content integrity:**
+```bash
+node app/scripts/validate-content.mjs   # exits 0 (clean) / 1 (violations)
+```
+
+**Agent prompt files** (for reference/editing): `app/scripts/create-course/prompts/`
+
+**Key rules for content JSON:**
+- `_status` field is a local sentinel — never written to DB (seeder skips it)
+- Module `quiz_form` must be non-null before seeding (DB enforces NOT NULL + structural CHECK)
+- `lesson_index` is 0-based; `getLesson(moduleId, position)` in `data.ts` uses 1-based position
+- Re-running the seeder is idempotent — all upserts use `ON CONFLICT (id) DO UPDATE`
+- IDs follow `{type}-{course-slug}-{...}-001` convention (e.g. `course-intro-to-python-001`)
+
+---
+
 ## App Platform Architecture (`app/`)
 
 ### Data Model (Neon PostgreSQL)
