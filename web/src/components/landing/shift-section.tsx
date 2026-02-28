@@ -16,20 +16,20 @@ export function ShiftSection() {
 
           <div className="space-y-8">
             <p className="text-lg leading-relaxed text-foreground/90 sm:text-xl">
-              AI is changing what it means to be skilled. The tools are getting smarter — but the
-              people who understand how they work will always run them.
+              Something shifted. Tools that used to take years to build now get shipped in a weekend.
+              AI is building apps, writing code, designing products — and it&apos;s only getting faster.
             </p>
 
             <p className="text-lg leading-relaxed text-muted-foreground sm:text-xl">
-              There&apos;s a gap. YouTube teaches you <span className="font-medium text-foreground">about</span> coding.
-              Bootcamps compress six months into six weeks. Neither builds the patient, foundational
-              instincts that actually transfer — the ability to look at a problem and{" "}
-              <span className="font-medium text-foreground">know how to solve it in code</span>.
+              But there&apos;s a gap between watching something get built and knowing how to build it
+              yourself. Prompting is not programming. Clicking is not creating. The people who will
+              run this era aren&apos;t just using the tools —{" "}
+              <span className="font-medium text-foreground">they understand them</span>.
             </p>
 
             <p className="text-lg leading-relaxed text-muted-foreground sm:text-xl">
-              Python is the language of this era. And the people who learn it properly — with the
-              right structure, the right practice, and the right guidance — become{" "}
+              Coding is no longer a profession. It&apos;s a baseline. And the people who learn it
+              properly — with the right structure, the right practice, the right guidance — become{" "}
               <span className="font-medium text-foreground">force multipliers</span> in every room
               they walk into.
             </p>
