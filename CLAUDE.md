@@ -149,8 +149,8 @@ NEON_AUTH_BASE_URL        # Neon Auth API URL
 NEON_AUTH_COOKIE_SECRET   # Cookie secret
 NEXT_PUBLIC_ROOT_DOMAIN   # e.g. zuzu.codes
 NEXT_PUBLIC_APP_URL       # e.g. https://zuzu.codes
-JUDGE0_API_KEY            # RapidAPI key
-JUDGE0_API_HOST           # e.g. judge0-ce.p.rapidapi.com
+JUDGE0_BASE_URL           # Self-hosted Judge0 server URL e.g. https://judge0-server-xxxx.up.railway.app
+JUDGE0_AUTH_TOKEN         # Matches AUTHN_TOKEN set in Railway (keep secret)
 ```
 
 ---
