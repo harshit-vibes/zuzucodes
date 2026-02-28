@@ -247,11 +247,11 @@ The Python executor migration (Judge0 → self-hosted Railway service) proved th
 - **Why:** Vercel's hobby plan has function timeout limits and cold starts; owned infra has no per-invocation pricing at scale
 - **Consideration:** Vercel's edge CDN and image optimisation (`next/image`) need equivalents — Cloudflare CDN + `sharp` on the server covers both
 
-### Email — replace Resend with self-hosted SMTP
-- **Current:** No email yet (email welcome flow is a roadmap TODO)
-- **Target:** Self-hosted [Postal](https://postal.cat) or use [Resend](https://resend.com) initially then migrate to own SMTP (AWS SES / Brevo) once volume justifies it
-- **Why:** Resend's free tier is 100 emails/day — fine to start, but self-hosted SMTP removes that ceiling entirely
-- **Integration point:** Wherever auth sends OTP emails (the new auth service above) + transactional emails (welcome, progress milestones)
+### Email — keep Resend, extend for transactional
+- **Current:** Resend already configured for auth emails (OTP codes, email verification, password reset). Google OAuth also configured as a login provider.
+- **Target:** Extend Resend usage for transactional emails (welcome flow, progress milestones) — no migration needed
+- **Why:** Resend is already integrated and working; self-hosted SMTP only worth revisiting if free-tier limits (100/day) become a constraint at scale
+- **Integration point:** Auth emails are covered. Remaining work is transactional emails triggered by app events (post sign-up welcome, course completion)
 
 ### Migration priority
 1. **Auth** (blocks hosting migration — Neon Auth is the tightest coupling)
