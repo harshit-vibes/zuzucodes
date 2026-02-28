@@ -1,3 +1,5 @@
+import { parsePythonError, ParsedError } from '@/lib/python-output';
+
 const BASE_URL = process.env.EXECUTOR_URL!;
 const API_KEY = process.env.EXECUTOR_API_KEY!;
 
@@ -28,6 +30,8 @@ export interface TestCaseResult {
   pass: boolean;
   got: string;
   exp: unknown;
+  kind: 'wrong-answer' | 'runtime-error';
+  error?: ParsedError;
 }
 
 export interface Judge0TestsResult {
@@ -145,16 +149,26 @@ export async function runTests(
   const tests: TestCaseResult[] = testCases.map((tc, i) => {
     const result = settled[i];
     if (result.status === 'rejected') {
-      return { d: tc.description, pass: false, got: (result.reason as Error)?.message ?? 'Request failed', exp: tc.expected };
+      const msg = (result.reason as Error)?.message ?? 'Request failed';
+      return {
+        d: tc.description,
+        pass: false,
+        got: msg,
+        exp: tc.expected,
+        kind: 'runtime-error',
+        error: { errorType: 'Error', message: msg, line: null, raw: msg },
+      };
     }
     const data = result.value;
     const status = data.status as { id: number };
     if (status.id === 3) {
       const got = ((data.stdout as string) ?? '').trim();
-      return { d: tc.description, pass: got === JSON.stringify(tc.expected), got, exp: tc.expected };
+      const pass = got === JSON.stringify(tc.expected);
+      return { d: tc.description, pass, got, exp: tc.expected, kind: 'wrong-answer' };
     }
     const got = ((data.stderr as string) ?? '').trim() || `Runtime error (status ${status.id})`;
-    return { d: tc.description, pass: false, got, exp: tc.expected };
+    const error = parsePythonError(got);
+    return { d: tc.description, pass: false, got, exp: tc.expected, kind: 'runtime-error', error };
   });
 
   const allPassed = tests.every(t => t.pass);
