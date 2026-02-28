@@ -118,6 +118,30 @@ node app/scripts/validate-content.mjs   # exits 0 (clean) / 1 (violations)
 
 ---
 
+## Updating a Course
+
+Use the `/update-course` Claude Code skill to update any unit of an existing course — lesson content, code challenge, module intro/outro, quiz, course-level forms, or structural changes (add/remove/reorder lessons and modules).
+
+```bash
+/update-course
+```
+
+The skill:
+1. Asks which course (lists slugs from `app/content/`)
+2. Asks what to update (free-form natural language)
+3. Resolves intent to the correct agent(s)
+4. Resets status, dispatches agent, validates, and runs the approve/edit/regenerate loop
+5. Checks for cascade effects (stale neighbours) and offers to regenerate each
+6. Seeds the course once all approvals are complete: `npm run create-course-seed -- --course={slug}`
+
+Structural changes (add/remove/reorder) update `course-outline.json` first and show a diff before dispatching any agents.
+
+**Reuses all agent prompts:** `app/scripts/create-course/prompts/`
+
+**Status management:** Same dual-write rule as `/create-course` — `_status` in entity files + `status` map in `course-outline.json`.
+
+---
+
 ## App Platform Architecture (`app/`)
 
 ### Data Model (Neon PostgreSQL)
@@ -252,100 +276,6 @@ Separate Next.js app. Static JSON data in `web/src/data/` with optional Supabase
 
 ---
 
-## Roadmap TODOs
+## Roadmap
 
-### 1. Course Player Micro-Enhancements (`/dashboard/course/[courseSlug]/...`)
-- Progress indicators: per-lesson, per-module, per-course (% complete, visual bars)
-- Navigation improvements: prev/next between lessons, breadcrumbs, keyboard shortcuts
-- Footer: lesson footer with next-up preview, time estimate, completion CTA
-- Course onboarding flow (first-visit guided intro) and offboarding (completion celebration)
-- Module quiz polish: result screen, retry flow, score history
-- Review mode UX: clear "reviewing completed lesson" state in the player
-
-### 2. Dashboard Enhancements (`/dashboard`)
-- Multi-course grid: add more courses, course card design improvements
-- Track view: group courses by track/learning path (e.g. Python Fundamentals track)
-- Continued learning section improvements: smarter resume logic
-- Course discovery: search, filter by tag/track
-
-### 3. Auth Gating + Demo Showcase
-- Lock lesson player, quiz, and code execution for unauthenticated users
-- Demo/preview mode: unauthenticated users can view lesson intro + read-only content
-- Auth prompts at key moments (first run attempt, first quiz question)
-- Guest → authenticated transition: preserve progress made as guest
-
-### 4. Landing Page → Dashboard Journey
-- Landing page enhancements: hero, social proof, course previews, track overview
-- Smooth hand-off: landing page CTAs go to specific onboarding flows
-- Onboarding survey / goal-setting step post sign-up
-- Email welcome flow integration
-
-### 5. Analytics + Tooling
-- PostHog integration: event tracking (lesson started/completed, quiz attempted, code run, auth events)
-- Customer support: Intercom or equivalent in-app chat widget
-- Sales/conversion: identify high-intent users, trigger upgrade flows when relevant
-- Error monitoring: Sentry or equivalent for runtime errors in prod
-
----
-
-## v2 Infrastructure Roadmap — Own Your Stack
-
-The Python executor migration (Judge0 → self-hosted Railway service) proved the pattern: replace managed third-party services with self-hosted equivalents where the operational cost is low and the control/cost benefit is high. The same approach applies to the remaining third-party dependencies.
-
-### Database — replace Neon with self-hosted Postgres
-- **Current:** Neon serverless Postgres (managed, proprietary connection pooling, Neon Auth)
-- **Target:** Postgres on Railway (or Fly.io) — same `pg` wire protocol, swap `DATABASE_URL`, no code changes beyond connection string
-- **Why:** Neon's free tier has compute suspension (cold starts); owned Postgres has predictable latency and no vendor lock-in on the auth layer
-- **Note:** Neon Auth is tightly coupled to Neon DB — replacing the DB means replacing auth too (see below)
-
-### Auth — replace Neon Auth with self-hosted auth service
-- **Current:** `@neondatabase/auth` — passwordless OTP, tied to Neon
-- **Target:** Self-hosted [Lucia](https://lucia-auth.com/) or [Better Auth](https://www.better-auth.com/) on Railway — OTP/magic-link via Resend (or self-hosted SMTP), sessions in own Postgres
-- **Why:** Neon Auth can't be decoupled from Neon DB; owning auth means full control over session strategy, multi-provider login, and user data
-- **Migration path:** `auth()` and `authClient` abstractions in `src/lib/auth/` already isolate the auth layer — swap the implementation without touching route code
-
-### Hosting — replace Vercel with self-hosted Next.js
-- **Current:** Vercel (two projects: `app/` → `app.zuzu.codes`, `web/` → `zuzu.codes`)
-- **Target:** Self-hosted Next.js via [OpenNext](https://opennext.js.org/) on Railway or Coolify — same build output, full App Router + RSC support
-- **Why:** Vercel's hobby plan has function timeout limits and cold starts; owned infra has no per-invocation pricing at scale
-- **Consideration:** Vercel's edge CDN and image optimisation (`next/image`) need equivalents — Cloudflare CDN + `sharp` on the server covers both
-
-### Email — keep Resend, extend for transactional
-- **Current:** Resend already configured for auth emails (OTP codes, email verification, password reset). Google OAuth also configured as a login provider.
-- **Target:** Extend Resend usage for transactional emails (welcome flow, progress milestones) — no migration needed
-- **Why:** Resend is already integrated and working; self-hosted SMTP only worth revisiting if free-tier limits (100/day) become a constraint at scale
-- **Integration point:** Auth emails are covered. Remaining work is transactional emails triggered by app events (post sign-up welcome, course completion)
-
-### Migration priority
-1. **Auth** (blocks hosting migration — Neon Auth is the tightest coupling)
-2. **Database** (migrate together with auth; single Railway Postgres replaces both Neon DB + Neon Auth backing store)
-3. **Email** (needed as soon as auth is self-hosted, for OTP delivery)
-4. **Hosting** (last — Vercel works fine; migrate when cost or limits become a constraint)
-
----
-
-## Course Creation Tool Roadmap
-
-### v1 — Claude Code Native (current)
-
-A `/create-course` skill that orchestrates specialised Task subagents inside Claude Code. Conversational approval at every level: course outline → per-module → per-lesson → per-quiz → course forms. Generated content lands in `app/content/{course-slug}/` as JSON files, seeded into DB via the existing seed script.
-
-**Agent hierarchy:**
-- **Structure Agent** — generates course outline (modules, lesson titles, objectives)
-- **Module Agent** — generates module intro/outro per module
-- **Lesson Content Agent** — generates Markdown body, problem fields, lesson intro/outro
-- **Code Challenge Agent** — generates solution code, derives stub template, writes test cases, verifies against executor (retry loop, max 3×)
-- **Quiz Agent** — generates module quiz grounded in actual lesson content
-- **Course Content Agent** — generates course intro/outro, confidence form
-
-**Design doc:** `app/docs/plans/2026-02-28-course-creation-tool-design.md`
-
-### v2 — Provider-Agnostic Script
-
-Extract orchestration from Claude Code into `scripts/create-course.mjs`:
-- Each agent's system prompt + generation call becomes a standalone function using `@anthropic-ai/sdk` with structured output (existing Zod schemas)
-- `Task tool dispatch` → `anthropic.messages.create()` with JSON schema response format
-- Swap `anthropic` client for `openai`/`gemini` to go fully provider-agnostic
-- Agent prompts live in `scripts/prompts/` as plain strings — no Claude Code dependency
-- Same JSON output format, same `app/content/` structure, same seeder
-- Approval flow moves from Claude Code conversation to terminal prompts
+See [`roadmap.md`](./roadmap.md) at the repo root.
