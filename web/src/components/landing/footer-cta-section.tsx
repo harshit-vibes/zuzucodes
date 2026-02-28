@@ -14,7 +14,7 @@ export function FooterCtaSection() {
           Ready to start building?
         </h2>
         <p className="mt-6 mx-auto max-w-xl text-lg text-muted-foreground">
-          Join the students already learning Python the right way. Try it free for 7 days.
+          Join the next generation of builders. Try it free for 7 days.
         </p>
         <div className="mt-10 flex flex-col items-center gap-4">
           <div className="gradient-border-animated rounded-xl">
