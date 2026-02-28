@@ -2,17 +2,27 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Markdown } from '@/components/shared/markdown';
-import { ProblemPanel } from '@/components/lesson/problem-panel';
-import { CodeEditor } from '@/components/lesson/code-editor';
-import { OutputPanel, ExecutionPhase } from '@/components/lesson/output-panel';
+import dynamic from 'next/dynamic';
+import type { ExecutionPhase, ExecutionMetrics } from '@/components/lesson/output-panel';
 import { parsePythonError, ParsedError } from '@/lib/python-output';
 import type { TestCase, TestCaseResult, Judge0RunResult, Judge0TestsResult } from '@/lib/judge0';
-import type { ExecutionMetrics } from '@/components/lesson/output-panel';
+
+const CodeEditor = dynamic(
+  () => import('@/components/lesson/code-editor').then(m => m.CodeEditor),
+  { ssr: false, loading: () => <div className="flex-1 bg-zinc-950 animate-pulse" /> }
+);
+const ProblemPanel = dynamic(
+  () => import('@/components/lesson/problem-panel').then(m => m.ProblemPanel),
+  { ssr: false }
+);
+const OutputPanel = dynamic(
+  () => import('@/components/lesson/output-panel').then(m => m.OutputPanel),
+  { ssr: false }
+);
 
 interface CodeLessonLayoutProps {
   lessonTitle: string;
-  content: string;
+  children: React.ReactNode;
   outroHref: string;
   codeTemplate: string | null;
   testCases: TestCase[] | null;
@@ -32,7 +42,7 @@ interface CodeLessonLayoutProps {
 
 export function CodeLessonLayout({
   lessonTitle: _lessonTitle,
-  content,
+  children,
   outroHref,
   codeTemplate,
   testCases,
@@ -53,25 +63,21 @@ export function CodeLessonLayout({
   const [code, setCode] = useState(savedCode ?? codeTemplate ?? '');
   const [output, setOutput] = useState('');
   const [parsedError, setParsedError] = useState<ParsedError | null>(null);
-  const [executionPhase, setExecutionPhase] = useState<ExecutionPhase>('idle');
+  const [executionPhase, setExecutionPhase] = useState<ExecutionPhase>(() =>
+    lastTestResults && lastTestResults.length > 0
+      ? (lastTestResults.every(r => r.pass) ? 'run-pass' : 'run-fail')
+      : 'idle'
+  );
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saved'>('idle');
   const [activeTab, setActiveTab] = useState<'lesson' | 'code'>('lesson');
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const outroTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isExecutingRef = useRef(false);
-  const [testResults, setTestResults] = useState<TestCaseResult[] | null>(null);
-  const [hasRun, setHasRun] = useState(false);
+  const [testResults, setTestResults] = useState<TestCaseResult[] | null>(
+    () => (lastTestResults && lastTestResults.length > 0 ? lastTestResults : null)
+  );
+  const [hasRun, setHasRun] = useState(() => !!(lastTestResults && lastTestResults.length > 0));
   const [metrics, setMetrics] = useState<ExecutionMetrics | null>(null);
-
-  // Hydrate output panel with persisted test results on mount
-  useEffect(() => {
-    if (lastTestResults && lastTestResults.length > 0) {
-      const allPassed = lastTestResults.every(r => r.pass);
-      setTestResults(lastTestResults);
-      setExecutionPhase(allPassed ? 'run-pass' : 'run-fail');
-      setHasRun(true);
-    }
-  }, []); // intentional: mount-only
 
   const handleCodeChange = useCallback((val: string) => {
     setCode(val);
@@ -131,7 +137,7 @@ export function CodeLessonLayout({
 
         if (!runRes.ok) {
           const msg = 'Execution service unavailable';
-          setParsedError({ errorType: 'Error', message: msg, line: null, raw: msg });
+          setParsedError({ errorType: 'NetworkError', message: msg, line: null, raw: msg });
           setExecutionPhase('error');
           return;
         }
@@ -187,7 +193,7 @@ export function CodeLessonLayout({
         }
       } catch (err: unknown) {
         const message = (err as Error).message ?? 'Network error';
-        setParsedError({ errorType: 'Error', message, line: null, raw: message });
+        setParsedError({ errorType: 'NetworkError', message, line: null, raw: message });
         setExecutionPhase('error');
       }
     } finally {
@@ -198,7 +204,7 @@ export function CodeLessonLayout({
   // ─── Prose Pane ─────────────────────────────────────────────────────────────
   const ProsePane = (
     <div className="h-full overflow-y-auto px-8 py-6">
-      <Markdown content={content} />
+      {children}
     </div>
   );
 
