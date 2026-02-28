@@ -1,27 +1,31 @@
 "use client";
 
-import { Briefcase, Rocket, Users, TrendingUp } from "lucide-react";
+import { GraduationCap, Briefcase, ArrowLeftRight, Code2 } from "lucide-react";
 
 const audiences = [
   {
+    icon: GraduationCap,
+    title: "The Student",
+    description:
+      "Building foundational skills before entering the workforce. Every line of code you write now is compound interest on your career.",
+  },
+  {
     icon: Briefcase,
-    title: "Career-Focused Professionals",
-    description: "Seeking AI-native skills that compound over time",
+    title: "The Career Starter",
+    description:
+      "Just started your first job and watching AI change everything around you. Time to stay two steps ahead.",
   },
   {
-    icon: Rocket,
-    title: "Founders and Operators",
-    description: "Who treat productivity as competitive advantage",
+    icon: ArrowLeftRight,
+    title: "The Career Switcher",
+    description:
+      "Transitioning into tech, or adding technical depth to the profession you already love. Python is your on-ramp.",
   },
   {
-    icon: Users,
-    title: "Team Leads",
-    description: "Building automation-first cultures",
-  },
-  {
-    icon: TrendingUp,
-    title: "Consultants",
-    description: "Adding process optimization to their practice",
+    icon: Code2,
+    title: "The Curious Builder",
+    description:
+      "You just want to understand how this stuff works — and to actually build something for once.",
   },
 ];
 
@@ -60,9 +64,9 @@ export function AudienceSection() {
 
           <div className="mx-auto max-w-3xl text-center">
             <p className="text-lg leading-relaxed text-muted-foreground sm:text-xl">
-              Like an MBA provides frameworks for business thinking, this curriculum provides
-              frameworks for{" "}
-              <span className="font-medium text-foreground">AI-native operations thinking</span>.
+              Whether you&apos;re a complete beginner or have tinkered before, the Zuzu Method gives you the
+              structured path to go from{" "}
+              <span className="font-medium text-foreground">curious to capable</span>.
             </p>
           </div>
         </div>
