@@ -3,6 +3,7 @@ import { AppSidebar } from "@/components/shared/app-sidebar";
 import { getCoursesForSidebar, getSidebarProgress, getSectionCompletionStatus, getDashboardStats, getSubscriptionStatus, type SectionStatus } from "@/lib/data";
 import { auth } from "@/lib/auth/server";
 import { redirect } from "next/navigation";
+import { enforceSessionLimit } from "@/lib/actions/session-limit";
 import { DashboardMain } from "@/components/dashboard/main";
 import { RateLimitProvider } from "@/context/rate-limit-context";
 import { RateLimitFooter } from "@/components/dashboard/rate-limit-footer";
@@ -18,6 +19,9 @@ export default async function DashboardLayout({
   if (!user) {
     redirect("/auth/sign-in");
   }
+
+  // Enforce max 2 active sessions — fire and forget
+  void enforceSessionLimit();
 
   const courses = await getCoursesForSidebar();
   const courseIds = courses.map((c) => c.id);
