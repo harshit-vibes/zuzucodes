@@ -9,7 +9,6 @@ const footerLinks = {
     { label: "Pricing", href: "#pricing", external: false },
   ],
   company: [
-    { label: "About", href: "#", external: false },
     { label: "FAQ", href: "#faq", external: false },
     { label: "Contact", href: WHATSAPP_URL, external: true },
   ],

@@ -43,7 +43,9 @@ function FaqItem({ question, answer }: { question: string; answer: string }) {
   return (
     <div className="border-b border-border last:border-0">
       <button
+        type="button"
         onClick={() => setOpen(!open)}
+        aria-expanded={open}
         className="flex w-full items-center justify-between py-5 text-left"
       >
         <span className="font-medium text-foreground pr-4">{question}</span>

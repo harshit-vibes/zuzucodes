@@ -29,7 +29,7 @@ export function FooterCtaSection() {
               </Link>
             </Button>
           </div>
-          <p className="text-sm text-muted-foreground">No credit card needed to browse. Cancel anytime.</p>
+          <p className="text-sm text-muted-foreground">Cancel anytime. No long-term commitment.</p>
         </div>
       </div>
     </section>
