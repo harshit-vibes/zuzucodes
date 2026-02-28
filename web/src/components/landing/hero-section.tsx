@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Play, BookOpen, Clock } from "lucide-react";
+import { ArrowRight, Code2, CheckCircle2, Zap } from "lucide-react";
 
 const particles = Array.from({ length: 10 }, (_, i) => ({
   id: i,
@@ -11,6 +11,30 @@ const particles = Array.from({ length: 10 }, (_, i) => ({
   delay: `${i * 0.8}s`,
   duration: `${6 + (i % 4)}s`,
 }));
+
+const milestones = [
+  {
+    icon: Code2,
+    step: "Step 1",
+    title: "Hello, World",
+    description: "Write your first line of Python",
+    active: false,
+  },
+  {
+    icon: CheckCircle2,
+    step: "Step 2",
+    title: "Build functions",
+    description: "Solve real problems with code",
+    active: true,
+  },
+  {
+    icon: Zap,
+    step: "Step 3",
+    title: "Automate tasks",
+    description: "Replace hours of manual work",
+    active: false,
+  },
+];
 
 export function HeroSection() {
   return (
@@ -49,39 +73,41 @@ export function HeroSection() {
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
                 </span>
-                New courses added weekly
+                Young Learners Track — now open
               </span>
             </div>
 
             <h1 className="font-display text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl xl:text-7xl">
-              <span className="text-reveal inline-block">AI-Native Upskilling</span>{" "}
+              <span className="text-reveal inline-block">Python for the</span>{" "}
               <span className="relative inline-block text-reveal text-reveal-delay-1">
-                <span className="relative z-10 text-gradient">for the Modern Professional</span>
+                <span className="relative z-10 text-gradient">next generation</span>
                 <span className="absolute -bottom-2 left-0 right-0 h-3 bg-gradient-to-r from-primary/20 to-accent/20 -skew-x-3 rounded-sm" />
               </span>
+              <br />
+              <span className="text-reveal text-reveal-delay-2 inline-block">of builders.</span>
             </h1>
 
             <p className="mt-6 max-w-lg text-lg leading-relaxed text-muted-foreground sm:text-xl fade-in-up stagger-2">
-              Build AI-native operations instincts through our quadrant-based learning method.
-              MBA-level rigor applied to automation management and process design.
+              Structured, hands-on Python learning for students and early-career learners.
+              Build real skills. Build real things.
             </p>
 
             <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-center fade-in-up stagger-3">
               <Button size="lg" className="group h-12 px-6 text-base btn-shimmer" asChild>
                 <Link href="https://app.zuzu.codes/auth/sign-up">
-                  Start Learning Free
+                  Start 7-Day Trial
                   <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Link>
               </Button>
-              <Button variant="outline" size="lg" className="h-12 px-6 text-base" asChild>
-                <Link href="https://app.zuzu.codes/auth/sign-in">Sign In</Link>
+              <Button variant="ghost" size="lg" className="h-12 px-6 text-base" asChild>
+                <a href="#courses">See what&apos;s inside ↓</a>
               </Button>
             </div>
 
             <div className="mt-16 flex flex-wrap items-center gap-8 border-t border-border pt-8 fade-in-up stagger-4">
               <div>
-                <p className="font-display text-3xl font-semibold">2 Courses</p>
-                <p className="text-sm text-muted-foreground">Personal + Business</p>
+                <p className="font-display text-3xl font-semibold">12 Lessons</p>
+                <p className="text-sm text-muted-foreground">In the first track</p>
               </div>
               <div className="hidden h-10 w-px bg-border sm:block" />
               <div>
@@ -90,70 +116,56 @@ export function HeroSection() {
               </div>
               <div className="hidden h-10 w-px bg-border sm:block" />
               <div>
-                <p className="font-display text-3xl font-semibold">3 Tiers</p>
-                <p className="text-sm text-muted-foreground">Progressive depth</p>
+                <p className="font-display text-3xl font-semibold">7-Day Trial</p>
+                <p className="text-sm text-muted-foreground">Risk-free start</p>
               </div>
             </div>
           </div>
 
-          {/* Right: Course Preview Card */}
+          {/* Right: Learning path visualization */}
           <div className="relative flex items-center justify-center lg:justify-end">
             <div className="absolute -right-8 -top-8 h-72 w-72 rounded-full bg-primary/5 blur-3xl" />
             <div className="absolute -bottom-8 -left-8 h-48 w-48 rounded-full bg-accent/20 blur-2xl" />
 
-            <div className="relative w-full max-w-md">
-              <div className="gradient-border-animated p-1 rounded-2xl">
-                <div className="rounded-xl border border-border/50 bg-card shadow-2xl shadow-primary/5 overflow-hidden">
-                  <div className="relative aspect-video overflow-hidden bg-muted">
-                    <div className="absolute inset-0 neural-grid opacity-50" />
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-primary/10 to-accent/20" />
-
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="pulse-ring flex h-16 w-16 items-center justify-center rounded-full bg-background/90 shadow-lg backdrop-blur-sm transition-transform hover:scale-105 cursor-pointer">
-                        <Play className="h-6 w-6 text-primary fill-primary ml-1" />
+            <div className="relative w-full max-w-md space-y-4">
+              {milestones.map((milestone) => {
+                const Icon = milestone.icon;
+                return (
+                  <div
+                    key={milestone.step}
+                    className={`rounded-xl border p-5 flex items-center gap-4 transition-all ${
+                      milestone.active
+                        ? "border-primary/50 bg-card shadow-lg shadow-primary/10"
+                        : "border-border bg-card/60 opacity-70"
+                    }`}
+                  >
+                    <div
+                      className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full ${
+                        milestone.active
+                          ? "bg-primary/15 text-primary"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-muted-foreground">{milestone.step}</p>
+                      <p className="font-display text-base font-semibold">{milestone.title}</p>
+                      <p className="text-sm text-muted-foreground truncate">{milestone.description}</p>
+                    </div>
+                    {milestone.active && (
+                      <div className="flex-shrink-0">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                          <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                          In progress
+                        </span>
                       </div>
-                    </div>
-
-                    <div className="absolute left-3 top-3">
-                      <span className="rounded-md bg-background/90 px-2 py-1 text-xs font-medium backdrop-blur-sm">
-                        Featured Course
-                      </span>
-                    </div>
+                    )}
                   </div>
+                );
+              })}
 
-                  <div className="p-5">
-                    <h3 className="font-display text-lg font-semibold">
-                      Personal Productivity Automation
-                    </h3>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      From manual processes to systematized personal operations that run themselves.
-                    </p>
-
-                    <div className="mt-4 flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1.5">
-                        <BookOpen className="h-4 w-4" />
-                        <span>3 modules</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <Clock className="h-4 w-4" />
-                        <span>Cohort-based</span>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Learning method</span>
-                        <span className="font-medium text-primary">4 Quadrants</span>
-                      </div>
-                      <div className="h-2 overflow-hidden rounded-full bg-muted">
-                        <div className="h-full w-0 rounded-full bg-gradient-to-r from-primary to-primary/70" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Floating elements */}
+              {/* Floating badges */}
               <div className="absolute -left-4 top-1/4 rounded-lg glass-premium p-3 shadow-lg card-lift">
                 <div className="flex items-center gap-2">
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-success/10 text-success">
@@ -162,13 +174,13 @@ export function HeroSection() {
                     </svg>
                   </div>
                   <div>
-                    <p className="text-xs font-medium">Hands-on</p>
-                    <p className="text-xs text-muted-foreground">Projects</p>
+                    <p className="text-xs font-medium">Beginner</p>
+                    <p className="text-xs text-muted-foreground">Friendly</p>
                   </div>
                 </div>
               </div>
 
-              <div className="absolute -right-4 bottom-1/4 rounded-lg glass-premium p-3 shadow-lg card-lift">
+              <div className="absolute -right-4 bottom-4 rounded-lg glass-premium p-3 shadow-lg card-lift">
                 <div className="flex items-center gap-2">
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary icon-glow">
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -176,8 +188,8 @@ export function HeroSection() {
                     </svg>
                   </div>
                   <div>
-                    <p className="text-xs font-medium">Production</p>
-                    <p className="text-xs text-muted-foreground">Ready</p>
+                    <p className="text-xs font-medium">AI-ready</p>
+                    <p className="text-xs text-muted-foreground">Skills</p>
                   </div>
                 </div>
               </div>
