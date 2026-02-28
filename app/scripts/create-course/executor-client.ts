@@ -11,7 +11,7 @@ function loadEnv(): { url: string; apiKey: string } {
   const lines = readFileSync(envPath, 'utf8').split('\n');
   const env: Record<string, string> = {};
   for (const line of lines) {
-    const m = line.match(/^([A-Z_]+)=(.+)$/);
+    const m = line.match(/^([A-Z_][A-Z0-9_]*)=(.+)$/);
     if (m) env[m[1]] = m[2].trim().replace(/^["']|["']$/g, '');
   }
   if (!env['EXECUTOR_URL'])     throw new Error('EXECUTOR_URL not found in app/.env.local');
@@ -73,6 +73,9 @@ export async function verifyCodeChallenge(
 ): Promise<VerifyResult> {
   if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(entryPoint)) {
     throw new Error(`Invalid entryPoint: ${entryPoint}`);
+  }
+  if (testCases.length === 0) {
+    throw new Error('verifyCodeChallenge requires at least one test case');
   }
 
   const { url, apiKey } = loadEnv();
