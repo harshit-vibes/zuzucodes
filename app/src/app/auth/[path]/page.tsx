@@ -41,7 +41,7 @@ export default async function AuthPage({
 
       {/* Auth card */}
       <div className="relative z-10 w-full max-w-sm glass-premium rounded-2xl shadow-lg p-8">
-        <AuthView path={path} />
+        <AuthView path={path} redirectTo="/dashboard" />
       </div>
 
     </div>
