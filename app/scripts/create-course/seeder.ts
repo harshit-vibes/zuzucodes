@@ -1,6 +1,7 @@
 // app/scripts/create-course/seeder.ts
 import { readFileSync, readdirSync, existsSync } from 'fs';
 import { join } from 'path';
+import { execSync } from 'child_process';
 import { neon } from '@neondatabase/serverless';
 import type { NeonQueryFunction } from '@neondatabase/serverless';
 import type { CourseOutline, CourseJson, ModuleJson, LessonJson } from './types';
@@ -49,6 +50,7 @@ async function seedCourse(
     )
     ON CONFLICT (id) DO UPDATE SET
       title            = EXCLUDED.title,
+      slug             = EXCLUDED.slug,
       description      = EXCLUDED.description,
       outcomes         = EXCLUDED.outcomes,
       tag              = EXCLUDED.tag,
@@ -74,11 +76,32 @@ async function seedCourse(
       throw new Error(`module ${mod.slug}._status is "${mod._status}" — use --allow-incomplete`);
     }
 
+    const lessonsDir = join(moduleDir, 'lessons');
+    if (!existsSync(lessonsDir)) {
+      if (allowIncomplete) { console.log(`  skip lessons for ${mod.slug}: no lessons/ dir`); continue; }
+      throw new Error(`lessons/ dir missing for ${mod.slug}`);
+    }
+
+    // Read all lesson files first so we can compute the actual insertable count
+    const lessonFiles = readdirSync(lessonsDir).filter(f => f.endsWith('.json')).sort();
+    const lessonsToInsert: LessonJson[] = [];
+    for (const lessonFile of lessonFiles) {
+      const lesson = readJson<LessonJson>(join(lessonsDir, lessonFile));
+      if (lesson._status === 'todo') { console.log(`    skip lesson ${lessonFile}: marked todo`); continue; }
+      if (!allowIncomplete && lesson._status !== 'complete') {
+        throw new Error(`lesson ${lessonFile}._status is "${lesson._status}" — use --allow-incomplete`);
+      }
+      lessonsToInsert.push(lesson);
+    }
+
+    // Fix 2: use actual insertable lesson count instead of the JSON value
+    const actualLessonCount = lessonsToInsert.length;
+
     await sql`
       INSERT INTO modules (id, course_id, title, slug, description, "order", lesson_count, quiz_form, intro_content, outro_content)
       VALUES (
         ${mod.id}, ${course.id}, ${mod.title}, ${mod.slug}, ${mod.description},
-        ${mod.order}, ${mod.lesson_count},
+        ${mod.order}, ${actualLessonCount},
         ${mod.quiz_form ? JSON.stringify(mod.quiz_form) : null},
         ${JSON.stringify(mod.intro_content)},
         ${JSON.stringify(mod.outro_content)}
@@ -92,22 +115,9 @@ async function seedCourse(
         intro_content = EXCLUDED.intro_content,
         outro_content = EXCLUDED.outro_content
     `;
-    console.log(`  upserted module: ${mod.title}`);
+    console.log(`  upserted module: ${mod.title} (lesson_count=${actualLessonCount})`);
 
-    const lessonsDir = join(moduleDir, 'lessons');
-    if (!existsSync(lessonsDir)) {
-      if (allowIncomplete) { console.log(`  skip lessons for ${mod.slug}: no lessons/ dir`); continue; }
-      throw new Error(`lessons/ dir missing for ${mod.slug}`);
-    }
-
-    const lessonFiles = readdirSync(lessonsDir).filter(f => f.endsWith('.json')).sort();
-    for (const lessonFile of lessonFiles) {
-      const lesson = readJson<LessonJson>(join(lessonsDir, lessonFile));
-      if (lesson._status === 'todo') { console.log(`    skip lesson ${lessonFile}: marked todo`); continue; }
-      if (!allowIncomplete && lesson._status !== 'complete') {
-        throw new Error(`lesson ${lessonFile}._status is "${lesson._status}" — use --allow-incomplete`);
-      }
-
+    for (const lesson of lessonsToInsert) {
       await sql`
         INSERT INTO lessons (
           id, module_id, lesson_index, title, content,
@@ -133,17 +143,17 @@ async function seedCourse(
           outro_content       = EXCLUDED.outro_content
       `;
 
-      // Delete + re-insert test_cases (no conflict key on test_cases)
-      await sql`DELETE FROM test_cases WHERE lesson_id = ${lesson.id}`;
-      for (const tc of lesson.test_cases) {
-        await sql`
-          INSERT INTO test_cases (id, lesson_id, position, description, args, expected, visible)
-          VALUES (
-            ${tc.id}, ${lesson.id}, ${tc.position}, ${tc.description},
-            ${JSON.stringify(tc.args)}, ${JSON.stringify(tc.expected)}, ${tc.visible}
-          )
-        `;
-      }
+      // Fix 1: wrap DELETE + INSERT test_cases in a transaction to prevent partial state
+      await sql.transaction([
+        sql`DELETE FROM test_cases WHERE lesson_id = ${lesson.id}`,
+        ...lesson.test_cases.map(tc =>
+          sql`INSERT INTO test_cases (id, lesson_id, position, description, args, expected, visible)
+              VALUES (
+                ${tc.id}, ${lesson.id}, ${tc.position}, ${tc.description},
+                ${JSON.stringify(tc.args)}, ${JSON.stringify(tc.expected)}, ${tc.visible}
+              )`
+        ),
+      ]);
       console.log(`    upserted lesson: ${lesson.title} (${lesson.test_cases.length} test cases)`);
     }
   }
@@ -172,7 +182,13 @@ async function main(): Promise<void> {
     await seedCourse(sql, slug, contentRoot, allowIncomplete);
   }
 
-  console.log('\nDone. Run: node app/scripts/validate-content.mjs');
+  console.log('\nRunning validation...');
+  try {
+    execSync('node app/scripts/validate-content.mjs', { stdio: 'inherit', cwd: join(__dirname, '..', '..', '..') });
+  } catch {
+    console.error('Seed failed validation — fix errors above.');
+    process.exit(1);
+  }
 }
 
 main().catch(err => { console.error(err); process.exit(1); });
