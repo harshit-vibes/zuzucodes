@@ -31,6 +31,7 @@ export interface Course {
   outcomes: string[] | null;
   tag: string | null;
   order: number;
+  published_at: string | null;
   intro_content: unknown | null;
   outro_content: unknown | null;
   confidence_form: ConfidenceForm | null;
@@ -105,7 +106,7 @@ function deriveContentItems(m: Module): ContentItem[] {
 export async function getCourses(): Promise<Course[]> {
   try {
     const result = await sql`
-      SELECT id, title, slug, description, thumbnail_url, outcomes, tag, "order",
+      SELECT id, title, slug, description, thumbnail_url, outcomes, tag, "order", published_at,
              intro_content, outro_content, confidence_form, created_at
       FROM courses
       ORDER BY created_at ASC
@@ -124,7 +125,7 @@ export async function getCourses(): Promise<Course[]> {
 export const getCourseWithModules = cache(async (courseSlug: string): Promise<CourseWithModules | null> => {
   try {
     const courses = await sql`
-      SELECT id, title, slug, description, thumbnail_url, outcomes, tag, "order",
+      SELECT id, title, slug, description, thumbnail_url, outcomes, tag, "order", published_at,
              intro_content, outro_content, confidence_form, created_at
       FROM courses
       WHERE slug = ${courseSlug}
@@ -928,7 +929,7 @@ export async function getBatchModuleCompletionStatus(
 export const getCoursesForSidebar = cache(async (): Promise<CourseWithModules[]> => {
   try {
     const courses = await sql`
-      SELECT id, title, slug, description, thumbnail_url, outcomes, tag, "order",
+      SELECT id, title, slug, description, thumbnail_url, outcomes, tag, "order", published_at,
              intro_content, outro_content, confidence_form, created_at
       FROM courses
       ORDER BY created_at ASC
@@ -980,6 +981,17 @@ export type SubscriptionRow = {
   next_billing_at: string | null;
 };
 
+export interface RoadmapItem {
+  id: string;
+  title: string;
+  description: string | null;
+  status: 'idea' | 'planned' | 'in_progress' | 'done';
+  created_by: string;
+  created_at: string;
+  vote_count: number;
+  user_voted: boolean;
+}
+
 export const getSubscriptionStatus = cache(
   async (userId: string): Promise<SubscriptionRow | null> => {
     const result = await sql`
@@ -992,3 +1004,72 @@ export const getSubscriptionStatus = cache(
     return (result[0] as SubscriptionRow) ?? null;
   }
 );
+
+// ========================================
+// ROADMAP
+// ========================================
+
+/**
+ * Get all published roadmap items with vote counts.
+ * user_voted is true if the given userId has voted for the item.
+ */
+export const getRoadmapItems = cache(async (userId: string | null): Promise<RoadmapItem[]> => {
+  try {
+    const uid = userId ?? '';
+    const rows = await sql`
+      SELECT
+        ri.id::text,
+        ri.title,
+        ri.description,
+        ri.status,
+        ri.created_by,
+        ri.created_at,
+        COUNT(rv.user_id)::int                        AS vote_count,
+        COALESCE(BOOL_OR(rv.user_id = ${uid}), false) AS user_voted
+      FROM roadmap_items ri
+      LEFT JOIN roadmap_votes rv ON rv.item_id = ri.id
+      WHERE ri.is_published = true
+      GROUP BY ri.id
+      ORDER BY COUNT(rv.user_id) DESC, ri.created_at DESC
+    `;
+    return rows as RoadmapItem[];
+  } catch (error) {
+    console.error('getRoadmapItems error:', error);
+    return [];
+  }
+});
+
+/**
+ * Toggle a vote on a roadmap item. Returns new voted state + count.
+ */
+export async function toggleRoadmapVote(
+  userId: string,
+  itemId: string,
+): Promise<{ voted: boolean; count: number }> {
+  const existing = await sql`
+    SELECT 1 FROM roadmap_votes WHERE user_id = ${userId} AND item_id = ${itemId}::uuid
+  `;
+  if (existing.length > 0) {
+    await sql`DELETE FROM roadmap_votes WHERE user_id = ${userId} AND item_id = ${itemId}::uuid`;
+  } else {
+    await sql`INSERT INTO roadmap_votes (user_id, item_id) VALUES (${userId}, ${itemId}::uuid)`;
+  }
+  const [{ count }] = await sql`
+    SELECT COUNT(*)::int AS count FROM roadmap_votes WHERE item_id = ${itemId}::uuid
+  `;
+  return { voted: existing.length === 0, count: count as number };
+}
+
+/**
+ * Submit a new idea (unpublished — admin reviews before publishing).
+ */
+export async function submitRoadmapIdea(
+  userId: string,
+  title: string,
+  description: string,
+): Promise<void> {
+  await sql`
+    INSERT INTO roadmap_items (title, description, created_by, is_published)
+    VALUES (${title}, ${description || null}, ${userId}, false)
+  `;
+}
