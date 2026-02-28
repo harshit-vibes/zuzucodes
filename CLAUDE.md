@@ -258,3 +258,31 @@ The Python executor migration (Judge0 → self-hosted Railway service) proved th
 2. **Database** (migrate together with auth; single Railway Postgres replaces both Neon DB + Neon Auth backing store)
 3. **Email** (needed as soon as auth is self-hosted, for OTP delivery)
 4. **Hosting** (last — Vercel works fine; migrate when cost or limits become a constraint)
+
+---
+
+## Course Creation Tool Roadmap
+
+### v1 — Claude Code Native (current)
+
+A `/create-course` skill that orchestrates specialised Task subagents inside Claude Code. Conversational approval at every level: course outline → per-module → per-lesson → per-quiz → course forms. Generated content lands in `app/content/{course-slug}/` as JSON files, seeded into DB via the existing seed script.
+
+**Agent hierarchy:**
+- **Structure Agent** — generates course outline (modules, lesson titles, objectives)
+- **Module Agent** — generates module intro/outro per module
+- **Lesson Content Agent** — generates Markdown body, problem fields, lesson intro/outro
+- **Code Challenge Agent** — generates solution code, derives stub template, writes test cases, verifies against executor (retry loop, max 3×)
+- **Quiz Agent** — generates module quiz grounded in actual lesson content
+- **Course Content Agent** — generates course intro/outro, confidence form
+
+**Design doc:** `app/docs/plans/2026-02-28-course-creation-tool-design.md`
+
+### v2 — Provider-Agnostic Script
+
+Extract orchestration from Claude Code into `scripts/create-course.mjs`:
+- Each agent's system prompt + generation call becomes a standalone function using `@anthropic-ai/sdk` with structured output (existing Zod schemas)
+- `Task tool dispatch` → `anthropic.messages.create()` with JSON schema response format
+- Swap `anthropic` client for `openai`/`gemini` to go fully provider-agnostic
+- Agent prompts live in `scripts/prompts/` as plain strings — no Claude Code dependency
+- Same JSON output format, same `app/content/` structure, same seeder
+- Approval flow moves from Claude Code conversation to terminal prompts
