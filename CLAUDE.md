@@ -222,3 +222,39 @@ Separate Next.js app. Static JSON data in `web/src/data/` with optional Supabase
 - Customer support: Intercom or equivalent in-app chat widget
 - Sales/conversion: identify high-intent users, trigger upgrade flows when relevant
 - Error monitoring: Sentry or equivalent for runtime errors in prod
+
+---
+
+## v2 Infrastructure Roadmap — Own Your Stack
+
+The Python executor migration (Judge0 → self-hosted Railway service) proved the pattern: replace managed third-party services with self-hosted equivalents where the operational cost is low and the control/cost benefit is high. The same approach applies to the remaining third-party dependencies.
+
+### Database — replace Neon with self-hosted Postgres
+- **Current:** Neon serverless Postgres (managed, proprietary connection pooling, Neon Auth)
+- **Target:** Postgres on Railway (or Fly.io) — same `pg` wire protocol, swap `DATABASE_URL`, no code changes beyond connection string
+- **Why:** Neon's free tier has compute suspension (cold starts); owned Postgres has predictable latency and no vendor lock-in on the auth layer
+- **Note:** Neon Auth is tightly coupled to Neon DB — replacing the DB means replacing auth too (see below)
+
+### Auth — replace Neon Auth with self-hosted auth service
+- **Current:** `@neondatabase/auth` — passwordless OTP, tied to Neon
+- **Target:** Self-hosted [Lucia](https://lucia-auth.com/) or [Better Auth](https://www.better-auth.com/) on Railway — OTP/magic-link via Resend (or self-hosted SMTP), sessions in own Postgres
+- **Why:** Neon Auth can't be decoupled from Neon DB; owning auth means full control over session strategy, multi-provider login, and user data
+- **Migration path:** `auth()` and `authClient` abstractions in `src/lib/auth/` already isolate the auth layer — swap the implementation without touching route code
+
+### Hosting — replace Vercel with self-hosted Next.js
+- **Current:** Vercel (two projects: `app/` → `app.zuzu.codes`, `web/` → `zuzu.codes`)
+- **Target:** Self-hosted Next.js via [OpenNext](https://opennext.js.org/) on Railway or Coolify — same build output, full App Router + RSC support
+- **Why:** Vercel's hobby plan has function timeout limits and cold starts; owned infra has no per-invocation pricing at scale
+- **Consideration:** Vercel's edge CDN and image optimisation (`next/image`) need equivalents — Cloudflare CDN + `sharp` on the server covers both
+
+### Email — replace Resend with self-hosted SMTP
+- **Current:** No email yet (email welcome flow is a roadmap TODO)
+- **Target:** Self-hosted [Postal](https://postal.cat) or use [Resend](https://resend.com) initially then migrate to own SMTP (AWS SES / Brevo) once volume justifies it
+- **Why:** Resend's free tier is 100 emails/day — fine to start, but self-hosted SMTP removes that ceiling entirely
+- **Integration point:** Wherever auth sends OTP emails (the new auth service above) + transactional emails (welcome, progress milestones)
+
+### Migration priority
+1. **Auth** (blocks hosting migration — Neon Auth is the tightest coupling)
+2. **Database** (migrate together with auth; single Railway Postgres replaces both Neon DB + Neon Auth backing store)
+3. **Email** (needed as soon as auth is self-hosted, for OTP delivery)
+4. **Hosting** (last — Vercel works fine; migrate when cost or limits become a constraint)
