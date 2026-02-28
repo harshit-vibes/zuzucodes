@@ -3,7 +3,7 @@ import { BrandLogo } from "@/components/shared/brand-logo";
 
 const footerLinks = {
   product: [
-    { label: "Python Foundations", href: "#courses", external: false },
+    { label: "Coding Foundations", href: "#courses", external: false },
     { label: "The Method", href: "#method", external: false },
     { label: "Pricing", href: "#pricing", external: false },
   ],
@@ -29,7 +29,7 @@ export function Footer() {
               <span className="font-display text-lg font-semibold">zuzu.codes</span>
             </Link>
             <p className="mt-4 max-w-xs text-sm text-muted-foreground">
-              Structured Python learning for the next generation of builders.
+              Structured coding for the AI era.
             </p>
           </div>
 
